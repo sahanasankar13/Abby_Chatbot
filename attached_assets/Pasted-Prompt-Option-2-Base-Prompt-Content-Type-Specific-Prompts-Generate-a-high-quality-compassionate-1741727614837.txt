@@ -1,0 +1,76 @@
+Prompt Option #2: Base Prompt + Content Type-Specific Prompts
+Generate a high-quality, compassionate question and answer pair about abortion care and mental health.
+
+TARGET CHARACTERISTICS:
+- Content type: {content_type}
+- Answer length: approximately {characteristics['target_length']} characters
+- Tone: Supportive, informative, non-judgemental, and empathetic
+- Include at least 3 of these keywords: {', '.join(selected_keywords)}
+
+WRITING GUIDELINES:
+- Use short sentences and paragraphs
+- Avoid medical jargon when possible; explain necessary technical terms
+- Include emotional validation in your response
+- Be direct and specific with information
+- Balance factual accuracy with emotional sensitivity
+
+LANGUAGE VARIATION REQUIREMENTS:
+- Use varied opening sentences (avoid repeatedly starting with "It's normal/completely normal")
+- Employ diverse transition phrases beyond "remember" and "consider"
+- Vary sentence structures between simple, compound, and complex sentences
+- Use a range of emotional validation phrases beyond "your feelings are valid"
+- Incorporate different linguistic patterns and vocabulary choices
+
+# Content-specific instructions
+        if content_type == 'educational':
+            prompt += """SPECIFIC INSTRUCTIONS: 
+The question should seek educational information about abortion and mental health.
+Create a response that is informative yet compassionate, providing evidence-based information in accessible language.
+Focus on being helpful without overwhelming the user with too much information.
+Include 1-2 sentences acknowledging the emotional aspect of the topic.
+
+EXAMPLE TOPICS:
+- Mental health during/after abortion
+- What to expect emotionally during an abortion procedure
+- How to find mental health support specific to abortion care
+- Understanding the relationship between reproductive choices and emotional wellbeing
+- Resources for abortion aftercare and emotional support
+            """
+        
+        elif content_type == 'personal':
+            prompt += """SPECIFIC INSTRUCTIONS:
+The question should be from someone seeking personal emotional support related to abortion.
+Create a warm, validating response that acknowledges feelings and offers coping strategies.
+Begin with emotional validation before offering practical advice.
+Use phrases like "It's normal to feel...", "Your feelings are valid", and "You're not alone".
+
+EXAMPLE TOPICS:
+- Coping with difficult emotions after an abortion
+- Managing anxiety about an upcoming abortion procedure
+- Processing mixed feelings about pregnancy termination
+- Dealing with stigma or isolation related to abortion
+- Finding emotional balance during the decision-making process
+"""
+        
+        elif content_type == 'factual':
+            prompt += """SPECIFIC INSTRUCTIONS:
+The question should seek specific factual information about abortion procedures, facts, or resources.
+Provide clear, accurate information without unnecessary medical terminology.
+Keep the tone warm and supportive even while delivering factual content.
+Include a brief acknowledgment of the emotional context of seeking this information.
+
+EXAMPLE TOPICS:
+- Types of abortion procedures and what to expect
+- Legal requirements for abortion access in different states
+- What to expect physically after an abortion
+- Resources for financial assistance for abortion care
+- Typical timeline for abortion procedures
+"""
+        
+        prompt += """
+FORMAT:
+Return your response in the following format:
+Question: 
+Answer: 
+"""
+

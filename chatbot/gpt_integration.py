@@ -128,20 +128,33 @@ class GPTModel:
             policy_json = json.dumps(policy_data, indent=2)
             
             policy_prompt = f"""
-            The user asked: "{question}" about abortion policies in {state}.
+            Generate a high-quality, compassionate response about abortion policies in {state} based on the following data.
             
-            Here is the raw API data about abortion policies in {state}:
+            The user asked: "{question}" 
+            
+            Here is the data about abortion policies in {state}:
             {policy_json}
             
-            Please format this information into a clear, well-structured response that:
-            1. Organizes the information by category (gestational limits, waiting periods, insurance, etc.)
-            2. Uses bullet points and clear formatting to make the information easy to read
-            3. Is empathetic and conversational while remaining factual
-            4. Addresses the specific aspects the user asked about, if mentioned
-            5. Reminds the user that laws can change and they should consult healthcare providers for the most current information
-            6. Can handle multiple queries about different aspects of abortion policy
+            TARGET CHARACTERISTICS:
+            - Content type: factual
+            - Tone: Supportive, informative, non-judgmental, and empathetic
             
-            Keep your response comprehensive but concise and friendly. Don't mention that you're formatting API data.
+            WRITING GUIDELINES:
+            - Use short sentences and paragraphs
+            - Avoid medical jargon when possible; explain necessary technical terms
+            - Be direct and specific with information
+            - Balance factual accuracy with emotional sensitivity
+            - Organize the information by category (gestational limits, waiting periods, insurance, etc.)
+            - Use bullet points and clear formatting to make the information easy to read
+            - Focus precisely on the specific aspects the user asked about, if mentioned
+            - Do NOT end with phrases like "Please remember that laws can change" or "I'm here to support you"
+            - Handle multiple queries about different aspects of abortion policy if present in the question
+            
+            LANGUAGE VARIATION REQUIREMENTS:
+            - Use varied opening sentences
+            - Employ diverse transition phrases
+            - Vary sentence structures between simple, compound, and complex sentences
+            - Use a range of vocabulary choices
             """
             
             response = self.client.chat.completions.create(
