@@ -1,13 +1,13 @@
 /* Custom styles for the chat application */
 :root {
-    --bot-message-bg: #394152;
-    --user-message-bg: #4f5d75;
-    --error-message-bg: #8b3a39;
+    --bot-message-bg: #f0f7ff;
+    --user-message-bg: #e9f5e9;
+    --error-message-bg: #ffe6e6;
 }
 
 body {
-    background-color: #242933;
-    color: #e5e5e5;
+    background-color: #ffffff;
+    color: #333333;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     min-height: 100vh;
     display: flex;
@@ -27,7 +27,7 @@ body {
 .chat-header {
     padding: 1rem 0;
     text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     margin-bottom: 1rem;
 }
 
@@ -105,7 +105,7 @@ body {
 
 .chat-input {
     padding: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .input-group {
@@ -114,9 +114,9 @@ body {
 }
 
 .form-control {
-    background-color: #2a3142;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #e5e5e5;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #333333;
     border-radius: 1.5rem;
     padding: 0.625rem 1rem;
 }
@@ -124,8 +124,8 @@ body {
 .form-control:focus {
     box-shadow: 0 0 0 0.25rem rgba(126, 87, 194, 0.25);
     border-color: #7e57c2;
-    background-color: #2a3142;
-    color: #e5e5e5;
+    background-color: #ffffff;
+    color: #333333;
 }
 
 .btn-primary {
@@ -151,7 +151,7 @@ body {
 .typing-indicator .dot {
     width: 8px;
     height: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(0, 0, 0, 0.7);
     border-radius: 50%;
     margin: 0 2px;
     animation: typing-animation 1.5s infinite ease-in-out;
