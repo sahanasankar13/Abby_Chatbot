@@ -130,10 +130,7 @@ class PolicyAPI:
                 return f"I don't have specific policy information for {state} at this time. For the most accurate and up-to-date information about abortion laws in {state}, please visit the Planned Parenthood website or contact a healthcare provider in your area."
             
             # Format the response based on policy data
-            response = f"""
-            Based on the most recent information available for {state}, here is what I can tell you about abortion policies:
-            
-            """
+            response = f"Based on the most recent information available for {state}, here is what I can tell you about abortion policies:\n\n"
             
             # Format gestational limits data
             if "gestational_limits" in policy_data:
@@ -243,15 +240,11 @@ class PolicyAPI:
                         response += f"- {info}\n"
                     response += "\n"
             
-            response += """
-            Please note that abortion laws can change rapidly, so for the most up-to-date information, I recommend:
-            
-            1. Contacting Planned Parenthood directly at 1-800-230-PLAN (7526)
-            2. Visiting the Planned Parenthood website (plannedparenthood.org)
-            3. Consulting with a healthcare provider in your area
-            
-            Would you like me to provide more specific information about a particular aspect of abortion access in this state?
-            """
+            response += "Please note that abortion laws can change rapidly, so for the most up-to-date information, I recommend:\n\n"
+            response += "1. Contacting Planned Parenthood directly at 1-800-230-PLAN (7526)\n"
+            response += "2. Visiting the Planned Parenthood website (plannedparenthood.org)\n"
+            response += "3. Consulting with a healthcare provider in your area\n\n"
+            response += "Would you like me to provide more specific information about a particular aspect of abortion access in this state?"
             
             return response
             

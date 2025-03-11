@@ -30,9 +30,25 @@ class BaselineModel:
             str: Category of the question ('policy', 'knowledge', or 'conversational')
         """
         # Simple keyword-based categorization
-        policy_keywords = ['law', 'legal', 'state', 'policy', 'ban', 'illegal', 'allowed', 'permit', 'legislation']
+        policy_keywords = ['law', 'legal', 'state', 'policy', 'ban', 'illegal', 'allowed', 'permit', 'legislation', 
+                          'restrict', 'abortion policy', 'abortion law', 'abortion access', 'gestational', 'limit',
+                          'parental consent', 'waiting period', 'insurance', 'medicaid', 'coverage']
         
         question_lower = question.lower()
+        
+        # Check for explicit state mentions combined with abortion/policy keywords
+        states = ["alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", 
+                 "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", 
+                 "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", 
+                 "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", 
+                 "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", 
+                 "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", 
+                 "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", 
+                 "wisconsin", "wyoming"]
+        
+        # If question mentions abortion and a state, categorize as policy
+        if ('abortion' in question_lower and any(state in question_lower for state in states)):
+            return 'policy'
         
         # Check for policy-related keywords
         if any(keyword in question_lower for keyword in policy_keywords):
