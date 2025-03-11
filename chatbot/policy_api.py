@@ -141,6 +141,9 @@ class PolicyAPI:
             # Get combined policy data from all endpoints for this state
             policy_data = self._fetch_all_policy_data_for_state(state)
             
+            # Log the full policy data to help debug
+            logger.debug(f"Combined policy data for {state}: {policy_data}")
+            
             if not policy_data:
                 return f"I don't have specific policy information for {state} at this time. For the most accurate and up-to-date information about abortion laws in {state}, please visit the Planned Parenthood website or contact a healthcare provider in your area."
             
@@ -298,13 +301,18 @@ class PolicyAPI:
                     
                     if response.status_code == 200:
                         data = response.json()
+                        # Log the actual API response
+                        logger.debug(f"API response for {endpoint_name}: {data}")
+                        
                         # API returns data keyed by state, so we extract just that state's data
                         if state_abbr in data:
                             all_data[endpoint_name] = data[state_abbr]
+                            logger.debug(f"Found data for state abbr {state_abbr}: {data[state_abbr]}")
                         elif state in data:
                             all_data[endpoint_name] = data[state]
+                            logger.debug(f"Found data for state name {state}: {data[state]}")
                         else:
-                            logger.warning(f"State {state} not found in response data")
+                            logger.warning(f"State {state} not found in response data: {data.keys()}")
                             all_data[endpoint_name] = {}
                     else:
                         logger.warning(f"API returned status code {response.status_code} for {endpoint_name}")
