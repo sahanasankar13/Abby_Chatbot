@@ -65,6 +65,7 @@ class BaselineModel:
     def process_question(self, question):
         """
         Process a question using the appropriate model based on its category
+        Handles multi-query questions by combining responses
         
         Args:
             question (str): The user's question
@@ -73,32 +74,97 @@ class BaselineModel:
             str: The model's response
         """
         try:
+            # Check if this is a multi-query question
+            if " and " in question.lower() or ";" in question:
+                return self._handle_multi_query(question)
+            
+            # Single query flow
             # Categorize the question
             category = self.categorize_question(question)
             logger.debug(f"Question category: {category}")
             
             # Process according to category
+            return self._process_single_query(question, category)
+            
+        except Exception as e:
+            logger.error(f"Error processing question: {str(e)}", exc_info=True)
+            return "I'm sorry, I encountered an error processing your question. Please try again or rephrase your question."
+                
+    def _handle_multi_query(self, compound_question):
+        """
+        Handle multi-part questions by splitting them and processing each part
+        
+        Args:
+            compound_question (str): The compound question with multiple parts
+            
+        Returns:
+            str: Combined response to all parts of the question
+        """
+        try:
+            logger.debug(f"Handling multi-query question: {compound_question}")
+            
+            # Split the question into parts
+            if ";" in compound_question:
+                parts = compound_question.split(";")
+            else:
+                parts = compound_question.split(" and ")
+                
+            # Clean up parts
+            parts = [part.strip() for part in parts if part.strip()]
+            
+            if len(parts) <= 1:
+                # Not actually a multi-query, process normally
+                category = self.categorize_question(compound_question)
+                return self._process_single_query(compound_question, category)
+                
+            # Process each part separately
+            responses = []
+            for part in parts:
+                category = self.categorize_question(part)
+                logger.debug(f"Part: '{part}', Category: {category}")
+                response = self._process_single_query(part, category)
+                responses.append(response)
+                
+            # Combine responses with GPT for a coherent answer
+            combined_prompt = f"""
+            The user asked the following multi-part question: "{compound_question}"
+            
+            Here are the separate responses to each part:
+            
+            {' '.join(responses)}
+            
+            Please combine these responses into a single, coherent answer that addresses all parts of the user's question.
+            Organize the information clearly with appropriate headings for each part.
+            """
+            
+            logger.debug("Combining multi-query responses with GPT")
+            return self.gpt_model.get_response(combined_prompt)
+            
+        except Exception as e:
+            logger.error(f"Error handling multi-query: {str(e)}", exc_info=True)
+            return "I'm sorry, I had trouble processing your multi-part question. Could you try asking one question at a time?"
+        
+    def _process_single_query(self, question, category):
+        """Process a single query based on its category"""
+        try:
             if category == 'policy':
-                logger.debug("Using Policy API for response")
+                logger.debug(f"Using Policy API for response to: {question}")
                 return self.policy_api.get_policy_response(question)
             
             elif category == 'knowledge':
-                logger.debug("Using BERT RAG for response")
-                # First try to get a response from the RAG model
+                logger.debug(f"Using BERT RAG for response to: {question}")
                 rag_response = self.bert_rag.get_response(question)
                 
-                # If RAG response is confident, return it
                 if self.bert_rag.is_confident(question, rag_response):
                     return rag_response
                 
-                # If not confident, enhance with GPT
                 logger.debug("RAG not confident, enhancing with GPT")
                 return self.gpt_model.enhance_response(question, rag_response)
             
             else:  # conversational
-                logger.debug("Using GPT for conversational response")
+                logger.debug(f"Using GPT for conversational response to: {question}")
                 return self.gpt_model.get_response(question)
-        
+                
         except Exception as e:
-            logger.error(f"Error processing question: {str(e)}", exc_info=True)
-            return "I'm sorry, I encountered an error processing your question. Please try again or rephrase your question."
+            logger.error(f"Error processing single query: {str(e)}", exc_info=True)
+            return "I'm sorry, I encountered an error with that question. Could you try rephrasing it?"
