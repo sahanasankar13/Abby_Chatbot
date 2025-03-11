@@ -4,6 +4,7 @@ import requests
 import json
 import time
 from urllib.parse import quote
+from chatbot.gpt_integration import GPTModel
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,9 @@ class PolicyAPI:
             self.api_base_url = "https://api.abortionpolicyapi.com/v1"
             self.api_key = os.environ.get("POLICY_API_KEY", "tA3Z3l6l35344")  # Using the provided API key
             self.headers = {"token": self.api_key}
+            
+            # Initialize GPT model for better response formatting
+            self.gpt_model = GPTModel()
             
             # State abbreviation mapping
             self.state_abbreviations = {
@@ -147,7 +151,18 @@ class PolicyAPI:
             if not policy_data:
                 return f"I don't have specific policy information for {state} at this time. For the most accurate and up-to-date information about abortion laws in {state}, please visit the Planned Parenthood website or contact a healthcare provider in your area."
             
-            # Format the response based on policy data
+            # Use GPT to format the response for better readability and to handle multi-queries
+            try:
+                logger.debug("Using GPT to format policy response")
+                gpt_response = self.gpt_model.format_policy_response(question, state, policy_data)
+                if gpt_response:
+                    logger.debug("Successfully formatted response with GPT")
+                    return gpt_response
+            except Exception as e:
+                logger.error(f"Error formatting with GPT: {str(e)}, falling back to template")
+            
+            # Fallback to template-based formatting if GPT fails
+            logger.debug("Using template-based formatting")
             response = f"Based on the most recent information available for {state}, here is what I can tell you about abortion policies:\n\n"
             
             # Format gestational limits data
