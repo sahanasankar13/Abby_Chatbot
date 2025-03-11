@@ -2,6 +2,7 @@ import os
 import logging
 import requests
 import json
+import time
 from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
@@ -14,10 +15,27 @@ class PolicyAPI:
         """Initialize the Policy API client"""
         logger.info("Initializing Policy API")
         try:
-            # The API endpoint and key would typically be set in environment variables
-            self.api_base_url = os.environ.get("POLICY_API_ENDPOINT", "https://api.abortionpolicyapi.com/v1")
-            self.api_key = os.environ.get("POLICY_API_KEY", "default_key")
+            # Using the provided API key
+            self.api_base_url = "https://api.abortionpolicyapi.com/v1"
+            self.api_key = os.environ.get("POLICY_API_KEY", "tA3Z3l6l35344")  # Using the provided API key
             self.headers = {"token": self.api_key}
+            
+            # State abbreviation mapping
+            self.state_abbreviations = {
+                "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
+                "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
+                "Florida": "FL", "Georgia": "GA", "Hawaii": "HI", "Idaho": "ID",
+                "Illinois": "IL", "Indiana": "IN", "Iowa": "IA", "Kansas": "KS",
+                "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME", "Maryland": "MD",
+                "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN", "Mississippi": "MS",
+                "Missouri": "MO", "Montana": "MT", "Nebraska": "NE", "Nevada": "NV",
+                "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+                "North Carolina": "NC", "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK",
+                "Oregon": "OR", "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
+                "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT",
+                "Vermont": "VT", "Virginia": "VA", "Washington": "WA", "West Virginia": "WV",
+                "Wisconsin": "WI", "Wyoming": "WY", "District of Columbia": "DC"
+            }
             
             # Define available endpoints according to documentation
             self.endpoints = {
@@ -97,17 +115,14 @@ class PolicyAPI:
         Returns:
             str: General policy information
         """
-        return """
-        Abortion laws and policies vary considerably by state in the United States. Some states have strict restrictions or bans, while others protect access to abortion.
-
-        For the most accurate and up-to-date information about abortion laws in a specific state, please:
-        1. Mention the state you're asking about in your question
-        2. Visit the Planned Parenthood website (plannedparenthood.org)
-        3. Contact a healthcare provider in your area
-        4. Call the Planned Parenthood helpline at 1-800-230-PLAN (7526)
-
-        Would you like to know about abortion laws in a specific state?
-        """
+        return ("Abortion laws and policies vary considerably by state in the United States. Some states have strict restrictions or bans, "
+               "while others protect access to abortion.\n\n"
+               "For the most accurate and up-to-date information about abortion laws in a specific state, please:\n"
+               "1. Mention the state you're asking about in your question\n"
+               "2. Visit the Planned Parenthood website (plannedparenthood.org)\n"
+               "3. Contact a healthcare provider in your area\n"
+               "4. Call the Planned Parenthood helpline at 1-800-230-PLAN (7526)\n\n"
+               "Would you like to know about abortion laws in a specific state?")
     
     def _get_state_policy(self, state, question):
         """
@@ -262,24 +277,55 @@ class PolicyAPI:
         Returns:
             dict: Combined policy data from all endpoints
         """
-        # For now, we'll use our static database since we don't have a real API key
-        # In production, this would make actual API calls to the endpoints
+        # Get the state abbreviation if it exists in our mapping
+        state_abbr = self.state_abbreviations.get(state, state)
         
-        # This is how the real API would be called:
-        # all_data = {}
-        # for endpoint_name, endpoint_url in self.endpoints.items():
-        #     try:
-        #         state_url = f"{endpoint_url}/states/{quote(state)}"
-        #         response = requests.get(state_url, headers=self.headers)
-        #         if response.status_code == 200:
-        #             data = response.json()
-        #             all_data[endpoint_name] = data.get(state, {})
-        #     except Exception as e:
-        #         logger.error(f"Error fetching {endpoint_name} data for {state}: {str(e)}")
-        # return all_data
+        try:
+            # Make actual API calls to all endpoints
+            all_data = {}
+            for endpoint_name, endpoint_url in self.endpoints.items():
+                try:
+                    # Format the URL using state abbreviation as needed by the API
+                    state_url = f"{endpoint_url}/states/{state_abbr}"
+                    logger.debug(f"Making API request to: {state_url}")
+                    
+                    # Add a small delay between requests to avoid rate limiting
+                    if endpoint_name != list(self.endpoints.keys())[0]:  # Skip delay for first request
+                        time.sleep(0.5)
+                    
+                    # Make the API request
+                    response = requests.get(state_url, headers=self.headers)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        # API returns data keyed by state, so we extract just that state's data
+                        if state_abbr in data:
+                            all_data[endpoint_name] = data[state_abbr]
+                        elif state in data:
+                            all_data[endpoint_name] = data[state]
+                        else:
+                            logger.warning(f"State {state} not found in response data")
+                            all_data[endpoint_name] = {}
+                    else:
+                        logger.warning(f"API returned status code {response.status_code} for {endpoint_name}")
+                        all_data[endpoint_name] = {}
+                except Exception as e:
+                    logger.error(f"Error fetching {endpoint_name} data for {state}: {str(e)}")
+                    all_data[endpoint_name] = {}
+            
+            # If we have some data, return it
+            if any(all_data.values()):
+                return all_data
+            
+            # Fall back to static database if API calls failed or returned no data
+            logger.info(f"No data from API for {state}, falling back to static database")
+            return self._get_policy_data_for_state(state)
         
-        # Simulate API responses with our static database
-        return self._get_policy_data_for_state(state)
+        except Exception as e:
+            logger.error(f"Error in API calls for {state}: {str(e)}", exc_info=True)
+            # Fall back to static database
+            logger.info(f"Error in API calls for {state}, falling back to static database")
+            return self._get_policy_data_for_state(state)
     
     def _get_policy_data_for_state(self, state):
         """
