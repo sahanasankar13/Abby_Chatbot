@@ -195,11 +195,11 @@ body {
 
 /* Make links in bot messages stand out */
 .bot-message a {
-    color: #bb86fc;
+    color: #4a6bdf;
     text-decoration: underline;
     transition: color 0.2s;
 }
 
 .bot-message a:hover {
-    color: #dbb8ff;
+    color: #7189e8;
 }

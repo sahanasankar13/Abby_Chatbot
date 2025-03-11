@@ -111,43 +111,101 @@ class PolicyAPI:
             str: State-specific policy information
         """
         try:
-            # In a real implementation, this would make an API call
-            # For this implementation, we'll simulate the API response
-            # with placeholder text that would be replaced by real data
-            
             logger.debug(f"Fetching policy information for state: {state}")
             
-            # Simulate API call delay and response
-            # In a real implementation, you would use:
-            # response = requests.get(
-            #     f"{self.api_endpoint}/state/{state}",
-            #     headers={"Authorization": f"Bearer {self.api_key}"}
-            # )
-            # policy_data = response.json()
+            # In a production environment, this would make an actual API call
+            # to retrieve the latest policy information from an authoritative source
             
-            # Placeholder response
-            return f"""
+            # Since we're focusing on integration, we'll use a database of policy information
+            # This could be expanded with a real API when available
+            policy_data = self._get_policy_data_for_state(state)
+            
+            if not policy_data:
+                return f"I don't have specific policy information for {state} at this time. For the most accurate and up-to-date information about abortion laws in {state}, please visit the Planned Parenthood website or contact a healthcare provider in your area."
+            
+            # Format the response based on policy data
+            response = f"""
             Based on the most recent information available for {state}, here is what I can tell you about abortion policies:
             
-            This would be replaced with actual policy information from the API response. The information would include details about:
+            {policy_data.get('legal_status', 'Information not available')}
             
-            - Legal status of abortion
-            - Gestational limits
-            - Waiting periods
-            - Parental consent requirements
-            - Insurance coverage
-            - Facility requirements
-            - Available services
+            Gestational limits: {policy_data.get('gestational_limits', 'Information not available')}
             
-            Please note that abortion laws can change, so for the most up-to-date information, I recommend:
+            Restrictions: {policy_data.get('restrictions', 'Information not available')}
             
-            1. Contacting Planned Parenthood directly
-            2. Visiting the Planned Parenthood website
+            Please note that abortion laws can change rapidly, so for the most up-to-date information, I recommend:
+            
+            1. Contacting Planned Parenthood directly at 1-800-230-PLAN (7526)
+            2. Visiting the Planned Parenthood website (plannedparenthood.org)
             3. Consulting with a healthcare provider in {state}
             
             Would you like me to provide information about resources available in {state}?
             """
             
+            return response
+            
         except Exception as e:
             logger.error(f"Error getting state policy for {state}: {str(e)}", exc_info=True)
             return f"I'm sorry, I'm having trouble retrieving the latest policy information for {state}. For the most accurate information, please consult the Planned Parenthood website or contact a healthcare provider directly."
+    
+    def _get_policy_data_for_state(self, state):
+        """
+        Get policy data for a specific state from our database
+        
+        Args:
+            state (str): State name
+        
+        Returns:
+            dict: Policy data for the state
+        """
+        # This is a simplified database of policy information
+        # In a production environment, this would be pulled from an API or database
+        policy_database = {
+            "California": {
+                "legal_status": "Abortion is legal in California. The state has strong protections for abortion access.",
+                "gestational_limits": "Abortion is accessible throughout pregnancy when needed to protect the life or health of the pregnant person.",
+                "restrictions": "California has expanded access to abortion services and has laws protecting abortion providers and patients."
+            },
+            "Texas": {
+                "legal_status": "Abortion is highly restricted in Texas under Senate Bill 8 (SB 8) and subsequent legislation.",
+                "gestational_limits": "Abortion is prohibited after approximately 6 weeks of pregnancy, before many people know they are pregnant.",
+                "restrictions": "Texas has numerous restrictions including mandatory waiting periods and parental consent requirements."
+            },
+            "New York": {
+                "legal_status": "Abortion is legal in New York. The state has enacted protections for abortion access.",
+                "gestational_limits": "Abortion is accessible up to 24 weeks of pregnancy, and after that if necessary to protect the patient's life or health.",
+                "restrictions": "New York has fewer restrictions compared to many states and has expanded access to abortion services."
+            },
+            "Florida": {
+                "legal_status": "Florida has significant restrictions on abortion access.",
+                "gestational_limits": "Abortion is prohibited after 15 weeks of pregnancy with limited exceptions.",
+                "restrictions": "Florida requires a 24-hour waiting period and parental consent for minors."
+            },
+            "Illinois": {
+                "legal_status": "Abortion is legal in Illinois with statutory protections.",
+                "gestational_limits": "Abortion is accessible throughout pregnancy when needed for the health of the pregnant person.",
+                "restrictions": "Illinois has removed many restrictions and expanded abortion access."
+            },
+            "Ohio": {
+                "legal_status": "Ohio has significant restrictions on abortion access.",
+                "gestational_limits": "Abortion is prohibited after fetal cardiac activity is detected (around 6 weeks) with limited exceptions.",
+                "restrictions": "Ohio requires a 24-hour waiting period, parental consent for minors, and has other restrictions."
+            },
+            "Washington": {
+                "legal_status": "Abortion is legal in Washington with statutory protections.",
+                "gestational_limits": "Abortion is accessible throughout pregnancy when needed for the health of the pregnant person.",
+                "restrictions": "Washington has few restrictions and has enacted laws to protect abortion providers and patients."
+            },
+            "Massachusetts": {
+                "legal_status": "Abortion is legal in Massachusetts with statutory protections.",
+                "gestational_limits": "Abortion is accessible up to 24 weeks, and after that if necessary to protect the patient's life or health.",
+                "restrictions": "Massachusetts requires parental consent for minors under 16, though there is a judicial bypass option."
+            },
+            "Michigan": {
+                "legal_status": "Abortion is legal in Michigan following a 2022 state constitutional amendment protecting reproductive freedom.",
+                "gestational_limits": "Abortion is accessible up to fetal viability, and after that if necessary to protect the patient's life or health.",
+                "restrictions": "Michigan has removed many previous restrictions following the constitutional amendment."
+            }
+        }
+        
+        return policy_database.get(state, None)
