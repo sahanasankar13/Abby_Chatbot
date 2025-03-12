@@ -415,6 +415,141 @@ class BertRAGModel:
             except:
                 # If citation fails, return plain error message
                 return error_response
+                
+    def get_response_with_context(self, question, top_k=5):
+        """
+        Get response with context information for a given question using RAG
+
+        Args:
+            question (str): The question to answer
+            top_k (int): Number of similar questions to retrieve
+
+        Returns:
+            tuple: (answer string, context list)
+        """
+        try:
+            # Import citation manager
+            from chatbot.citation_manager import CitationManager
+            citation_mgr = CitationManager()
+            
+            # Prepare empty contexts list
+            contexts = []
+
+            # Check if this is a conversational query instead of a health question
+            conversational_type = self._is_conversational_query(question)
+            if conversational_type == "greeting":
+                logger.debug(f"Detected conversational query: '{question}'")
+                greeting_response = "I'm doing well, thanks for asking! How can I help you with reproductive health information today?"
+                return citation_mgr.add_citation_to_text(greeting_response, "planned_parenthood"), contexts
+            elif conversational_type == "goodbye":
+                goodbye_response = "Goodbye! Take care and stay healthy."
+                return citation_mgr.add_citation_to_text(goodbye_response, "planned_parenthood"), contexts
+
+            # Check if the question is out of scope
+            out_of_scope = self._is_out_of_scope(question)
+            if out_of_scope:
+                topics = ", ".join(out_of_scope)
+                logger.debug(f"Detected out-of-scope query about {topics}: '{question}'")
+                out_of_scope_response = self._get_out_of_scope_response(out_of_scope)
+                return citation_mgr.add_citation_to_text(out_of_scope_response, "planned_parenthood"), contexts
+
+            # First check for exact matches (case-insensitive) to prioritize them
+            normalized_question = question.lower().strip('?. ')
+
+            # Check for exact match
+            for idx, qa_pair in enumerate(self.qa_pairs):
+                qa_normalized = qa_pair['Question'].lower().strip('?. ')
+                # Check if this is an exact match
+                if normalized_question == qa_normalized:
+                    logger.debug(f"Found exact match for question: '{question}'")
+                    logger.debug(f"Exact match index: {idx}")
+                    answer = qa_pair['Answer']
+                    contexts.append({
+                        'question': qa_pair['Question'],
+                        'answer': qa_pair['Answer'],
+                        'distance': 0.0,  # Perfect match
+                        'category': qa_pair.get('Category', 'General'),
+                        'source': 'Planned Parenthood'
+                    })
+                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood"), contexts
+
+            # Also check for questions that contain the exact query
+            # This helps with cases like "what is the menstrual cycle" matching "what is the menstrual cycle?"
+            for idx, qa_pair in enumerate(self.qa_pairs):
+                qa_normalized = qa_pair['Question'].lower().strip('?. ')
+                if qa_normalized.startswith(normalized_question) or normalized_question.startswith(qa_normalized):
+                    logger.debug(f"Found partial match for question: '{question}'")
+                    logger.debug(f"Partial match index: {idx}")
+                    answer = qa_pair['Answer']
+                    contexts.append({
+                        'question': qa_pair['Question'],
+                        'answer': qa_pair['Answer'],
+                        'distance': 1.0,  # Very close match
+                        'category': qa_pair.get('Category', 'General'),
+                        'source': 'Planned Parenthood'
+                    })
+                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood"), contexts
+
+            # Expand the query for better recall
+            expanded_question = self.expand_query(question)
+
+            # If no exact match, proceed with embedding-based retrieval
+            # Generate embedding for the question
+            question_embedding = self.generate_embeddings([expanded_question])
+
+            # Search for similar questions
+            distances, indices = self.index.search(question_embedding, top_k)
+            
+            # Create context list from the retrieved documents
+            for i in range(min(top_k, len(indices[0]))):
+                idx = indices[0][i]
+                dist = float(distances[0][i])
+                contexts.append({
+                    'question': self.qa_pairs[idx]['Question'],
+                    'answer': self.qa_pairs[idx]['Answer'],
+                    'distance': dist,
+                    'category': self.qa_pairs[idx].get('Category', 'General'),
+                    'source': 'Planned Parenthood'
+                })
+
+            # Perform a confidence check - don't answer if distance is too high
+            if distances[0][0] > 15.0:
+                logger.debug(f"Low confidence (distance: {distances[0][0]}) for query: '{question}'")
+                response = "I'm not sure I understand your question about reproductive health. Could you please rephrase it or ask something more specific about contraception, pregnancy, or reproductive health?"
+                # Add Planned Parenthood citation by default even for uncertainty responses
+                return citation_mgr.add_citation_to_text(response, "planned_parenthood"), contexts
+
+            # If multiple good matches, combine answers
+            if len(indices[0]) > 1 and distances[0][1] < 12.0:
+                combined = self._combine_top_answers(question, distances[0], indices[0])
+                return citation_mgr.add_citation_to_text(combined, "planned_parenthood"), contexts
+
+            # Get the most similar question's answer
+            best_idx = indices[0][0]
+            best_answer = self.qa_pairs[best_idx]['Answer']
+            best_question = self.qa_pairs[best_idx]['Question']
+
+            logger.debug(f"Primary confidence (distance): {distances[0][0]}")
+            if len(indices[0]) > 1:
+                logger.debug(f"Secondary confidence (gap): {distances[0][1] - distances[0][0]}")
+            logger.debug(f"Matched question: {best_question}")
+
+            # Add citation to the response
+            cited_answer = citation_mgr.add_citation_to_text(best_answer, "planned_parenthood")
+            return cited_answer, contexts
+
+        except Exception as e:
+            logger.error(f"Error getting RAG response with context: {str(e)}", exc_info=True)
+            error_response = "I apologize, but I encountered an error processing your question. Please try asking again or rephrase your question."
+
+            # Add citation even for error responses
+            try:
+                from chatbot.citation_manager import CitationManager
+                citation_mgr = CitationManager()
+                return citation_mgr.add_citation_to_text(error_response, "planned_parenthood"), []
+            except:
+                # If citation fails, return plain error message
+                return error_response, []
 
     def _combine_top_answers(self, question, distances, indices, max_answers=3):
         """

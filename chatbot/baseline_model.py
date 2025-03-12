@@ -114,7 +114,10 @@ class BaselineModel:
                                 
             # Check if this is a follow-up state message after abortion question
             is_state_only = question_lower in states or question_lower in state_abbrevs
-            has_abortion_context = any('abortion' in msg.lower() for msg in self.message_history[-3:] if msg)
+            
+            # Use history parameter instead of accessing conversation_history directly
+            last_messages = [msg['message'] for msg in history[-3:] if msg['sender'] == 'user'] if history else []
+            has_abortion_context = any('abortion' in msg.lower() for msg in last_messages)
 
             if ('abortion' in question_lower and (state_mentioned or abbr_mentioned)) or \
                (is_state_only and has_abortion_context):
@@ -363,7 +366,12 @@ class BaselineModel:
 
             elif category == 'knowledge':
                 logger.debug(f"Using BERT RAG for response to: {question}")
-                rag_response = self.bert_rag.get_response(question)
+                rag_response, contexts = self.bert_rag.get_response_with_context(question)
+
+                # Store the contexts for Ragas evaluation
+                self.recent_contexts.append(contexts)
+                while len(self.recent_contexts) > self.max_tracked_responses:
+                    self.recent_contexts.pop(0)
 
                 # Add source information for the evaluator
                 source_info = {
@@ -410,6 +418,18 @@ class BaselineModel:
             if category in ['conversational', 'policy']:
                 approx_tokens = len(question.split()) + len(final_response.split())
                 record_api_call("openai", approx_tokens)
+                
+            # Store response for evaluation
+            self.recent_responses.append({
+                'question': question,
+                'response': final_response,
+                'category': category,
+                'timestamp': time.time()
+            })
+            
+            # Limit the number of tracked responses
+            while len(self.recent_responses) > self.max_tracked_responses:
+                self.recent_responses.pop(0)
 
             return final_response
 
