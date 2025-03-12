@@ -160,17 +160,15 @@ class GPTModel:
             A knowledge base provided this information:
             "{rag_response}"
 
-            Please create an extremely concise, friendly response that:
-
-            1. Answers the question directly in 1-2 sentences maximum
+            Create a single-sentence, direct answer that:
+            1. Answers the question in just 1 sentence
             2. Uses simple, everyday language
-            3. Keeps the entire response to 1-2 sentences total
+            3. Includes only the absolute most essential information
             4. Maintains complete factual accuracy
-            5. Includes only the most essential information
-            6. Removes all unnecessary details and explanations
+            5. Removes all unnecessary details and explanations
 
-            Format: Your response should be similar in brevity to this example:
-            "Emergency contraception can prevent pregnancy after unprotected sex if taken within 72 hours (some brands work up to 5 days). It's available over-the-counter without a prescription."
+            Format: Your response must be ONE SENTENCE ONLY, similar to:
+            "Emergency contraception prevents pregnancy after unprotected sex if taken within 72 hours."
 
             Be factually accurate while being extremely concise.
             """
@@ -184,8 +182,8 @@ class GPTModel:
                     "role": "user",
                     "content": enhancement_prompt
                 }],
-                temperature=0.3,  # Lower temperature for more concise responses
-                max_tokens=150)  # Significantly reduced token limit to enforce brevity
+                temperature=0.2,  # Lower temperature for more deterministic responses
+                max_tokens=80)  # Very limited token limit to enforce brevity
 
             return response.choices[0].message.content
 

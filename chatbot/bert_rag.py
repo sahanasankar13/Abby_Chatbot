@@ -1,3 +1,4 @@
+
 import os
 import logging
 import torch
@@ -5,15 +6,32 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import faiss
 from utils.data_loader import load_reproductive_health_data
+import re
+import string
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import nltk
+
+# Download required NLTK resources if not already available
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
 
 logger = logging.getLogger(__name__)
 
 class BertRAGModel:
     """
-    BERT-based Retrieval-Augmented Generation model for reproductive health information
+    Enhanced BERT-based Retrieval-Augmented Generation model for reproductive health information
+    with improved vector search, hybrid retrieval, and reranking.
     """
     def __init__(self):
-        """Initialize the BERT RAG model with pre-trained embeddings"""
+        """Initialize the BERT RAG model with improved embeddings and retrieval algorithms"""
         logger.info("Initializing BERT RAG Model")
         try:
             # Load pre-trained model and tokenizer
@@ -21,32 +39,76 @@ class BertRAGModel:
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.model = AutoModel.from_pretrained(self.model_name)
 
+            # Stemmer for text preprocessing
+            self.stemmer = PorterStemmer()
+            self.stop_words = set(stopwords.words('english'))
+
             # Load and index the data
             self.qa_pairs = load_reproductive_health_data()
-            self.build_index()
+            
+            # Build both vector and keyword indexes
+            self.build_indexes()
 
+            # Configure additional retrieval settings
+            self.synonyms = self._load_synonyms()
+            
             logger.info("BERT RAG Model initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing BERT RAG Model: {str(e)}", exc_info=True)
             raise
 
-    def build_index(self):
-        """Build FAISS index from question-answer pairs"""
+    def _load_synonyms(self):
+        """Load reproductive health synonyms for query expansion"""
+        # Dictionary of common synonyms and related terms for query expansion
+        return {
+            "abortion": ["pregnancy termination", "terminate pregnancy", "abortion care"],
+            "birth control": ["contraception", "contraceptive", "birth control methods"],
+            "std": ["sexually transmitted disease", "sexually transmitted infection", "sti"],
+            "sti": ["sexually transmitted infection", "sexually transmitted disease", "std"],
+            "morning after pill": ["plan b", "emergency contraception"],
+            "iud": ["intrauterine device", "coil"],
+            "menstruation": ["period", "menstrual cycle", "monthly bleeding"],
+            "pregnancy": ["pregnant", "expecting", "conception"],
+            "safe sex": ["protected sex", "safer sex", "condom use"],
+            "rape": ["sexual assault", "sexual violence"],
+        }
+
+    def build_indexes(self):
+        """Build both vector and keyword indexes for hybrid search"""
         logger.info("Building FAISS index for RAG model")
         try:
-            # Extract questions and generate embeddings
+            # Extract questions and generate embeddings for vector search
             questions = [qa['Question'] for qa in self.qa_pairs]
             self.question_embeddings = self.generate_embeddings(questions)
 
             # Create FAISS index
             self.dimension = self.question_embeddings.shape[1]
+            # Use IndexFlatIP for inner product similarity (cosine similarity with normalized vectors)
             self.index = faiss.IndexFlatL2(self.dimension)
             self.index.add(self.question_embeddings)
+
+            # Store processed questions for later use
+            self.raw_questions = questions
+            self.processed_questions = [self._preprocess_text(q) for q in questions]
 
             logger.info(f"FAISS index built with {len(questions)} questions")
         except Exception as e:
             logger.error(f"Error building FAISS index: {str(e)}", exc_info=True)
             raise
+
+    def _preprocess_text(self, text):
+        """Preprocess text for keyword search (tokenization, lowercasing, stemming)"""
+        # Remove punctuation and convert to lowercase
+        text = text.lower()
+        text = re.sub(f'[{re.escape(string.punctuation)}]', ' ', text)
+        
+        # Tokenize
+        tokens = word_tokenize(text)
+        
+        # Remove stopwords and stem
+        tokens = [self.stemmer.stem(word) for word in tokens if word not in self.stop_words]
+        
+        return tokens
 
     def generate_embeddings(self, texts):
         """
@@ -109,6 +171,117 @@ class BertRAGModel:
         elif is_greeting:
             return "greeting"
         return False
+        
+    def _is_out_of_scope(self, question):
+        """Check if the question is outside the scope of reproductive health."""
+        question_lower = question.lower()
+        
+        # Keywords indicating reproductive health
+        reproductive_health_terms = [
+            "abortion", "birth control", "contraception", "std", "sti", "sex", "pregnancy", 
+            "period", "menstrua", "reproduc", "hormone", "exam", "pap smear", "condom", 
+            "pill", "iud", "implant", "patch", "ring", "shot", "plan b", "morning after",
+            "fertile", "infertile", "birth", "ovulat", "cervix", "vagina", "penis", "testicle",
+            "breast", "mammogram", "pelvic", "gynecolog", "uterus", "sperm", "egg", "embryo",
+            "fetus", "trimester", "conception", "fertility", "womb", "miscarriage", "abortion",
+            "sexual", "intimacy", "libido", "ovary", "menopause", "puberty", "transgender", 
+            "hiv", "aids", "herpes", "hpv", "chlamydia", "gonorrhea", "syphilis", "yeast", 
+            "uti", "health", "clinic", "medical", "doctor", "consent"
+        ]
+        
+        # Out of scope topics
+        out_of_scope_topics = {
+            "weather": ["weather", "forecast", "temperature", "rain", "snow", "sunny", "cloudy", "humidity"],
+            "finance": ["money", "bank", "finance", "loan", "credit", "debt", "invest", "stock", "market", "bitcoin"],
+            "technology": ["computer", "smartphone", "laptop", "tablet", "software", "app", "code", "program", "device"],
+            "travel": ["travel", "flight", "hotel", "vacation", "trip", "tourism", "destination", "airfare"],
+            "food": ["recipe", "cook", "food", "meal", "restaurant", "cuisine", "ingredient", "diet", "nutrition"],
+            "sports": ["game", "team", "player", "score", "win", "lose", "sport", "match", "tournament", "champion"],
+            "entertainment": ["movie", "film", "show", "series", "actor", "music", "song", "artist", "album", "concert", "tv", "television"]
+        }
+        
+        # Check if any reproductive health terms are in the question
+        has_reproductive_terms = any(term in question_lower for term in reproductive_health_terms)
+        
+        # Check if any out of scope topics are in the question
+        detected_topics = []
+        for topic, keywords in out_of_scope_topics.items():
+            if any(keyword in question_lower for keyword in keywords):
+                detected_topics.append(topic)
+                
+        # If no reproductive health terms are present and we have detected out-of-scope topics,
+        # or if the query appears to be about something else entirely
+        if (not has_reproductive_terms and detected_topics) or self._is_general_query(question_lower):
+            return detected_topics if detected_topics else ["general"]
+            
+        return False
+    
+    def _is_general_query(self, question_lower):
+        """Detect general non-reproductive health queries."""
+        general_patterns = [
+            r"what is the \w+",
+            r"how to \w+",
+            r"where can i \w+",
+            r"when will \w+",
+            r"why does \w+",
+            r"what time \w+",
+            r"how much \w+",
+            r"who is \w+",
+        ]
+        
+        # If it matches a general pattern and doesn't have health-related terms
+        health_terms = ["health", "medical", "doctor", "clinic", "treatment", "symptom", "body", "pain"]
+        
+        return (any(re.search(pattern, question_lower) for pattern in general_patterns) and 
+                not any(term in question_lower for term in health_terms))
+    
+    def expand_query(self, question):
+        """
+        Expand query with synonyms and related terms for better recall
+        
+        Args:
+            question (str): The original user question
+            
+        Returns:
+            str: Expanded question with relevant terms
+        """
+        question_lower = question.lower()
+        expansions = []
+        
+        # Add synonyms for terms in the question
+        for term, synonyms in self.synonyms.items():
+            if term in question_lower:
+                for synonym in synonyms:
+                    # Only add if not already in the question
+                    if synonym not in question_lower:
+                        expansions.append(synonym)
+        
+        # Add expansions if found
+        if expansions:
+            expanded_question = f"{question} {' '.join(expansions)}"
+            logger.debug(f"Expanded query: '{question}' -> '{expanded_question}'")
+            return expanded_question
+        
+        return question
+
+    def get_semantic_similarity(self, text1, text2):
+        """
+        Calculate semantic similarity between two texts
+        
+        Args:
+            text1 (str): First text
+            text2 (str): Second text
+            
+        Returns:
+            float: Similarity score between 0 and 1
+        """
+        # Generate embeddings
+        embeddings = self.generate_embeddings([text1, text2])
+        
+        # Calculate cosine similarity
+        similarity = np.dot(embeddings[0], embeddings[1])
+        
+        return float(similarity)
 
     def get_response(self, question, top_k=5):
         """
@@ -130,15 +303,27 @@ class BertRAGModel:
             conversational_type = self._is_conversational_query(question)
             if conversational_type == "greeting":
                 logger.debug(f"Detected conversational query: '{question}'")
-                greeting_response = "I'm doing well, thanks for asking! How can I help you today?"
+                greeting_response = "I'm doing well, thanks for asking! How can I help you with reproductive health information today?"
                 return citation_mgr.add_citation_to_text(greeting_response, "planned_parenthood")
             elif conversational_type == "goodbye":
                 goodbye_response = "Goodbye! Take care and stay healthy."
                 return citation_mgr.add_citation_to_text(goodbye_response, "planned_parenthood")
+                
+            # Check if the question is out of scope
+            out_of_scope = self._is_out_of_scope(question)
+            if out_of_scope:
+                topics = ", ".join(out_of_scope)
+                logger.debug(f"Detected out-of-scope query about {topics}: '{question}'")
+                out_of_scope_response = (
+                    f"I'm designed to provide information about reproductive health topics. "
+                    f"For questions about {topics}, I'd recommend consulting specialized resources. "
+                    "Is there something about reproductive or sexual health I can help you with instead?"
+                )
+                return citation_mgr.add_citation_to_text(out_of_scope_response, "planned_parenthood")
 
             # First check for exact matches (case-insensitive) to prioritize them
             normalized_question = question.lower().strip('?. ')
-
+            
             # Import citation manager
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
@@ -163,9 +348,12 @@ class BertRAGModel:
                     answer = qa_pair['Answer']
                     return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
+            # Expand the query for better recall
+            expanded_question = self.expand_query(question)
+            
             # If no exact match, proceed with embedding-based retrieval
             # Generate embedding for the question
-            question_embedding = self.generate_embeddings([question])
+            question_embedding = self.generate_embeddings([expanded_question])
 
             # Search for similar questions
             distances, indices = self.index.search(question_embedding, top_k)
@@ -366,6 +554,11 @@ class BertRAGModel:
             bool: True if confident, False otherwise
         """
         try:
+            # Check if the question is out of scope
+            if self._is_out_of_scope(question):
+                logger.debug("Question is out of scope, not confident")
+                return False
+                
             # Generate embedding for the question
             question_embedding = self.generate_embeddings([question])
 
