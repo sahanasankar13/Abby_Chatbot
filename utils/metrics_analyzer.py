@@ -11,6 +11,9 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 
+# Import advanced metrics
+from utils.advanced_metrics import AdvancedMetricsCalculator, generate_performance_report
+
 logger = logging.getLogger(__name__)
 
 class MetricsAnalyzer:
@@ -25,6 +28,9 @@ class MetricsAnalyzer:
         """
         self.log_file = log_file
         self.logs = self._load_logs()
+        
+        # Initialize advanced metrics calculator
+        self.advanced_metrics = AdvancedMetricsCalculator(log_file)
     
     def _load_logs(self):
         """Load evaluation logs from the log file"""
@@ -159,6 +165,15 @@ class MetricsAnalyzer:
                 elif isinstance(issue, str):
                     safety_issues[issue] = safety_issues.get(issue, 0) + 1
         
+        # Get advanced metrics
+        try:
+            advanced_metrics = self.advanced_metrics.calculate_all_metrics(log_entries=filtered_logs)
+        except Exception as e:
+            logger.error(f"Error calculating advanced metrics: {str(e)}")
+            advanced_metrics = {
+                'error': str(e)
+            }
+        
         return {
             'date_range': {
                 'start': start_date.isoformat() if start_date else None,
@@ -176,7 +191,11 @@ class MetricsAnalyzer:
             },
             'categories': categories,
             'safety_issues': safety_issues,
-            'daily_metrics': daily_metrics
+            'daily_metrics': daily_metrics,
+            # Add advanced metrics
+            'text_similarity': advanced_metrics.get('text_similarity', {}),
+            'improved_text_similarity': advanced_metrics.get('improved_text_similarity', {}),
+            'performance': advanced_metrics.get('performance', {})
         }
         
     def _calculate_daily_metrics(self, logs):
@@ -264,5 +283,21 @@ class MetricsAnalyzer:
             },
             'categories': {},
             'safety_issues': {},
-            'daily_metrics': {}
+            'daily_metrics': {},
+            # Empty advanced metrics
+            'text_similarity': {
+                'bleu': {'score': 0.0},
+                'rouge': {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0},
+                'bert_score': {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+            },
+            'improved_text_similarity': {
+                'bleu': {'score': 0.0},
+                'rouge': {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0},
+                'bert_score': {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+            },
+            'performance': {
+                'average_inference_time_ms': 0,
+                'average_tokens_per_response': 0,
+                'average_memory_usage_mb': 0
+            }
         }

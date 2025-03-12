@@ -567,7 +567,70 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function endSession() {
-        // Simple goodbye message
+        // Create feedback dialog
+        const feedbackDialog = document.createElement('div');
+        feedbackDialog.className = 'feedback-dialog';
+        
+        const dialogContent = document.createElement('div');
+        dialogContent.className = 'feedback-dialog-content';
+        
+        const heading = document.createElement('h3');
+        heading.textContent = 'End Your Session';
+        
+        const message = document.createElement('p');
+        message.textContent = 'Would you like to provide feedback about your experience before ending this session?';
+        
+        const note = document.createElement('p');
+        note.className = 'feedback-note';
+        note.textContent = 'Your feedback helps us improve our service.';
+        
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'feedback-dialog-buttons';
+        
+        // Button to provide feedback
+        const provideFeedbackBtn = document.createElement('button');
+        provideFeedbackBtn.className = 'provide-feedback-btn';
+        provideFeedbackBtn.textContent = 'Give Feedback';
+        provideFeedbackBtn.addEventListener('click', () => {
+            document.body.removeChild(feedbackDialog);
+            openFeedbackModal();
+        });
+        
+        // Button to end without feedback
+        const endWithoutFeedbackBtn = document.createElement('button');
+        endWithoutFeedbackBtn.className = 'end-without-feedback-btn';
+        endWithoutFeedbackBtn.textContent = 'End Session Without Feedback';
+        endWithoutFeedbackBtn.addEventListener('click', () => {
+            document.body.removeChild(feedbackDialog);
+            completeEndSession();
+        });
+        
+        // Button to cancel
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'cancel-end-btn';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', () => {
+            document.body.removeChild(feedbackDialog);
+        });
+        
+        // Add buttons to container
+        buttonsContainer.appendChild(provideFeedbackBtn);
+        buttonsContainer.appendChild(endWithoutFeedbackBtn);
+        buttonsContainer.appendChild(cancelBtn);
+        
+        // Build the dialog
+        dialogContent.appendChild(heading);
+        dialogContent.appendChild(message);
+        dialogContent.appendChild(note);
+        dialogContent.appendChild(buttonsContainer);
+        feedbackDialog.appendChild(dialogContent);
+        
+        // Add to document
+        document.body.appendChild(feedbackDialog);
+    }
+    
+    function completeEndSession() {
+        // Goodbye message
         addBotMessage("Thanks for chatting with Abby. Your session has ended and your conversation history has been cleared. Take care!");
 
         // Clear history on the server

@@ -31,18 +31,9 @@
     <!-- Theme Toggle JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Check for saved theme preference or use device preference
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-bs-theme', savedTheme);
-                updateThemeUI(savedTheme);
-            } else if (prefersDark) {
-                document.documentElement.setAttribute('data-bs-theme', 'dark');
-                updateThemeUI('dark');
-                localStorage.setItem('theme', 'dark');
-            }
+            // Always use light theme
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            localStorage.setItem('theme', 'light');
             
             // Add event listener to theme toggle links
             const themeToggles = document.querySelectorAll('.theme-toggle');

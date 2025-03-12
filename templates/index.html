@@ -4,20 +4,26 @@
 <div class="container chat-container">
     <div class="chat-header">
         <div class="header-controls">
+            <!-- Quick Exit button on the left -->
+            <a href="https://www.google.com" class="btn btn-danger quick-exit-btn" title="Quick Exit">
+                <i class="fas fa-times-circle me-2"></i> Quick Exit
+            </a>
+            
+            <!-- Menu dropdown on the right -->
             <div class="dropdown">
                 <button class="btn btn-link menu-toggle" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-ellipsis-v"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
                     <li>
-                        <a class="dropdown-item" href="https://www.google.com" title="Quick Exit">
-                            <i class="fas fa-times-circle me-2"></i> Quick Exit
+                        <a class="dropdown-item" href="{{ url_for('view_metrics') }}">
+                            <i class="bi bi-graph-up me-2"></i> Admin Dashboard
                         </a>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item" href="{{ url_for('view_metrics') }}">
-                            <i class="bi bi-graph-up me-2"></i> Admin Dashboard
+                        <a class="dropdown-item" href="#" id="endSessionBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i> End Session
                         </a>
                     </li>
                 </ul>
