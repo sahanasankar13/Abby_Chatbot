@@ -1,4 +1,3 @@
-
 import os
 import logging
 import torch
@@ -43,7 +42,7 @@ class BertRAGModel:
 
             # Stemmer for text preprocessing
             self.stemmer = PorterStemmer()
-            
+
             # Define stopwords manually to avoid NLTK dependency issues
             self.stop_words = {
                 'a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as', 'what',
@@ -64,13 +63,13 @@ class BertRAGModel:
 
             # Load and index the data
             self.qa_pairs = load_reproductive_health_data()
-            
+
             # Build both vector and keyword indexes
             self.build_indexes()
 
             # Configure additional retrieval settings
             self.synonyms = self._load_synonyms()
-            
+
             logger.info("BERT RAG Model initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing BERT RAG Model: {str(e)}", exc_info=True)
@@ -120,13 +119,13 @@ class BertRAGModel:
         # Remove punctuation and convert to lowercase
         text = text.lower()
         text = re.sub(f'[{re.escape(string.punctuation)}]', ' ', text)
-        
+
         # Simple tokenization without relying on nltk's word_tokenize
         tokens = text.split()
-        
+
         # Remove stopwords and stem
         tokens = [self.stemmer.stem(word) for word in tokens if word not in self.stop_words]
-        
+
         return tokens
 
     def generate_embeddings(self, texts):
@@ -190,83 +189,85 @@ class BertRAGModel:
         elif is_greeting:
             return "greeting"
         return False
-        
+
     def _is_out_of_scope(self, question):
-        """Check if the question is outside the scope of reproductive health."""
+        """Check if question is outside the scope of reproductive health"""
         question_lower = question.lower()
-        
-        # Keywords indicating reproductive health
-        reproductive_health_terms = [
-            "abortion", "birth control", "contraception", "std", "sti", "sex", "pregnancy", 
-            "period", "menstrua", "reproduc", "hormone", "exam", "pap smear", "condom", 
-            "pill", "iud", "implant", "patch", "ring", "shot", "plan b", "morning after",
-            "fertile", "infertile", "birth", "ovulat", "cervix", "vagina", "penis", "testicle",
-            "breast", "mammogram", "pelvic", "gynecolog", "uterus", "sperm", "egg", "embryo",
-            "fetus", "trimester", "conception", "fertility", "womb", "miscarriage", "abortion",
-            "sexual", "intimacy", "libido", "ovary", "menopause", "puberty", "transgender", 
-            "hiv", "aids", "herpes", "hpv", "chlamydia", "gonorrhea", "syphilis", "yeast", 
-            "uti", "health", "clinic", "medical", "doctor", "consent"
-        ]
-        
-        # Out of scope topics
+
+        # Define reproductive health related terms
+        reproductive_health_terms = ["birth control", "contraception", "pregnancy", "abortion", "std", "sti", 
+                                   "sexually transmitted", "period", "menstruation", "reproductive", "fertility",
+                                   "sex", "sexual", "condom", "iud", "pill", "morning after", "plan b", 
+                                   "reproductive health", "vagina", "penis", "uterus", "cervix", "sperm",
+                                   "egg", "embryo", "fetus", "gestation", "trimester", "ovulation"]
+
+        # Define common out-of-scope topics and their related keywords
         out_of_scope_topics = {
-            "weather": ["weather", "forecast", "temperature", "rain", "snow", "sunny", "cloudy", "humidity"],
-            "finance": ["money", "bank", "finance", "loan", "credit", "debt", "invest", "stock", "market", "bitcoin"],
-            "technology": ["computer", "smartphone", "laptop", "tablet", "software", "app", "code", "program", "device"],
-            "travel": ["travel", "flight", "hotel", "vacation", "trip", "tourism", "destination", "airfare"],
-            "food": ["recipe", "cook", "food", "meal", "restaurant", "cuisine", "ingredient", "diet", "nutrition"],
-            "sports": ["game", "team", "player", "score", "win", "lose", "sport", "match", "tournament", "champion"],
-            "entertainment": ["movie", "film", "show", "series", "actor", "music", "song", "artist", "album", "concert", "tv", "television"]
+            "weather": ["weather", "temperature", "rain", "sunny", "cloudy", "snow", "forecast", "climate", "humidity", "degrees", "hot", "cold"],
+            "politics": ["politics", "election", "government", "president", "vote", "congress", "senate", "political", "democrat", "republican", "law", "politician"],
+            "technology": ["computer", "smartphone", "laptop", "tablet", "software", "app", "code", "program", "device", "internet", "website", "tech", "gadget"],
+            "travel": ["travel", "flight", "hotel", "vacation", "trip", "tourism", "destination", "airfare", "airline", "beach", "resort", "passport"],
+            "food": ["recipe", "cook", "food", "meal", "restaurant", "cuisine", "ingredient", "diet", "nutrition", "eat", "dinner", "lunch", "breakfast"],
+            "sports": ["game", "team", "player", "score", "win", "lose", "sport", "match", "tournament", "champion", "football", "basketball", "soccer", "baseball"],
+            "entertainment": ["movie", "film", "show", "series", "actor", "music", "song", "artist", "album", "concert", "tv", "television", "celebrity", "theater"]
         }
-        
+
         # Check if any reproductive health terms are in the question
         has_reproductive_terms = any(term in question_lower for term in reproductive_health_terms)
-        
+
         # Check if any out of scope topics are in the question
         detected_topics = []
         for topic, keywords in out_of_scope_topics.items():
             if any(keyword in question_lower for keyword in keywords):
                 detected_topics.append(topic)
-                
+
+        # Check for general greeting or off-topic patterns
+        general_query = self._is_general_query(question_lower)
+
         # If no reproductive health terms are present and we have detected out-of-scope topics,
         # or if the query appears to be about something else entirely
-        if (not has_reproductive_terms and detected_topics) or self._is_general_query(question_lower):
+        if (not has_reproductive_terms and detected_topics) or general_query:
             return detected_topics if detected_topics else ["general"]
-            
+
         return False
-    
+
     def _is_general_query(self, question_lower):
-        """Detect general non-reproductive health queries."""
+        """Check if this is a general query unrelated to reproductive health"""
+        # General questions and off-topic patterns
         general_patterns = [
-            r"what is the \w+",
-            r"how to \w+",
-            r"where can i \w+",
-            r"when will \w+",
-            r"why does \w+",
-            r"what time \w+",
-            r"how much \w+",
-            r"who is \w+",
+            "what's the time", "what time is it", "what day is it", "what is your name",
+            "who are you", "what can you do", "how old are you", "where are you from",
+            "tell me a joke", "tell me about yourself", "what's your favorite", "what is your favorite",
+            "hello world", "test", "can you help me with", "what's happening", "what is happening",
+            "how's it going", "how does this work", "what's new", "what is new"
         ]
-        
-        # If it matches a general pattern and doesn't have health-related terms
-        health_terms = ["health", "medical", "doctor", "clinic", "treatment", "symptom", "body", "pain"]
-        
-        return (any(re.search(pattern, question_lower) for pattern in general_patterns) and 
-                not any(term in question_lower for term in health_terms))
-    
+
+        # Check if question matches any general patterns
+        for pattern in general_patterns:
+            if pattern in question_lower:
+                return True
+
+        # Check if question is very short (likely not reproductive health specific)
+        # and doesn't contain any health-related terms
+        health_terms = ["health", "medical", "doctor", "pill", "pregnancy", "sex", "birth"]
+        if len(question_lower.split()) <= 3 and not any(term in question_lower for term in health_terms):
+            return True
+
+        return False
+
     def expand_query(self, question):
         """
         Expand query with synonyms and related terms for better recall
-        
+
         Args:
             question (str): The original user question
-            
+
         Returns:
             str: Expanded question with relevant terms
         """
         question_lower = question.lower()
         expansions = []
-        
+
         # Add synonyms for terms in the question
         for term, synonyms in self.synonyms.items():
             if term in question_lower:
@@ -274,32 +275,32 @@ class BertRAGModel:
                     # Only add if not already in the question
                     if synonym not in question_lower:
                         expansions.append(synonym)
-        
+
         # Add expansions if found
         if expansions:
             expanded_question = f"{question} {' '.join(expansions)}"
             logger.debug(f"Expanded query: '{question}' -> '{expanded_question}'")
             return expanded_question
-        
+
         return question
 
     def get_semantic_similarity(self, text1, text2):
         """
         Calculate semantic similarity between two texts
-        
+
         Args:
             text1 (str): First text
             text2 (str): Second text
-            
+
         Returns:
             float: Similarity score between 0 and 1
         """
         # Generate embeddings
         embeddings = self.generate_embeddings([text1, text2])
-        
+
         # Calculate cosine similarity
         similarity = np.dot(embeddings[0], embeddings[1])
-        
+
         return float(similarity)
 
     def get_response(self, question, top_k=5):
@@ -317,7 +318,7 @@ class BertRAGModel:
             # Import citation manager
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
-            
+
             # Check if this is a conversational query instead of a health question
             conversational_type = self._is_conversational_query(question)
             if conversational_type == "greeting":
@@ -327,26 +328,22 @@ class BertRAGModel:
             elif conversational_type == "goodbye":
                 goodbye_response = "Goodbye! Take care and stay healthy."
                 return citation_mgr.add_citation_to_text(goodbye_response, "planned_parenthood")
-                
+
             # Check if the question is out of scope
             out_of_scope = self._is_out_of_scope(question)
             if out_of_scope:
                 topics = ", ".join(out_of_scope)
                 logger.debug(f"Detected out-of-scope query about {topics}: '{question}'")
-                out_of_scope_response = (
-                    f"I'm designed to provide information about reproductive health topics. "
-                    f"For questions about {topics}, I'd recommend consulting specialized resources. "
-                    "Is there something about reproductive or sexual health I can help you with instead?"
-                )
+                out_of_scope_response = self._get_out_of_scope_response(out_of_scope)
                 return citation_mgr.add_citation_to_text(out_of_scope_response, "planned_parenthood")
 
             # First check for exact matches (case-insensitive) to prioritize them
             normalized_question = question.lower().strip('?. ')
-            
+
             # Import citation manager
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
-            
+
             # Check for exact match
             for idx, qa_pair in enumerate(self.qa_pairs):
                 qa_normalized = qa_pair['Question'].lower().strip('?. ')
@@ -369,7 +366,7 @@ class BertRAGModel:
 
             # Expand the query for better recall
             expanded_question = self.expand_query(question)
-            
+
             # If no exact match, proceed with embedding-based retrieval
             # Generate embedding for the question
             question_embedding = self.generate_embeddings([expanded_question])
@@ -392,16 +389,16 @@ class BertRAGModel:
             best_idx = indices[0][0]
             best_answer = self.qa_pairs[best_idx]['Answer']
             best_question = self.qa_pairs[best_idx]['Question']
-            
+
             # Add citation from Planned Parenthood
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
-            
+
             logger.debug(f"Primary confidence (distance): {distances[0][0]}")
             if len(indices[0]) > 1:
                 logger.debug(f"Secondary confidence (gap): {distances[0][1] - distances[0][0]}")
             logger.debug(f"Matched question: {best_question}")
-            
+
             # Add citation to the response
             cited_answer = citation_mgr.add_citation_to_text(best_answer, "planned_parenthood")
             return cited_answer
@@ -409,7 +406,7 @@ class BertRAGModel:
         except Exception as e:
             logger.error(f"Error getting RAG response: {str(e)}", exc_info=True)
             error_response = "I apologize, but I encountered an error processing your question. Please try asking again or rephrase your question."
-            
+
             # Add citation even for error responses
             try:
                 from chatbot.citation_manager import CitationManager
@@ -452,7 +449,7 @@ class BertRAGModel:
         # Import citation manager
         from chatbot.citation_manager import CitationManager
         citation_mgr = CitationManager()
-        
+
         # If only one good match, format it for better readability
         if len(relevant_answers) == 1:
             answer = self._format_single_answer(question, relevant_answers[0]['answer'])
@@ -460,62 +457,62 @@ class BertRAGModel:
 
         # Combine multiple answers into a comprehensive, naturally flowing response
         return self._format_multiple_answers(question, relevant_answers)
-        
+
     def _format_single_answer(self, question, answer):
         """
         Format a single answer to be concise and direct
-        
+
         Args:
             question (str): Original question
             answer (str): Answer to format
-            
+
         Returns:
             str: Formatted answer
         """
         # Make sure the answer ends with proper punctuation
         if not answer.endswith(('.', '?', '!')):
             answer = answer + '.'
-        
+
         # For long answers, extract the most important parts (first 2 sentences)
         sentences = self._extract_sentences(answer)
-        
+
         if len(sentences) > 2:
             # Use first 2 sentences for concise response
             concise_answer = ' '.join(sentences[:2])
-                
+
             return concise_answer
-        
+
         return answer
-        
+
     def _format_multiple_answers(self, question, relevant_answers):
         """
         Format multiple answers into a cohesive, concise response
-        
+
         Args:
             question (str): Original question
             relevant_answers (list): List of relevant answer dictionaries
-            
+
         Returns:
             str: Formatted and combined answer
         """
         from chatbot.citation_manager import CitationManager
         citation_mgr = CitationManager()
-        
+
         # Sort answers by relevance (distance)
         sorted_answers = sorted(relevant_answers, key=lambda x: x['distance'])
-        
+
         # Extract the most relevant answer as our primary response
         primary_answer = sorted_answers[0]['answer']
-        
+
         # Find one important sentence from other answers that adds new info
         important_point = ""
         seen_content = set(self._get_key_phrases(primary_answer))
-        
+
         for item in sorted_answers[1:]:
             sentences = self._extract_sentences(item['answer'])
             if not sentences:
                 continue
-                
+
             # Get the first sentence that adds new information
             for sentence in sentences[:1]:  # Only look at first sentence
                 key_phrases = self._get_key_phrases(sentence)
@@ -523,13 +520,13 @@ class BertRAGModel:
                 if not any(phrase in seen_content for phrase in key_phrases):
                     important_point = sentence
                     break
-            
+
             if important_point:
                 break
-        
+
         # Include more content from the primary answer (3 sentences instead of 1)
         direct_answer = self._get_first_sentences(primary_answer, 3)
-        
+
         # Build a more comprehensive response by including more information
         # Add the full primary answer rather than just the first sentence
         if important_point:
@@ -538,22 +535,22 @@ class BertRAGModel:
             comprehensive_response = primary_answer + ' ' + important_point
         else:
             comprehensive_response = primary_answer
-        
+
         # Add citation
         cited_response = citation_mgr.add_citation_to_text(comprehensive_response, "planned_parenthood") 
         return cited_response
-        
+
     def _get_first_sentences(self, text, num_sentences=2):
         """Extract the first N sentences from a text"""
         import re
         sentences = re.split(r'(?<=[.!?])\s+', text)
         return ' '.join(sentences[:num_sentences])
-        
+
     def _extract_sentences(self, text):
         """Split text into sentences"""
         import re
         return re.split(r'(?<=[.!?])\s+', text)
-        
+
     def _get_key_phrases(self, text):
         """Extract key phrases/words from text to identify content"""
         # Simple implementation: just use words of 4+ chars
@@ -578,7 +575,7 @@ class BertRAGModel:
             if self._is_out_of_scope(question):
                 logger.debug("Question is out of scope, not confident")
                 return False
-                
+
             # Generate embedding for the question
             question_embedding = self.generate_embeddings([question])
 
@@ -601,9 +598,9 @@ class BertRAGModel:
             logger.debug(f"Primary confidence (distance): {primary_confidence}")
             logger.debug(f"Secondary confidence (gap): {secondary_confidence}")
             logger.debug(f"Matched question: {matched_question}")
-            
+
             # Strict confidence checks to avoid incorrect information
-            
+
             # 1. If primary confidence is very good, trust it
             if primary_confidence < threshold * 0.6:
                 logger.debug("High confidence based on primary score")
@@ -644,15 +641,15 @@ class BertRAGModel:
         similarity = self._get_semantic_similarity_score(q1, q2)
         logger.debug(f"Semantic similarity: {similarity}")
         return similarity > 0.4
-        
+
     def _get_semantic_similarity_score(self, q1, q2):
         """
         Calculate semantic similarity score between two questions
-        
+
         Args:
             q1 (str): First question
             q2 (str): Second question
-            
+
         Returns:
             float: Similarity score between 0 and 1
         """
@@ -660,7 +657,7 @@ class BertRAGModel:
         # Remove common stop words and punctuation
         stop_words = {'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 
                      'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'like', 'of', 'from'}
-        
+
         def preprocess(text):
             # Convert to lowercase and remove punctuation
             text = text.lower()
@@ -668,28 +665,46 @@ class BertRAGModel:
             # Split into words and remove stop words
             words = [w for w in text.split() if w not in stop_words]
             return set(words)
-            
+
         q1_words = preprocess(q1)
         q2_words = preprocess(q2)
-        
+
         # Calculate Jaccard similarity
         intersection = len(q1_words.intersection(q2_words))
         union = len(q1_words.union(q2_words))
-        
+
         if union == 0:
             return 0.0
-            
+
         # Basic Jaccard similarity
         basic_similarity = intersection / union
-        
+
         # Check for exact phrase matches (more weight for exact matches)
         q1_phrases = [' '.join(q1.lower().split()[i:i+3]) for i in range(len(q1.lower().split())-2)]
         q2_phrases = [' '.join(q2.lower().split()[i:i+3]) for i in range(len(q2.lower().split())-2)]
-        
+
         phrase_matches = sum(1 for p in q1_phrases if p in q2_phrases)
         phrase_similarity = phrase_matches / max(len(q1_phrases), len(q2_phrases), 1) if q1_phrases and q2_phrases else 0
-        
+
         # Combined similarity (weighted)
         similarity = (basic_similarity * 0.7) + (phrase_similarity * 0.3)
-        
+
         return similarity
+
+    def _get_out_of_scope_response(self, topics):
+        """Generate a response for out-of-scope questions"""
+        # Default response for out-of-scope topics
+        primary_topic = topics[0] if topics else "general"
+
+        topic_responses = {
+            "weather": "I'm designed to provide information about reproductive health, not weather forecasts. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "politics": "I'm here to provide information about reproductive health, not political matters. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "technology": "I'm programmed to assist with reproductive health questions, not technology matters. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "travel": "I'm designed to answer questions about reproductive health, not travel information. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "food": "I'm trained to provide information about reproductive health, not food or nutrition in general. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "sports": "I'm programmed to assist with reproductive health questions, not sports information. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "entertainment": "I'm designed to provide information about reproductive health, not entertainment. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "general": "I'm Abby, a chatbot specifically designed to provide information about reproductive health. I don't have information on this topic. If you have any questions about contraception, pregnancy, abortion access, or sexual health, I'd be happy to help with those instead."
+        }
+
+        return topic_responses.get(primary_topic, topic_responses["general"])

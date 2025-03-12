@@ -332,6 +332,12 @@ class ConversationManager:
             question_type = self.friendly_bot.detect_question_type(message)
             logger.debug(f"Detected question type: {question_type}")
 
+            # Get the category of the question from baseline model first
+            category = self.baseline_model.categorize_question(
+                message, self.conversation_history)
+                
+            logger.info(f"Message categorized as: {category}")
+
             # Get response from baseline model, passing conversation history and location context
             start_time = time.time()
             # Pass the conversation history and location context for complete context awareness
@@ -343,10 +349,6 @@ class ConversationManager:
             logger.debug(
                 f"Baseline model processing time: {processing_time:.2f} seconds"
             )
-
-            # Get the category of the question from baseline model
-            category = self.baseline_model.categorize_question(
-                message, self.conversation_history)
 
             # Check confidence for knowledge questions
             if category == 'knowledge' and not self.baseline_model.bert_rag.is_confident(

@@ -37,8 +37,13 @@ class BaselineModel:
             conversation_history (list, optional): Previous conversation messages
 
         Returns:
-            str: Category of the question ('policy', 'knowledge', or 'conversational')
+            str: Category of the question ('policy', 'knowledge', 'conversational', or 'out_of_scope')
         """
+        # First check if this is an out-of-scope question using BERT RAG's detection
+        if hasattr(self, 'bert_rag') and self.bert_rag._is_out_of_scope(question):
+            logger.info(f"Question categorized as out of scope: {question}")
+            return 'out_of_scope'
+            
         # Simple keyword-based categorization
         policy_keywords = ['law', 'legal', 'state', 'policy', 'ban', 'illegal', 'allowed', 'permit', 'legislation', 
                           'restrict', 'abortion policy', 'abortion law', 'abortion access', 'gestational', 'limit',
@@ -289,7 +294,7 @@ class BaselineModel:
 
         Args:
             question (str): The user's question
-            category (str): The question category ('policy', 'knowledge', or 'conversational')
+            category (str): The question category ('policy', 'knowledge', 'conversational', or 'out_of_scope')
             conversation_history (list, optional): List of previous messages in the conversation
             location_context (str): User's location if detected
 
@@ -301,7 +306,18 @@ class BaselineModel:
             initial_response = ""
             source_info = {}
             
-            if category == 'policy':
+            if category == 'out_of_scope':
+                logger.debug(f"Handling out-of-scope question: {question}")
+                # Get out-of-scope response from BERT RAG
+                out_of_scope = self.bert_rag._is_out_of_scope(question)
+                initial_response = self.bert_rag._get_out_of_scope_response(out_of_scope if out_of_scope else ["general"])
+                # No citations for out-of-scope responses
+                source_info = {"source": "out_of_scope"}
+                
+                # Return immediately without further evaluation
+                return initial_response
+            
+            elif category == 'policy':
                 logger.debug(f"Using Policy API for response to: {question}")
                 # Pass conversation history to the policy API for context
                 initial_response = self.policy_api.get_policy_response(question, conversation_history, location_context)
