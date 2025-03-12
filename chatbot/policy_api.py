@@ -96,8 +96,6 @@ class PolicyAPI:
         Extract state information from a user's question. 
         Return the 2-letter state code if found, else None.
         """
-        import re
-
         question_lower = question.lower().strip()
 
         # Quick pass: check exact name matches (e.g. "california")
@@ -348,7 +346,6 @@ class PolicyAPI:
         
         # Check for known 2-letter abbreviations in the text
         # (Only valid if they match an actual state code)
-        import re
         pattern = r'\b([A-Za-z]{2})\b'
         matches = re.findall(pattern, location_context)
         for match in matches:

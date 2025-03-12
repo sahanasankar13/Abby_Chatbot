@@ -652,33 +652,29 @@ class ConversationManager:
 
     def _is_us_location(self, location):
         """Check if a location string refers to the US or a US state."""
-        us_states = {
-            "alabama", "alaska", "arizona", "arkansas", "california",
-            "colorado", "connecticut", "delaware", "florida", "georgia",
-            "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas",
-            "kentucky", "louisiana", "maine", "maryland", "massachusetts",
-            "michigan", "minnesota", "mississippi", "missouri", "montana",
-            "nebraska", "nevada", "new hampshire", "new jersey", "new mexico",
-            "new york", "north carolina", "north dakota", "ohio", "oklahoma",
-            "oregon", "pennsylvania", "rhode island", "south carolina",
-            "south dakota", "tennessee", "texas", "utah", "vermont",
-            "virginia", "washington", "west virginia", "wisconsin", "wyoming",
-            "district of columbia", "dc"
-        }
-        state_abbrevs = {
-            "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi",
-            "id", "il", "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi",
-            "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc",
-            "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut",
-            "vt", "va", "wa", "wv", "wi", "wy", "dc"
-        }
+        # Now we use the STATE_NAMES from PolicyAPI for consistency
+        us_states = {state.lower() for state in self.policy_api.STATE_NAMES.values()}
+        state_abbrevs = {code.lower() for code in self.policy_api.STATE_NAMES.keys()}
 
         us_general_terms = {
             "united states", "usa", "us", "america", "the us", "the states",
             "the united states"
         }
+        
+        # Non-US countries to specifically identify international requests
+        non_us_countries = {
+            'india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
+            'china', 'japan', 'brazil', 'spain', 'italy', 'russia'
+        }
 
         location_lower = location.lower().strip()
+        
+        # First check if this is a known non-US country
+        if location_lower in non_us_countries:
+            logger.debug(f"Identified non-US country in location check: {location_lower}")
+            return False
+            
+        # Otherwise check if it's a US state or general US reference
         return (location_lower in us_states or location_lower in state_abbrevs
                 or location_lower in us_general_terms)
 
@@ -738,15 +734,26 @@ class ConversationManager:
 
     def detect_location_context(self, message: str) -> Optional[str]:
         """
-        Detect if a US location is mentioned in the message
+        Detect if a US location is mentioned in the message.
+        Also identifies international locations for proper handling.
 
         Args:
             message (str): The user message to analyze
 
         Returns:
-            Optional[str]: The detected US state or None if no location is found
+            Optional[str]: The detected location (US state or international) 
+                          or None if no location is found
         """
         message_lower = message.lower()
+        
+        # First check for international countries
+        non_us_countries = ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
+                           'china', 'japan', 'brazil', 'spain', 'italy', 'russia']
+                           
+        for country in non_us_countries:
+            if country in message_lower:
+                logger.info(f"Found international location mention in message: {country}")
+                return country
 
         # Check for direct mentions of US states - using the state names from policy_api
         for code, state in self.policy_api.STATE_NAMES.items():
