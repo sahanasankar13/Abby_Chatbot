@@ -180,10 +180,33 @@ body {
   font-style: italic;
 }
 
-/* End session button */
+/* End session and feedback buttons */
 .end-session-btn {
   position: absolute;
   right: 1.5rem;
+  top: 1.5rem;
+  background-color: #ff3b30; /* Red for ending session */
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.end-session-btn:hover {
+  background-color: #cc2f27;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-btn-header {
+  position: absolute;
+  right: 10rem; /* Position to the left of the end session button */
   top: 1.5rem;
   background-color: var(--apple-blue);
   color: white;
@@ -198,10 +221,22 @@ body {
   gap: 0.5rem;
 }
 
-.end-session-btn:hover {
+.feedback-btn-header:hover {
   background-color: #005bbf;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments for header buttons */
+@media (max-width: 768px) {
+  .end-session-btn, .feedback-btn-header {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .feedback-btn-header {
+    right: 8.5rem;
+  }
 }
 
 /* Feedback modal */

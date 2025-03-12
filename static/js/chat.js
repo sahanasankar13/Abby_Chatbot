@@ -8,9 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatHeader = document.querySelector('.chat-header');
     const endSessionBtn = document.createElement('button');
     endSessionBtn.className = 'end-session-btn';
-    endSessionBtn.innerHTML = '<i class="fas fa-comment-alt"></i> End & Give Feedback';
-    endSessionBtn.addEventListener('click', openFeedbackModal);
+    endSessionBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> End Session';
+    endSessionBtn.addEventListener('click', endSession);
     chatHeader.appendChild(endSessionBtn);
+    
+    // Add optional feedback button
+    const feedbackBtn = document.createElement('button');
+    feedbackBtn.className = 'feedback-btn-header';
+    feedbackBtn.innerHTML = '<i class="fas fa-comment-alt"></i> Give Feedback';
+    feedbackBtn.addEventListener('click', openFeedbackModal);
+    chatHeader.appendChild(feedbackBtn);
 
     // Enable/disable send button based on input
     userInput.addEventListener('input', function() {
@@ -336,8 +343,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add initial welcome message
-    addBotMessage("Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?");
+    // Add initial welcome message - without feedback buttons
+    const welcomeMessage = "Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?";
+    
+    // Special handling for the welcome message - no feedback buttons
+    const welcomeContainer = document.createElement('div');
+    welcomeContainer.className = 'message-container';
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message bot-message';
+    messageElement.innerHTML = welcomeMessage;
+    
+    welcomeContainer.appendChild(messageElement);
+    welcomeContainer.style.opacity = '0';
+    welcomeContainer.style.transform = 'translateY(10px)';
+    
+    chatMessages.appendChild(welcomeContainer);
+    
+    setTimeout(() => {
+        welcomeContainer.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        welcomeContainer.style.opacity = '1';
+        welcomeContainer.style.transform = 'translateY(0)';
+    }, 10);
 
     userInput.focus();
 
@@ -411,7 +438,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="submit-feedback-btn" disabled>Submit & End Session</button>
+                <button class="submit-feedback-btn" disabled>Submit Feedback</button>
+                <button class="skip-feedback-btn">Skip & Close</button>
             </div>
         `;
         
@@ -460,6 +488,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    function endSession() {
+        // Add end session message
+        addBotMessage("Your session has been ended. Thank you for using Abby! If you have more questions, feel free to start a new conversation.");
+        
+        // Reset the chat after a brief delay
+        setTimeout(() => {
+            // Clear all messages
+            while (chatMessages.children.length > 0) {
+                chatMessages.removeChild(chatMessages.lastChild);
+            }
+            
+            // Add welcome message back with special handling
+            const welcomeMessage = "Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?";
+            
+            const welcomeContainer = document.createElement('div');
+            welcomeContainer.className = 'message-container';
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message bot-message';
+            messageElement.innerHTML = welcomeMessage;
+            
+            welcomeContainer.appendChild(messageElement);
+            chatMessages.appendChild(welcomeContainer);
+        }, 2000);
+    }
+    
     function resetChat() {
         // Clear chat messages except for the first welcome message
         while (chatMessages.children.length > 1) {
@@ -468,7 +522,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // If all messages were removed, add welcome message back
         if (chatMessages.children.length === 0) {
-            addBotMessage("Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?");
+            // Add welcome message with special handling (no feedback buttons)
+            const welcomeMessage = "Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?";
+            
+            const welcomeContainer = document.createElement('div');
+            welcomeContainer.className = 'message-container';
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message bot-message';
+            messageElement.innerHTML = welcomeMessage;
+            
+            welcomeContainer.appendChild(messageElement);
+            chatMessages.appendChild(welcomeContainer);
         }
         
         // Show session ended message
