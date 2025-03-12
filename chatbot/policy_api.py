@@ -6,543 +6,285 @@ from typing import Dict, Any, Optional, List, Union
 
 logger = logging.getLogger(__name__)
 
+
 class PolicyAPI:
     """
     Integration with the abortion policy API to provide up-to-date policy information
     """
-    # State code to full name mapping
+
     STATE_NAMES = {
-        "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
-        "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", "FL": "Florida", "GA": "Georgia",
-        "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa",
-        "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
-        "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", "MO": "Missouri",
-        "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey",
-        "NM": "New Mexico", "NY": "New York", "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio",
-        "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
-        "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
-        "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming",
+        "AL": "Alabama",
+        "AK": "Alaska",
+        "AZ": "Arizona",
+        "AR": "Arkansas",
+        "CA": "California",
+        "CO": "Colorado",
+        "CT": "Connecticut",
+        "DE": "Delaware",
+        "FL": "Florida",
+        "GA": "Georgia",
+        "HI": "Hawaii",
+        "ID": "Idaho",
+        "IL": "Illinois",
+        "IN": "Indiana",
+        "IA": "Iowa",
+        "KS": "Kansas",
+        "KY": "Kentucky",
+        "LA": "Louisiana",
+        "ME": "Maine",
+        "MD": "Maryland",
+        "MA": "Massachusetts",
+        "MI": "Michigan",
+        "MN": "Minnesota",
+        "MS": "Mississippi",
+        "MO": "Missouri",
+        "MT": "Montana",
+        "NE": "Nebraska",
+        "NV": "Nevada",
+        "NH": "New Hampshire",
+        "NJ": "New Jersey",
+        "NM": "New Mexico",
+        "NY": "New York",
+        "NC": "North Carolina",
+        "ND": "North Dakota",
+        "OH": "Ohio",
+        "OK": "Oklahoma",
+        "OR": "Oregon",
+        "PA": "Pennsylvania",
+        "RI": "Rhode Island",
+        "SC": "South Carolina",
+        "SD": "South Dakota",
+        "TN": "Tennessee",
+        "TX": "Texas",
+        "UT": "Utah",
+        "VT": "Vermont",
+        "VA": "Virginia",
+        "WA": "Washington",
+        "WV": "West Virginia",
+        "WI": "Wisconsin",
+        "WY": "Wyoming",
         "DC": "District of Columbia"
     }
-    
-    # Create a reverse mapping for case-insensitive lookup
-    STATE_NAMES_LOWER = {}
-    for code, name in STATE_NAMES.items():
-        STATE_NAMES_LOWER[name.lower()] = code
-    
+
+    # Case-insensitive lookup: "california" -> "CA"
+    STATE_NAMES_LOWER = {
+        name.lower(): code
+        for code, name in STATE_NAMES.items()
+    }
+
     def __init__(self):
         """Initialize the Policy API client"""
         logger.info("Initializing Policy API")
-        # Check for various environment variable names for the API key
-        self.api_key = os.environ.get("ABORTION_POLICY_API_KEY") or os.environ.get("POLICY_API_KEY")
+        # Check env vars for API key
+        self.api_key = os.environ.get(
+            "ABORTION_POLICY_API_KEY") or os.environ.get("POLICY_API_KEY")
         self.base_url = "https://api.abortionpolicyapi.com/v1"
-        
+
         if not self.api_key:
-            logger.warning("Abortion Policy API key not found in environment variables")
+            logger.warning(
+                "Abortion Policy API key not found in environment variables")
         else:
             logger.info("Abortion Policy API key found")
-        
+
+        # We'll lazy-load GPT if needed
         self.gpt_model = None
         logger.info("Policy API initialized successfully")
-        
+
     def _extract_state_from_question(self, question: str) -> Optional[str]:
         """
-        Extract state information from a user's question
-        
-        Args:
-            question (str): User's question about abortion policy
-            
-        Returns:
-            Optional[str]: State code if found, None otherwise
+        Extract state information from a user's question. 
+        Return the 2-letter state code if found, else None.
         """
-        # First try a rule-based approach for common patterns
-        state_patterns = {
-            "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", 
-            "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE", 
-            "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID", 
-            "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS", 
-            "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD", 
-            "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS", 
-            "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV", 
-            "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY", 
-            "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", 
-            "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", 
-            "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT", 
-            "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV", 
-            "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC", 
-            "washington dc": "DC", "dc": "DC"
-        }
-        
-        # Handle common misspellings
-        misspelling_corrections = {
-            "tennesse": "tennessee",
-            "tenessee": "tennessee",
-            "tennesee": "tennessee",
-            "misouri": "missouri",
-            "pensilvania": "pennsylvania",
-            "pensylvania": "pennsylvania",
-            "massachusets": "massachusetts",
-            "massachussetts": "massachusetts",
-            "masachusetts": "massachusetts",
-            "conneticut": "connecticut",
-            "conecticut": "connecticut",
-            "mississipi": "mississippi",
-            "louisana": "louisiana",
-            "montanna": "montana",
-            "oklohoma": "oklahoma",
-            "arisona": "arizona",
-            "arkansaw": "arkansas",
-            "colorodo": "colorado",
-            "cailifornia": "california",
-            "califonia": "california",
-            "virgina": "virginia"
-        }
-        
-        # Also check for state abbreviations (in isolation)
-        abbrev_pattern = r'\b([A-Za-z]{2})\b'
         import re
-        
-        question_lower = question.lower()
-        
-        # Correct misspellings
-        for misspelled, correct in misspelling_corrections.items():
-            if misspelled in question_lower:
-                logger.debug(f"Corrected misspelling from '{misspelled}' to '{correct}'")
-                question_lower = question_lower.replace(misspelled, correct)
-        
-        # Enhanced matching: Check for "in [state]" and similar patterns
-        state_context_patterns = ["in ", "for ", "about ", "policy in ", "laws in "]
-        for pattern in state_context_patterns:
-            if pattern in question_lower:
-                parts = question_lower.split(pattern)
-                # Look at the part after the pattern
-                if len(parts) > 1:
-                    context_part = parts[1].strip()
-                    # Check each state against the beginning of this part
-                    for state_name, code in state_patterns.items():
-                        if context_part.startswith(state_name) or context_part == state_name:
-                            logger.debug(f"Found state '{state_name}' after '{pattern}' in question")
-                            return code
-                        
-        # Check for direct state names in question (simple contains)
-        for state_name, code in state_patterns.items():
-            if state_name in question_lower:
-                logger.debug(f"Found state name {state_name} in question")
+
+        question_lower = question.lower().strip()
+
+        # Quick pass: check exact name matches (e.g. "california")
+        for state_name_lower, code in self.STATE_NAMES_LOWER.items():
+            if state_name_lower in question_lower:
+                logger.debug(
+                    f"Found state name '{state_name_lower}' in question -> code={code}"
+                )
                 return code
-        
-        # Check for state abbreviations (case insensitive)
-        abbrevs = re.findall(abbrev_pattern, question)
-        if abbrevs:
-            # Convert to uppercase for consistency
-            potential_abbrevs = [abbr.upper() for abbr in abbrevs]
-            logger.debug(f"Found potential state abbreviations: {potential_abbrevs}")
-            
-            # Check if any of the found abbreviations are valid state codes
-            valid_state_codes = set(state_patterns.values())
-            for abbr in potential_abbrevs:
-                if abbr in valid_state_codes:
-                    logger.debug(f"Matched valid state code: {abbr}")
-                    return abbr
-        
-        # Fall back to GPT for more complex cases
-        from chatbot.gpt_integration import GPTModel
-        
-        if not self.gpt_model:
-            self.gpt_model = GPTModel()
-        
-        prompt = f"""
-        Extract the US state mentioned in this question. Return only the state's two-letter code in uppercase.
-        If no specific state is mentioned, return "NONE".
-        
-        Question: {question}
-        
-        State code (e.g., CA, TX, NY, or NONE):
-        """
-        
-        try:
-            response = self.gpt_model.get_response(prompt).strip()
-            if response == "NONE":
-                return None
-            return response if len(response) == 2 else None
-        except Exception as e:
-            logger.error(f"Error extracting state from GPT: {str(e)}")
-            return None
-    
+
+        # Check for known 2-letter abbreviations in the text
+        # (Only valid if they match an actual state code)
+        pattern = r'\b([A-Za-z]{2})\b'
+        matches = re.findall(pattern, question)
+        for match in matches:
+            abbr = match.upper()
+            if abbr in self.STATE_NAMES:
+                logger.debug(f"Found state abbreviation '{abbr}' in question")
+                return abbr
+
+        # If nothing found, return None
+        logger.debug("No valid US state recognized in the question")
+        return None
+
     def get_policy_data(self, state_code: str) -> Dict[str, Any]:
         """
-        Get abortion policy data for a specific state
-        
-        Args:
-            state_code (str): Two-letter state code
-            
-        Returns:
-            Dict: Policy data for the state
+        Get abortion policy data for a specific state from the Abortion Policy API
         """
         if not self.api_key:
             logger.error("API key not found when trying to fetch policy data")
             return {"error": "API key not configured"}
-        
+
+        # Verify that state_code is indeed in our known states
+        if state_code.upper() not in self.STATE_NAMES:
+            logger.warning(
+                f"Attempted to fetch data for invalid state code '{state_code}'"
+            )
+            return {"error": f"Not a recognized US state code: {state_code}"}
+
         try:
-            # Define endpoints to fetch
+            # Define endpoints
             endpoints = {
                 "waiting_periods": "waiting_periods",
                 "insurance_coverage": "insurance_coverage",
                 "gestational_limits": "gestational_limits",
                 "minors": "minors"
             }
-            
-            # Get proper state data - API expects abbreviations (TX)
-            state_abbr = None
-            state_name = None
-            
-            # First, check if it's a valid 2-letter code
-            if len(state_code) == 2 and state_code.upper() in self.STATE_NAMES:
-                state_abbr = state_code.upper()
-                state_name = self.STATE_NAMES[state_abbr]
-                logger.info(f"Found state code {state_abbr} for {state_name}")
-            # Then check if it's a state name using our case-insensitive mapping
-            elif state_code.lower() in self.STATE_NAMES_LOWER:
-                state_abbr = self.STATE_NAMES_LOWER[state_code.lower()]
-                state_name = self.STATE_NAMES[state_abbr]
-                logger.info(f"Mapped state name '{state_code}' to code {state_abbr}")
-            else:
-                # If we can't find it, use a fallback and return an error later
-                state_abbr = state_code.upper() if len(state_code) == 2 else state_code
-                state_name = state_code
-                logger.warning(f"Could not identify state from input: {state_code}")
-            
-            # Use 'token' in headers as discovered in testing
-            headers = {"token": self.api_key}
-            
-            # Log the API key (first few characters only for security)
-            masked_key = self.api_key[:3] + "*" * (len(self.api_key) - 3) if self.api_key else "None"
-            logger.debug(f"Using API key: {masked_key}")
-            
-            # Combined policy data object
+
             policy_data = {
-                "state_code": state_abbr,
-                "state_name": state_name,
+                "state_code": state_code.upper(),
+                "state_name": self.STATE_NAMES[state_code.upper()],
                 "endpoints": {}
             }
-            
-            # Collect data from all endpoints - use abbreviation for API calls
+
+            headers = {"token": self.api_key}
+
+            import time
             for key, endpoint in endpoints.items():
-                url = f"{self.base_url}/{endpoint}/states/{state_abbr}"
-                logger.debug(f"Making request to endpoint: {url}")
-                
-                # Add slight delay to avoid rate limiting
-                import time
-                time.sleep(0.5)
-                
-                try:
-                    response = requests.get(url, headers=headers)
-                    logger.debug(f"API Response status for {key}: {response.status_code}")
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        if data:  # if data is not empty
-                            policy_data["endpoints"][key] = data
-                            # Set success flag since we got data from at least one endpoint
-                            policy_data["success"] = True
-                    else:
-                        logger.warning(f"Endpoint {key} failed with status {response.status_code}: {response.text}")
-                        policy_data["endpoints"][key] = {"error": f"Status code {response.status_code}"}
-                except Exception as endpoint_error:
-                    logger.error(f"Error fetching {key} endpoint: {str(endpoint_error)}")
-                    policy_data["endpoints"][key] = {"error": str(endpoint_error)}
-            
-            # Check if we got any data at all
-            if not policy_data.get("success") and not any(endpoint for endpoint in policy_data["endpoints"].values() if "error" not in endpoint):
-                logger.error("No policy data retrieved from any endpoint")
-                return {"error": "Failed to retrieve policy data from any endpoint", "state_attempted": state_code}
-                
+                url = f"{self.base_url}/{endpoint}/states/{state_code.upper()}"
+                logger.debug(f"Making request to {url}")
+                time.sleep(0.4)  # slight delay to avoid rate-limits
+
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        policy_data["endpoints"][key] = data
+                        policy_data["success"] = True
+                else:
+                    logger.warning(
+                        f"Failed endpoint {key} with status {response.status_code}"
+                    )
+                    policy_data["endpoints"][key] = {
+                        "error": f"Status code {response.status_code}"
+                    }
+
+            # If no successful data at all
+            if not policy_data.get("success"):
+                policy_data[
+                    "error"] = "No policy data retrieved from any endpoint"
             return policy_data
-                
+
         except Exception as e:
-            logger.error(f"Error fetching policy data: {str(e)}", exc_info=True)
+            logger.error(f"Error fetching policy data: {str(e)}",
+                         exc_info=True)
             return {"error": str(e)}
-    
-    def get_policy_response(self, question: str, conversation_history: Optional[List[Dict[str, Any]]] = None, location_context: Optional[str] = None) -> str:
+
+    def get_policy_response(self,
+                            question: str,
+                            conversation_history: Optional[List[Dict[
+                                str, Any]]] = None,
+                            location_context: Optional[str] = None) -> str:
         """
-        Process a policy-related question and return a response
-        
-        Args:
-            question (str): User's question about abortion policy
-            conversation_history (list, optional): List of previous messages in the conversation
-            location_context (str, optional): Explicit location context if already detected
-            
-        Returns:
-            str: Formatted response with policy information
+        Process a policy-related question and return a response:
+         - If no valid US state is found, we disclaim that we only have US data.
+         - Otherwise, fetch data from the API and format the response.
         """
-        # First use the location_context if provided
+        # 1) Check location_context first
         state_code = None
         if location_context:
-            # Check if it's a state name and convert to code if needed
+            # If location_context is recognized in our state map
             if location_context.lower() in self.STATE_NAMES_LOWER:
                 state_code = self.STATE_NAMES_LOWER[location_context.lower()]
-                logger.info(f"Converted location context from '{location_context}' to state code: {state_code}")
-            else:
-                state_code = location_context
-                logger.info(f"Using provided location context: {state_code}")
-            
-        # If no location context, try to extract state from the current question
+                logger.info(
+                    f"Converted location context '{location_context}' -> state code '{state_code}'"
+                )
+
+        # 2) If still None, try extracting from question
         if not state_code:
-            state_code = self._extract_state_from_question(question)
-            logger.info(f"Checking for state in question: '{question}' - Result: {state_code}")
-        
-        # If still no state, try to find it in conversation history
-        if not state_code and conversation_history:
-            logger.info("No state found in current question, checking conversation history")
-            
-            # Use our case-insensitive state name mapping
-            state_patterns = self.STATE_NAMES_LOWER
-            
-            # Iterate through conversation history from newest to oldest
-            for message in reversed(conversation_history):
-                if message['sender'] == 'user':
-                    msg = message['message'].lower()
-                    logger.info(f"Checking history message: '{msg}'")
-                    
-                    # First try direct match with all states
-                    for state_name, code in state_patterns.items():
-                        if state_name in msg:
-                            logger.info(f"Direct match! Found state {state_name} in message")
-                            state_code = code
-                            break
-                    
-                    # If we found a state, break out of the messages loop
-                    if state_code:
-                        break
-                        
-                    # Otherwise try the full extraction
-                    potential_state = self._extract_state_from_question(message['message'])
-                    if potential_state:
-                        logger.info(f"Found state {potential_state} in conversation history")
-                        state_code = potential_state
-                        break
-        
+            extracted_code = self._extract_state_from_question(question)
+            if extracted_code:
+                state_code = extracted_code
+                logger.info(
+                    f"Extracted state code from question: {state_code}")
+
+        # 3) If still None, we disclaim we only have US data
         if not state_code:
-            logger.debug("No state found in question or conversation history")
-            return self._get_general_policy_information(question)
-        
-        logger.info(f"Getting policy data for state: {state_code}")
-        # Get policy data for the state
+            logger.debug(
+                "No valid US state recognized -> returning fallback message.")
+            return (
+                "I'm sorry, but I only have policy information for U.S. states right now. "
+                "I don't have data about abortion policies in that location.")
+
+        # 4) Fetch policy data
         policy_data = self.get_policy_data(state_code)
-        
         if "error" in policy_data:
-            logger.warning(f"Error in policy data: {policy_data['error']}")
-            if "state_attempted" in policy_data:
-                state_name = self.STATE_NAMES.get(policy_data["state_attempted"].upper(), policy_data["state_attempted"])
-                logger.info(f"Failed to get data for {state_name}, returning state-specific general information")
-                # Return a tailored response for the state that doesn't cite the API
-                return f"I'm sorry, I'm having trouble accessing specific policy information for {state_name} at the moment. Abortion policies vary by state and may change. For the most accurate and up-to-date information about abortion access in {state_name}, I recommend contacting Planned Parenthood directly or visiting their website. They can provide current information about options available to you in {state_name}."
-            return self._get_general_policy_information(question)
-        
-        # Format the policy data into a user-friendly response
+            logger.warning(
+                f"Error in policy data for state '{state_code}': {policy_data['error']}"
+            )
+            return (
+                f"I'm sorry, I'm having trouble accessing policy information for {state_code}. "
+                "Abortion policies vary by state and may change. "
+                "You might consider contacting Planned Parenthood or a local provider for the most current details."
+            )
+
+        # 5) Format policy data into a user-friendly response
         return self._format_policy_response(question, state_code, policy_data)
-    
-    def _get_general_policy_information(self, question: str) -> str:
+
+    def _format_policy_response(self, question: str, state_code: str,
+                                policy_data: Dict[str, Any]) -> str:
         """
-        Provide general policy information when state-specific data is unavailable
-        
-        Args:
-            question (str): User's original question
-            
-        Returns:
-            str: General policy information
+        Format policy data into a user-friendly, conversational response.
+        This is where you instruct GPT to create the final text. 
         """
-        from chatbot.gpt_integration import GPTModel
-        
-        if not self.gpt_model:
-            self.gpt_model = GPTModel()
-            
-        prompt = f"""
-        The user has asked the following policy-related question, but I couldn't identify a specific state or couldn't retrieve state-specific policy data:
-        
-        "{question}"
-        
-        Please provide a general response about abortion policies in the United States, explaining that policies vary by state and suggesting that the user specify a state for more detailed information. Include information about how to find state-specific resources.
-        
-        Keep the response factual, neutral, and informative. Avoid including specific policy details that might be outdated or incorrect.
-        """
-        
-        try:
-            return self.gpt_model.get_response(prompt)
-        except Exception as e:
-            logger.error(f"Error getting general policy info: {str(e)}")
-            return "I'm sorry, I'm having trouble providing policy information at the moment. Abortion policies vary significantly by state. For the most accurate and up-to-date information, consider visiting the Planned Parenthood website or contacting a healthcare provider in your state."
-    
-    def _format_policy_response(self, question: str, state_code: str, policy_data: Dict[str, Any]) -> str:
-        """
-        Format policy API data into a user-friendly response
-        
-        Args:
-            question (str): User's original question
-            state_code (str): Two-letter state code
-            policy_data (dict): Policy data from the API
-            
-        Returns:
-            str: Formatted response
-        """
+        # import GPTModel dynamically to avoid circular imports
         from chatbot.gpt_integration import GPTModel
         from chatbot.citation_manager import CitationManager
-        
+
         if not self.gpt_model:
             self.gpt_model = GPTModel()
-        
-        # Get state name for better readability using the class constant
-        state_name = self.STATE_NAMES.get(state_code.upper(), state_code)
-        
-        # Log the received policy data for debugging
-        logger.debug(f"Formatting policy data for {state_name}: {json.dumps(policy_data, indent=2)[:500]}...")
-        
-        # Add citation for the Abortion Policy API
-        citation_mgr = CitationManager()
-        
-        # Convert policy data to readable format with special parsing for our new structure
-        formatted_data = {
-            "state_name": state_name,
-            "state_code": state_code
-        }
-        
-        # Extract data from each endpoint
-        endpoints_data = policy_data.get("endpoints", {})
-        
-        # Extract waiting periods info
-        if "waiting_periods" in endpoints_data:
-            # The API returns data keyed by state code
-            wp_data = endpoints_data["waiting_periods"].get(state_code.upper(), {})
-            if not wp_data:  # Fallback to state name if empty
-                wp_data = endpoints_data["waiting_periods"].get(state_name, {})
-            formatted_data["waiting_periods"] = wp_data
-        
-        # Extract insurance coverage info
-        if "insurance_coverage" in endpoints_data:
-            ic_data = endpoints_data["insurance_coverage"].get(state_code.upper(), {})
-            if not ic_data:
-                ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
-            formatted_data["insurance_coverage"] = ic_data
-        
-        # Extract gestational limits info
-        if "gestational_limits" in endpoints_data:
-            gl_data = endpoints_data["gestational_limits"].get(state_code.upper(), {})
-            if not gl_data:
-                gl_data = endpoints_data["gestational_limits"].get(state_name, {})
-            formatted_data["gestational_limits"] = gl_data
-            
-            # Extract key gestational limit info for the prompt
-            if "banned_after_weeks_since_LMP" in gl_data:
-                formatted_data["weeks_limit"] = gl_data["banned_after_weeks_since_LMP"]
-            
-            if "exception_life" in gl_data:
-                formatted_data["exception_life"] = gl_data["exception_life"]
-                
-            if "exception_health" in gl_data:
-                formatted_data["exception_health"] = gl_data["exception_health"]
-        
-        # Extract minors info
-        if "minors" in endpoints_data:
-            minors_data = endpoints_data["minors"].get(state_code.upper(), {})
-            if not minors_data:
-                minors_data = endpoints_data["minors"].get(state_name, {})
-            formatted_data["minors"] = minors_data
-            
-            # Extract key minors info
-            if "allows_minor_to_consent_to_abortion" in minors_data:
-                formatted_data["minor_consent"] = minors_data["allows_minor_to_consent_to_abortion"]
-        
-        # Format the data as JSON string for the prompt
-        formatted_json = json.dumps(formatted_data, indent=2)
-        
-        prompt = f"""
+
+        state_name = policy_data["state_name"]
+        policy_json = json.dumps(policy_data, indent=2)
+
+        # Prompt: keep it conversational, no headings, no bullet points
+        policy_prompt = f"""
         The user asked: "{question}"
-        
-        This question is about abortion policy in {state_name} (state code: {state_code}).
-        
-        Here is the policy data from the Abortion Policy API for this state:
-        {formatted_json}
-        
-        Please provide a clear, accurate response that directly answers the user's question using this policy data.
-        Focus on the specific policy areas the question is about.
-        
-        Format the response in a user-friendly way with appropriate headings and bullet points.
-        Include appropriate citations to the Abortion Policy API.
-        Be sure to mention that this information is current according to the API data, but policies may change.
-        Include a disclaimer that this is for informational purposes only and not legal advice.
-        
-        If the policy data doesn't specifically address the user's question, acknowledge that and provide the most relevant information available.
+
+        We have abortion policy data for {state_name} from the Abortion Policy API:
+        {policy_json}
+
+        Please provide a short, conversational overview. 
+        - Do NOT use headings or bullet points.
+        - Speak naturally in short paragraphs.
+        - End with "(Source: Abortion Policy API)" only if you use the data. 
+        - If you see no relevant data, do NOT mention the source. 
+        - Emphasize that laws can change.
         """
-        
+
         try:
-            # Add a citation to the abortion policy API
-            from chatbot.citation_manager import CitationManager
+            response_text = self.gpt_model.get_response(policy_prompt)
+
+            # Optionally add citation marker if data was used
+            # But if your GPT prompt already adds it, you may omit this step.
             citation_mgr = CitationManager()
-            response = self.gpt_model.get_response(prompt)
-            return citation_mgr.add_citation_to_text(response, "abortion_policy_api")
+            # Add the actual marker to track for your UI, if desired
+            final_text = citation_mgr.add_citation_to_text(
+                response_text, "abortion_policy_api")
+            return final_text
+
         except Exception as e:
-            logger.error(f"Error formatting policy response: {str(e)}")
-            
-            # Fallback response using the raw data
-            response = f"Here is information about abortion policy in {state_name}:\n\n"
-            
-            # Format each section of the policy data
-            if "gestational_limits" in endpoints_data:
-                gl_data = endpoints_data["gestational_limits"].get(state_code.upper(), {})
-                if not gl_data:
-                    gl_data = endpoints_data["gestational_limits"].get(state_name, {})
-                response += "## Gestational Limits\n"
-                
-                if "banned_after_weeks_since_LMP" in gl_data:
-                    weeks = gl_data["banned_after_weeks_since_LMP"]
-                    if weeks == 99:  # API uses 99 to indicate no specific ban
-                        response += "• No specific week limit mentioned\n"
-                    else:
-                        response += f"• Abortion banned after {weeks} weeks since last menstrual period\n"
-                        
-                if "exception_life" in gl_data:
-                    response += f"• Exception for life of the pregnant person: {gl_data['exception_life']}\n"
-                    
-                if "exception_health" in gl_data:
-                    response += f"• Health exception: {gl_data['exception_health']}\n"
-                    
-                response += "\n"
-                
-            if "waiting_periods" in endpoints_data:
-                wp_data = endpoints_data["waiting_periods"].get(state_code.upper(), {})
-                if not wp_data:
-                    wp_data = endpoints_data["waiting_periods"].get(state_name, {})
-                if wp_data:
-                    response += "## Waiting Periods\n"
-                    for key, value in wp_data.items():
-                        if key != "Last Updated":
-                            response += f"• {key.replace('_', ' ').title()}: {value}\n"
-                    response += "\n"
-                    
-            if "insurance_coverage" in endpoints_data:
-                ic_data = endpoints_data["insurance_coverage"].get(state_code.upper(), {})
-                if not ic_data:
-                    ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
-                if ic_data:
-                    response += "## Insurance Coverage\n"
-                    for key, value in ic_data.items():
-                        if key != "Last Updated":
-                            response += f"• {key.replace('_', ' ').title()}: {value}\n"
-                    response += "\n"
-                    
-            if "minors" in endpoints_data:
-                minors_data = endpoints_data["minors"].get(state_code.upper(), {})
-                if not minors_data:
-                    minors_data = endpoints_data["minors"].get(state_name, {})
-                if minors_data:
-                    response += "## Minors\n"
-                    for key, value in minors_data.items():
-                        if key != "Last Updated":
-                            response += f"• {key.replace('_', ' ').title()}: {value}\n"
-                    response += "\n"
-                
-            response += "This information is provided for informational purposes only and is not legal advice. Policies may change, so please consult with a healthcare provider or legal professional for the most current information."
-            
-            # Add a citation to the abortion policy API
-            from chatbot.citation_manager import CitationManager
+            logger.error(f"Error formatting policy response: {str(e)}",
+                         exc_info=True)
+            # Fallback: Basic text without GPT
+            fallback = (
+                f"Here's what I know about abortion policy in {state_name}, but I'm having trouble "
+                "formatting the data right now. These policies can change, so please check for updates. "
+                "(Source: Abortion Policy API)")
             citation_mgr = CitationManager()
-            return citation_mgr.add_citation_to_text(response, "abortion_policy_api")
+            return citation_mgr.add_citation_to_text(fallback,
+                                                     "abortion_policy_api")
