@@ -31,6 +31,11 @@ class BaselineModel:
         self.gpt_model = GPTModel()
         self.policy_api = PolicyAPI()
         self.response_evaluator = ResponseEvaluator(evaluation_model=evaluation_model)
+        
+        # Track recent responses and contexts for evaluation
+        self.recent_responses = []
+        self.recent_contexts = []
+        self.max_tracked_responses = 100
 
     def categorize_question(self, question, history=None):
         """
