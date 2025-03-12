@@ -25,6 +25,11 @@ class PolicyAPI:
         "DC": "District of Columbia"
     }
     
+    # Create a reverse mapping for case-insensitive lookup
+    STATE_NAMES_LOWER = {}
+    for code, name in STATE_NAMES.items():
+        STATE_NAMES_LOWER[name.lower()] = code
+    
     def __init__(self):
         """Initialize the Policy API client"""
         logger.info("Initializing Policy API")
@@ -141,11 +146,25 @@ class PolicyAPI:
                 "minors": "minors"
             }
             
-            # Convert state code to proper name format (the API requires proper capitalized names like "Texas")
-            state_name = self.STATE_NAMES.get(state_code.upper(), None)
-            if not state_name:
-                logger.error(f"Invalid state code provided: {state_code}")
-                return {"error": f"Invalid state code: {state_code}", "state_attempted": state_code}
+            # Get proper state data - API expects abbreviations (TX)
+            state_abbr = None
+            state_name = None
+            
+            # First, check if it's a valid 2-letter code
+            if len(state_code) == 2 and state_code.upper() in self.STATE_NAMES:
+                state_abbr = state_code.upper()
+                state_name = self.STATE_NAMES[state_abbr]
+                logger.info(f"Found state code {state_abbr} for {state_name}")
+            # Then check if it's a state name using our case-insensitive mapping
+            elif state_code.lower() in self.STATE_NAMES_LOWER:
+                state_abbr = self.STATE_NAMES_LOWER[state_code.lower()]
+                state_name = self.STATE_NAMES[state_abbr]
+                logger.info(f"Mapped state name '{state_code}' to code {state_abbr}")
+            else:
+                # If we can't find it, use a fallback and return an error later
+                state_abbr = state_code.upper() if len(state_code) == 2 else state_code
+                state_name = state_code
+                logger.warning(f"Could not identify state from input: {state_code}")
             
             # Use 'token' in headers as discovered in testing
             headers = {"token": self.api_key}
@@ -156,14 +175,14 @@ class PolicyAPI:
             
             # Combined policy data object
             policy_data = {
-                "state_code": state_code.upper(),
+                "state_code": state_abbr,
                 "state_name": state_name,
                 "endpoints": {}
             }
             
-            # Collect data from all endpoints
+            # Collect data from all endpoints - use abbreviation for API calls
             for key, endpoint in endpoints.items():
-                url = f"{self.base_url}/{endpoint}/states/{state_name}"
+                url = f"{self.base_url}/{endpoint}/states/{state_abbr}"
                 logger.debug(f"Making request to endpoint: {url}")
                 
                 # Add slight delay to avoid rate limiting
@@ -213,8 +232,13 @@ class PolicyAPI:
         # First use the location_context if provided
         state_code = None
         if location_context:
-            state_code = location_context
-            logger.info(f"Using provided location context: {state_code}")
+            # Check if it's a state name and convert to code if needed
+            if location_context.lower() in self.STATE_NAMES_LOWER:
+                state_code = self.STATE_NAMES_LOWER[location_context.lower()]
+                logger.info(f"Converted location context from '{location_context}' to state code: {state_code}")
+            else:
+                state_code = location_context
+                logger.info(f"Using provided location context: {state_code}")
             
         # If no location context, try to extract state from the current question
         if not state_code:
@@ -225,10 +249,8 @@ class PolicyAPI:
         if not state_code and conversation_history:
             logger.info("No state found in current question, checking conversation history")
             
-            # Get state patterns from the extraction method
-            state_patterns = {}
-            for state_name, code in self.STATE_NAMES.items():
-                state_patterns[state_name.lower()] = code
+            # Use our case-insensitive state name mapping
+            state_patterns = self.STATE_NAMES_LOWER
             
             # Iterate through conversation history from newest to oldest
             for message in reversed(conversation_history):
@@ -336,17 +358,24 @@ class PolicyAPI:
         
         # Extract waiting periods info
         if "waiting_periods" in endpoints_data:
-            wp_data = endpoints_data["waiting_periods"].get(state_name, {})
+            # The API returns data keyed by state code
+            wp_data = endpoints_data["waiting_periods"].get(state_code.upper(), {})
+            if not wp_data:  # Fallback to state name if empty
+                wp_data = endpoints_data["waiting_periods"].get(state_name, {})
             formatted_data["waiting_periods"] = wp_data
         
         # Extract insurance coverage info
         if "insurance_coverage" in endpoints_data:
-            ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
+            ic_data = endpoints_data["insurance_coverage"].get(state_code.upper(), {})
+            if not ic_data:
+                ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
             formatted_data["insurance_coverage"] = ic_data
         
         # Extract gestational limits info
         if "gestational_limits" in endpoints_data:
-            gl_data = endpoints_data["gestational_limits"].get(state_name, {})
+            gl_data = endpoints_data["gestational_limits"].get(state_code.upper(), {})
+            if not gl_data:
+                gl_data = endpoints_data["gestational_limits"].get(state_name, {})
             formatted_data["gestational_limits"] = gl_data
             
             # Extract key gestational limit info for the prompt
@@ -361,7 +390,9 @@ class PolicyAPI:
         
         # Extract minors info
         if "minors" in endpoints_data:
-            minors_data = endpoints_data["minors"].get(state_name, {})
+            minors_data = endpoints_data["minors"].get(state_code.upper(), {})
+            if not minors_data:
+                minors_data = endpoints_data["minors"].get(state_name, {})
             formatted_data["minors"] = minors_data
             
             # Extract key minors info
@@ -404,7 +435,9 @@ class PolicyAPI:
             
             # Format each section of the policy data
             if "gestational_limits" in endpoints_data:
-                gl_data = endpoints_data["gestational_limits"].get(state_name, {})
+                gl_data = endpoints_data["gestational_limits"].get(state_code.upper(), {})
+                if not gl_data:
+                    gl_data = endpoints_data["gestational_limits"].get(state_name, {})
                 response += "## Gestational Limits\n"
                 
                 if "banned_after_weeks_since_LMP" in gl_data:
@@ -423,7 +456,9 @@ class PolicyAPI:
                 response += "\n"
                 
             if "waiting_periods" in endpoints_data:
-                wp_data = endpoints_data["waiting_periods"].get(state_name, {})
+                wp_data = endpoints_data["waiting_periods"].get(state_code.upper(), {})
+                if not wp_data:
+                    wp_data = endpoints_data["waiting_periods"].get(state_name, {})
                 if wp_data:
                     response += "## Waiting Periods\n"
                     for key, value in wp_data.items():
@@ -432,7 +467,9 @@ class PolicyAPI:
                     response += "\n"
                     
             if "insurance_coverage" in endpoints_data:
-                ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
+                ic_data = endpoints_data["insurance_coverage"].get(state_code.upper(), {})
+                if not ic_data:
+                    ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
                 if ic_data:
                     response += "## Insurance Coverage\n"
                     for key, value in ic_data.items():
@@ -441,7 +478,9 @@ class PolicyAPI:
                     response += "\n"
                     
             if "minors" in endpoints_data:
-                minors_data = endpoints_data["minors"].get(state_name, {})
+                minors_data = endpoints_data["minors"].get(state_code.upper(), {})
+                if not minors_data:
+                    minors_data = endpoints_data["minors"].get(state_name, {})
                 if minors_data:
                     response += "## Minors\n"
                     for key, value in minors_data.items():
