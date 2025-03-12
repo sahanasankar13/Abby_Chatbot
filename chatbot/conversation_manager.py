@@ -738,25 +738,17 @@ class ConversationManager:
 
     def detect_location_context(self, message: str) -> Optional[str]:
         """
-        Detect if a location is mentioned in the message
+        Detect if a US location is mentioned in the message
 
         Args:
             message (str): The user message to analyze
 
         Returns:
-            Optional[str]: The detected location or None if no location is found
+            Optional[str]: The detected US state or None if no location is found
         """
         message_lower = message.lower()
 
-        # Check for non-US countries first
-        non_us_countries = ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
-                          'china', 'japan', 'brazil', 'spain', 'italy', 'russia']
-        for country in non_us_countries:
-            if country in message_lower:
-                logger.info(f"Found non-US country mention in message: {country}")
-                return country
-
-        # Check for direct mentions of US states
+        # Check for direct mentions of US states - using the state names from policy_api
         for code, state in self.policy_api.STATE_NAMES.items():
             if state.lower() in message_lower or code.lower() in message_lower:
                 logger.info(f"Found direct state mention in message: {state.lower()}")
