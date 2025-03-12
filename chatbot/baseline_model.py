@@ -127,7 +127,7 @@ class BaselineModel:
         # Default to conversational
         return 'conversational'
 
-    def process_question(self, question, conversation_history=[], location_context=None):
+    def process_question(self, question, conversation_history=[], location_context=None, force_category=None):
         """
         Process a question using the appropriate model based on its category
         Handles multi-query questions by combining responses
@@ -136,6 +136,7 @@ class BaselineModel:
             question (str): The user's question
             conversation_history (list, optional): List of previous messages in the conversation
             location_context (str): User's location if detected
+            force_category (str, optional): Force a specific category ('policy', 'knowledge', 'conversational')
 
         Returns:
             str: The model's response

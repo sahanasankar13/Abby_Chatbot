@@ -179,22 +179,30 @@ class PolicyAPI:
             logger.error(f"Error fetching policy data: {str(e)}", exc_info=True)
             return {"error": str(e)}
     
-    def get_policy_response(self, question: str, conversation_history: Optional[List[Dict[str, Any]]] = None) -> str:
+    def get_policy_response(self, question: str, conversation_history: Optional[List[Dict[str, Any]]] = None, location_context: Optional[str] = None) -> str:
         """
         Process a policy-related question and return a response
         
         Args:
             question (str): User's question about abortion policy
             conversation_history (list, optional): List of previous messages in the conversation
+            location_context (str, optional): Explicit location context if already detected
             
         Returns:
             str: Formatted response with policy information
         """
-        # First try to extract state from the current question
-        state_code = self._extract_state_from_question(question)
-        logger.info(f"Checking for state in question: '{question}' - Result: {state_code}")
+        # First use the location_context if provided
+        state_code = None
+        if location_context:
+            state_code = location_context
+            logger.info(f"Using provided location context: {state_code}")
+            
+        # If no location context, try to extract state from the current question
+        if not state_code:
+            state_code = self._extract_state_from_question(question)
+            logger.info(f"Checking for state in question: '{question}' - Result: {state_code}")
         
-        # If no state in current question, try to find it in conversation history
+        # If still no state, try to find it in conversation history
         if not state_code and conversation_history:
             logger.info("No state found in current question, checking conversation history")
             
