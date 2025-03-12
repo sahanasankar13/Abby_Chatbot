@@ -148,6 +148,16 @@ class BertRAGModel:
                 logger.debug(f"Detected conversational query: '{question}'")
                 return "I'm doing well, thanks for asking! I'm Abby, your reproductive health assistant. How can I help you today?"
             
+            # First check for exact matches (case-insensitive) to prioritize them
+            normalized_question = question.lower().strip('?. ')
+            for qa_pair in self.qa_pairs:
+                qa_normalized = qa_pair['Question'].lower().strip('?. ')
+                # Check if this is an exact match
+                if normalized_question == qa_normalized:
+                    logger.debug(f"Found exact match for question: '{question}'")
+                    return qa_pair['Answer']
+                
+            # If no exact match, proceed with embedding-based retrieval
             # Generate embedding for the question
             question_embedding = self.generate_embeddings([question])
             

@@ -98,17 +98,17 @@ def preprocess_question_answer_pairs(qa_pairs):
     # Add important additional QA pairs for common questions
     menstrual_cycle_qa = {
         'Question': 'What is the menstrual cycle?',
-        'Answer': '''The menstrual cycle is the monthly hormonal cycle a woman's body goes through to prepare for pregnancy. An average cycle takes about 28 days and occurs in phases:
+        'Answer': '''The menstrual cycle is the monthly hormonal cycle a woman's body goes through to prepare for pregnancy. An average cycle takes about 28 days and occurs in phases: [SOURCE:planned_parenthood]
 
-1. Menstrual phase (Days 1-5): The uterus sheds its lining, resulting in menstrual bleeding or a period.
+1. Menstrual phase (Days 1-5): The uterus sheds its lining, resulting in menstrual bleeding or a period. This is when your period happens, and the bleeding usually lasts for 3-7 days. During this time, the body sheds the thickened uterine lining and unfertilized egg from the previous cycle. [SOURCE:planned_parenthood]
 
-2. Follicular phase (Days 1-13): The body prepares to release an egg. Estrogen levels rise and the uterine lining begins to thicken.
+2. Follicular phase (Days 1-13): The body prepares to release an egg. Estrogen levels rise and the uterine lining begins to thicken. During this phase, follicle-stimulating hormone (FSH) stimulates the ovaries to produce 5-20 follicles, each containing an immature egg. Usually, only one follicle will mature into an egg, while the others are reabsorbed. [SOURCE:planned_parenthood]
 
-3. Ovulation (Day 14, in a 28-day cycle): The ovary releases a mature egg, which travels through the fallopian tube. This is when pregnancy is most likely to occur.
+3. Ovulation (Day 14, in a 28-day cycle): The ovary releases a mature egg, which travels through the fallopian tube. This is when pregnancy is most likely to occur. A surge in luteinizing hormone (LH) triggers the release of the egg. Some people experience mild pain called "mittelschmerz" during ovulation. [SOURCE:planned_parenthood]
 
-4. Luteal phase (Days 15-28): If the egg isn't fertilized, hormone levels decrease and the body prepares to shed the uterine lining, starting the cycle again.
+4. Luteal phase (Days 15-28): If the egg isn't fertilized, hormone levels decrease and the body prepares to shed the uterine lining, starting the cycle again. The empty follicle transforms into a corpus luteum, which releases progesterone to maintain the uterine lining in case of pregnancy. If pregnancy doesn't occur, the corpus luteum breaks down, hormone levels drop, and a new cycle begins. [SOURCE:planned_parenthood]
 
-The length of the menstrual cycle varies from person to person. Some people have shorter cycles (21 days) while others have longer ones (35 days). The cycle length may also vary from month to month for the same person.''',
+The length of the menstrual cycle varies from person to person. Some people have shorter cycles (21 days) while others have longer ones (35 days). The cycle length may also vary from month to month for the same person. Tracking your cycle can help you understand your body's patterns and identify any irregularities. [SOURCE:planned_parenthood]''',
         'Link': 'https://www.plannedparenthood.org/learn/health-and-wellness/menstruation',
         'Category': 'Health'
     }
