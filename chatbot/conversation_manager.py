@@ -1,5 +1,7 @@
 import logging
 import time
+import random
+import uuid
 from chatbot.baseline_model import BaselineModel
 from chatbot.friendly_bot import FriendlyBot
 from chatbot.citation_manager import CitationManager
@@ -298,6 +300,34 @@ class ConversationManager:
                     formatted_response['message_id'] = message_id
                     return formatted_response
 
+            # Check if this is a simple greeting that should have a brief response
+            simple_greeting_indicators = ["hi", "hello", "hey", "good morning", "good afternoon", 
+                                        "good evening", "how are you", "what's up", "greetings"]
+            is_simple_greeting = any(message.lower().strip() == greeting or 
+                                  message.lower().strip().startswith(f"{greeting} ") or
+                                  message.lower().strip().endswith(f" {greeting}")
+                                  for greeting in simple_greeting_indicators)
+            
+            # If it's a very simple greeting, respond directly without using the full model pipeline
+            if is_simple_greeting and len(message.split()) <= 4:
+                logger.info("Detected simple greeting, bypassing full model pipeline")
+                greeting_responses = [
+                    "Hello! How can I help you today?",
+                    "Hi there! How can I assist you?",
+                    "Hello! I'm here if you have any questions about reproductive health.",
+                    "Hi! What can I help you with today?"
+                ]
+                simple_response = random.choice(greeting_responses)
+                formatted_response = {
+                    "text": simple_response,
+                    "citations": [],
+                    "citation_objects": []
+                }
+                message_id = self.add_to_history('bot', simple_response)
+                formatted_response['message_id'] = message_id
+                return formatted_response
+            
+            # For non-greeting messages, continue with normal processing
             # Detect question type for adding appropriate friendly elements
             question_type = self.friendly_bot.detect_question_type(message)
             logger.debug(f"Detected question type: {question_type}")

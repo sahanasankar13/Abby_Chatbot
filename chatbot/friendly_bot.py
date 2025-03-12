@@ -63,12 +63,16 @@ class FriendlyBot:
             str: Enhanced friendly response with improved structure
         """
         try:
-            # Determine if this is a new conversation (more comprehensive check for greeting words or phrases)
-            greeting_words = ["hello", "hi ", "hey", "welcome", "how are you", "doing well", "thanks for asking"]
-            is_greeting = any(word in message.lower() for word in greeting_words)
+            # Comprehensive check for greetings and simple conversational responses
+            greeting_words = ["hello", "hi ", "hey", "welcome", "how are you", "doing well", "thanks for asking", "nice to meet", "pleasure to meet"]
+            conversational_markers = ["can help", "assist you", "what can i", "how can i", "i'm here", "here to help"]
             
-            # Don't modify conversational exchanges or greetings
-            if is_greeting or len(message.split()) < 15:  # Simple response or greeting
+            # Check if message is a greeting or simple conversational response
+            is_greeting = any(word in message.lower() for word in greeting_words)
+            is_simple_conversation = any(marker in message.lower() for marker in conversational_markers)
+            
+            # Don't modify greetings or short conversational exchanges
+            if is_greeting or is_simple_conversation or len(message.split()) < 20:  # Simple response or greeting
                 return message
             
             # Format the original message with better paragraph breaks
