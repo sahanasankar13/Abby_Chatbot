@@ -152,9 +152,12 @@ class BertRAGModel:
                     logger.debug(f"Exact match index: {idx}")
                     answer = qa_pair['Answer']
                     link = qa_pair.get('Link', '')
-                    # Check if the user wants to disable citations
+                    # Only add citation if there's a valid link and this isn't a conversational response
                     include_citations = not ("dont cite" in normalized_question or "don't cite" in normalized_question)
-                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood", include_citations, link=link)
+                    if link:
+                        return citation_mgr.add_citation_to_text(answer, "planned_parenthood", include_citations, link=link)
+                    else:
+                        return answer
 
             # Also check for questions that contain the exact query
             # This helps with cases like "what is the menstrual cycle" matching "what is the menstrual cycle?"
@@ -165,9 +168,12 @@ class BertRAGModel:
                     logger.debug(f"Partial match index: {idx}")
                     answer = qa_pair['Answer']
                     link = qa_pair.get('Link', '')
-                    # Check if the user wants to disable citations
+                    # Only add citation if there's a valid link and this isn't a conversational response
                     include_citations = not ("dont cite" in normalized_question or "don't cite" in normalized_question)
-                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood", include_citations, link=link)
+                    if link:
+                        return citation_mgr.add_citation_to_text(answer, "planned_parenthood", include_citations, link=link)
+                    else:
+                        return answer
 
             # If no exact match, proceed with embedding-based retrieval
             # Generate embedding for the question

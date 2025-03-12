@@ -139,16 +139,17 @@ class ConversationManager:
             # Add friendly elements to the response
             friendly_response = self.friendly_bot.add_friendly_elements(response, question_type)
 
-            # Add appropriate citation based on the source of information
+            # Add appropriate citation based on the source of information and new citation rules
             if category == 'knowledge' and self.baseline_model.bert_rag.is_confident(message, response) and include_citations:
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
+                # For knowledge responses from RAG/CSV, check if we have a link
+                link = self._extract_link_from_response(response)
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood', include_citations, link)
             elif category == 'policy' and include_citations:
-                # For policy responses, both API and Planned Parenthood information might be used
-                # The citation manager will handle the correct sources display
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'abortion_policy_api')
-            elif include_citations:
-                # Default citation for general responses that aren't policy-specific
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
+                # For policy responses, cite the Abortion Policy API
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'abortion_policy_api', include_citations)
+            else:
+                # For conversational/emotional responses, don't add citation
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, None, include_citations)
 
 
             # Format response with citations
@@ -320,6 +321,30 @@ class ConversationManager:
             self.conversation_history = self.conversation_history[-10:]
 
         return message_id
+
+    def _extract_link_from_response(self, response):
+        """
+        Extract link from a response if it exists
+        
+        Args:
+            response (str): The response to extract a link from
+            
+        Returns:
+            str: The link or None if not found
+        """
+        try:
+            # Try to find URLs in the response
+            import re
+            url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+            urls = re.findall(url_pattern, response)
+            
+            # Return the first URL if found
+            if urls and len(urls) > 0:
+                return urls[0]
+            return None
+        except Exception as e:
+            logger.error(f"Error extracting link from response: {str(e)}")
+            return None
 
     def get_history(self):
         """

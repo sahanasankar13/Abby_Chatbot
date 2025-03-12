@@ -230,40 +230,60 @@ class CitationManager:
 
     def add_citation_to_text(self, text: str, source_id: Optional[str] = None, include_citations: bool = True, link: Optional[str] = None) -> str:
         """
-        Add citation to text if needed, but only for Planned Parenthood or Abortion Policy API.
+        Add citation to text if needed, following these rules:
+        1. For RAG responses (from CSV), use the link from the CSV
+        2. For Abortion API responses, cite the API
+        3. If both sources are used, cite both
+        4. For general or emotional responses, don't include citations
 
         Args:
             text (str): Text to add citation to
             source_id (str, optional): Explicit source ID to use
             include_citations (bool): Whether to include citations in the output
-            link (str, optional): Link to use for Planned Parenthood citation
+            link (str, optional): Link to use for Planned Parenthood citation from CSV
 
         Returns:
             str: Text with or without citations
         """
         try:
-            # If citations are disabled, just return the clean text
+            # For greeting, goodbye, or emotional support messages, don't add citations
+            text_lower = text.lower()
+            conversational_indicators = [
+                "hi there", "hello", "hey", "how are you", "goodbye", "bye", 
+                "take care", "I'm here to support", "I understand this can be difficult",
+                "that must be", "I'm sorry to hear", "that sounds"
+            ]
+            
+            # Check if this is a general or emotional response
+            is_conversational = (
+                len(text.split()) < 15 or 
+                any(indicator in text_lower for indicator in conversational_indicators)
+            )
+            
+            if is_conversational:
+                logger.debug("Detected conversational response, skipping citations")
+                text = self._remove_citation_markers(text)
+                return text
+
+            # If citations are explicitly disabled, just return the clean text
             if not include_citations:
                 text = self._remove_citation_markers(text)
                 return text
                 
-            # If text already has citation markers, don't add more
+            # If text already has citation markers, extract and process them
             if "[SOURCE:" in text or "[cite:" in text or "[API:" in text:
                 logger.debug(f"Text already has citation markers, extracting citations")
                 citations = self.extract_citations_from_text(text)
-
-                # Remove any citation markers from the text for clean display
                 text = self._remove_citation_markers(text)
-
                 return self._format_text_with_citations(text, citations, include_citations)
 
-            # If explicit source ID provided, only use it if it's one of our approved sources
+            # If explicit source ID provided, handle based on the source
             if source_id and source_id in self.SOURCES:
-                if source_id in ["planned_parenthood", "abortion_policy_api"]:
-                    logger.debug(f"Using explicit source ID: {source_id}")
-                    # Update link if provided for planned parenthood
-                    if source_id == "planned_parenthood" and link:
-                        # Create a copy of the citation to avoid modifying the original
+                if source_id == "planned_parenthood":
+                    logger.debug(f"Using CSV/RAG source with link: {link}")
+                    # If we have a link from the CSV, use it instead of generic Planned Parenthood URL
+                    if link:
+                        # Create a citation with the specific link from CSV
                         citation = Citation(
                             source=self.SOURCES[source_id].source,
                             url=link,
@@ -274,17 +294,20 @@ class CitationManager:
                         )
                         return self._format_text_with_citations(text, [citation], include_citations)
                     else:
-                        return self._format_text_with_citations(text, [self.SOURCES[source_id]], include_citations)
+                        # Don't cite if no link is available from CSV
+                        return text
+                
+                elif source_id == "abortion_policy_api":
+                    logger.debug("Using Abortion Policy API source")
+                    return self._format_text_with_citations(text, [self.SOURCES[source_id]], include_citations)
+                
                 else:
                     # Don't add citation for non-approved sources
                     return text
-
-            # Otherwise extract citations from the text based on content
-            # This will now only get explicit source mentions due to our changes
-            citations = self.extract_citations_from_text(text)
-
-            logger.debug(f"Formatting response with {len(citations)} citations")
-            return self._format_text_with_citations(text, citations, include_citations)
+            
+            # If no explicit source ID, don't add automatic citations 
+            # (this is different from previous behavior)
+            return text
         except Exception as e:
             logger.error(f"Error adding citation to text: {str(e)}", exc_info=True)
             return text
