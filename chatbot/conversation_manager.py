@@ -26,13 +26,13 @@ class ConversationManager:
     
     def process_message(self, message):
         """
-        Process a user message and generate a response
+        Process a user message and generate a response with citations
         
         Args:
             message (str): User's message
         
         Returns:
-            str: Bot's response
+            dict: Response with text and citations
         """
         try:
             # Store message in history
@@ -51,14 +51,36 @@ class ConversationManager:
             # Add friendly elements to the response
             friendly_response = self.friendly_bot.add_friendly_elements(response, question_type)
             
-            # Store response in history
-            self.add_to_history('bot', friendly_response)
+            # Add citation markers based on question type and content
+            if question_type == 'policy':
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'abortion_policy_api')
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'guttmacher')
+            elif 'pregnancy' in message.lower() or 'contraception' in message.lower():
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'acog')
+            elif 'health' in message.lower() or 'infection' in message.lower() or 'disease' in message.lower():
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'cdc')
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'who')
+            else:
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'ai_generated')
             
-            return friendly_response
+            # Format response with citations
+            formatted_response = self.citation_manager.format_response_with_citations(friendly_response)
+            
+            # Store response in history
+            self.add_to_history('bot', formatted_response['text'])
+            
+            return formatted_response
         
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}", exc_info=True)
-            return "I'm sorry, I encountered a problem processing your message. Please try again or ask a different question."
+            error_response = "I'm sorry, I encountered a problem processing your message. Please try again or ask a different question."
+            return {
+                "text": error_response,
+                "citations": [],
+                "citation_objects": []
+            }
     
     def add_to_history(self, sender, message):
         """

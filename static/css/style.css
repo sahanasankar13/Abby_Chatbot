@@ -53,6 +53,11 @@ body {
   background-color: #fff;
 }
 
+.chat-messages .message-container,
+.chat-messages .message:not(.bot-message) {
+  max-width: 80%;
+}
+
 .message {
   max-width: 75%;
   padding: 1rem 1.5rem;
@@ -250,4 +255,122 @@ a:hover {
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-family: monospace;
+}
+
+/* Citation styles */
+.message-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  align-self: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.citations-container {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(240, 240, 240, 0.7);
+  border-left: 3px solid #007bff;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.citations-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.citations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.citation {
+  color: #555;
+  line-height: 1.4;
+}
+
+.citation a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.citation a:hover {
+  text-decoration: underline;
+}
+
+.citation-source {
+  font-style: italic;
+}
+
+/* Graphics styles */
+.graphics-container {
+  margin-top: 1.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.graphic {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.graphic h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.graphic-description {
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.svg-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.svg-container svg {
+  width: 100%;
+  height: auto;
+  min-height: 300px;
+}
+
+/* Responsive adjustments for graphics and citations */
+@media (max-width: 768px) {
+  .message-container {
+    max-width: 95%;
+  }
+  
+  .citations-container {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .graphic {
+    padding: 0.75rem;
+  }
+  
+  .graphic h4 {
+    font-size: 1rem;
+  }
+  
+  .graphic-description {
+    font-size: 0.8rem;
+  }
+  
+  .svg-container svg {
+    min-height: 250px;
+  }
 }

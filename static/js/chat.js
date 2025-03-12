@@ -37,13 +37,75 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottom();
     }
 
-    // Function to add bot message to chat
-    function addBotMessage(message) {
+    // Function to add bot message to chat with citations and graphics
+    function addBotMessage(message, citations = [], graphics = []) {
+        const messageContainer = document.createElement('div');
+        messageContainer.className = 'message-container';
+        
+        // Main message
         const messageElement = document.createElement('div');
         messageElement.className = 'message bot-message';
         messageElement.innerHTML = message;
+        messageContainer.appendChild(messageElement);
+        
+        // Add citations if available
+        if (citations && citations.length > 0) {
+            const citationsContainer = document.createElement('div');
+            citationsContainer.className = 'citations-container';
+            
+            const citationsTitle = document.createElement('div');
+            citationsTitle.className = 'citations-title';
+            citationsTitle.textContent = 'Sources:';
+            citationsContainer.appendChild(citationsTitle);
+            
+            const citationsList = document.createElement('div');
+            citationsList.className = 'citations-list';
+            
+            citations.forEach(citation => {
+                const citationElement = document.createElement('div');
+                citationElement.className = 'citation';
+                citationElement.innerHTML = citation;
+                citationsList.appendChild(citationElement);
+            });
+            
+            citationsContainer.appendChild(citationsList);
+            messageContainer.appendChild(citationsContainer);
+        }
+        
+        // Add graphics if available
+        if (graphics && graphics.length > 0) {
+            const graphicsContainer = document.createElement('div');
+            graphicsContainer.className = 'graphics-container';
+            
+            graphics.forEach(graphic => {
+                if (graphic.type === 'svg') {
+                    const graphicElement = document.createElement('div');
+                    graphicElement.className = 'graphic';
+                    
+                    const graphicTitle = document.createElement('h4');
+                    graphicTitle.textContent = graphic.title;
+                    graphicElement.appendChild(graphicTitle);
+                    
+                    if (graphic.description) {
+                        const graphicDesc = document.createElement('p');
+                        graphicDesc.className = 'graphic-description';
+                        graphicDesc.textContent = graphic.description;
+                        graphicElement.appendChild(graphicDesc);
+                    }
+                    
+                    const svgContainer = document.createElement('div');
+                    svgContainer.className = 'svg-container';
+                    svgContainer.innerHTML = graphic.content;
+                    graphicElement.appendChild(svgContainer);
+                    
+                    graphicsContainer.appendChild(graphicElement);
+                }
+            });
+            
+            messageContainer.appendChild(graphicsContainer);
+        }
 
-        chatMessages.appendChild(messageElement);
+        chatMessages.appendChild(messageContainer);
         scrollToBottom();
     }
 
@@ -130,7 +192,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Format and add bot response to chat
             const formattedResponse = formatResponseWithMarkdown(data.response);
-            addBotMessage(formattedResponse);
+            addBotMessage(
+                formattedResponse, 
+                data.citations || [], 
+                data.graphics || []
+            );
         })
         .catch(error => {
             console.error('Error:', error);

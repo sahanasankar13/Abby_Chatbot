@@ -43,15 +43,27 @@ def chat():
 
             # If PII is detected, redact it before processing
             redacted_message, _ = pii_detector.redact_pii(message)
-            response = conversation_manager.process_message(redacted_message)
+            response_data = conversation_manager.process_message(redacted_message)
 
-            # Add PII warning to the response
-            response = f"{pii_warning}\n\n{response}"
+            # Add PII warning to the response text
+            response_data['text'] = f"{pii_warning}\n\n{response_data['text']}"
         else:
             # Get response from conversation manager
-            response = conversation_manager.process_message(message)
+            response_data = conversation_manager.process_message(message)
+            
+        # Import visual info if needed
+        from chatbot.visual_info import VisualInfoGraphics
+        visual_info = VisualInfoGraphics()
+        
+        # Add visual graphics if relevant
+        response_data = visual_info.add_graphics_to_response(response_data, message)
 
-        return jsonify({'response': response})
+        return jsonify({
+            'response': response_data['text'],
+            'citations': response_data['citations'],
+            'citation_objects': response_data['citation_objects'],
+            'graphics': response_data.get('graphics', [])
+        })
 
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
