@@ -65,20 +65,27 @@ document.addEventListener('DOMContentLoaded', function() {
             messageElement.innerHTML = message;
 
             messageContainer.appendChild(messageElement);
+            
+            // Skip sources completely for short conversational responses
+            if (message.length < 100 || !citations || citations.length === 0) {
+                chatMessages.appendChild(messageContainer);
+                animateMessage(messageElement);
+                return;
+            }
 
             // Add citations if present - but only for API or knowledge base sources
-            if (citations && citations.length > 0) {
+            if (citations && citations.length > 0 && citation_objects && citation_objects.length > 0) {
                 // Check if any citation is from the abortion policy API or another trusted source
                 // Don't show "ai_generated" citations by themselves
-                const hasApiSources = citation_objects && citation_objects.some(
-                    co => co.source && 
-                    (co.source.includes("Abortion Policy API") || 
-                     co.source.includes("Planned Parenthood") || 
-                     co.source.includes("Guttmacher") ||
-                     co.source.includes("CDC") ||
-                     co.source.includes("WHO") ||
-                     co.source.includes("American College"))
-                );
+                const validSources = ["Abortion Policy API", "Planned Parenthood", "Guttmacher Institute", 
+                                     "CDC", "WHO", "American College", "Centers for Disease Control", 
+                                     "World Health Organization"];
+                
+                // Only show citations if we have valid external sources (not just AI-generated)
+                const hasApiSources = citation_objects.some(co => {
+                    if (!co || !co.source) return false;
+                    return validSources.some(validSource => co.source.includes(validSource));
+                });
 
                 if (hasApiSources) {
                     const citationsContainer = document.createElement('div');
