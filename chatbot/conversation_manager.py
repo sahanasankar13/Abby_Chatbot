@@ -331,7 +331,8 @@ class ConversationManager:
                 response, question_type)
 
             # Only add citations to substantial responses (not simple conversational exchanges)
-            is_conversational = len(friendly_response.split()) < 20
+            # Increased threshold to consider more responses as substantial enough for citations
+            is_conversational = len(friendly_response.split()) < 10
 
             # Add appropriate citation based on the source of information, only for non-conversational responses
             if not is_conversational:
