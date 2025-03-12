@@ -58,5 +58,95 @@
       "positive_percentage": 0,
       "negative_percentage": 0
     }
+  },
+  {
+    "timestamp": "2025-03-12T22:53:06.288502",
+    "duration_seconds": 300.00029373168945,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T22:53:17.165820",
+    "duration_seconds": 300.0003056526184,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T22:58:06.294950",
+    "duration_seconds": 300.000417470932,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:01:41.209273",
+    "duration_seconds": 300.0003206729889,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:03:06.295988",
+    "duration_seconds": 300.0003893375397,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:08:06.316533",
+    "duration_seconds": 300.00936937332153,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
   }
 ]

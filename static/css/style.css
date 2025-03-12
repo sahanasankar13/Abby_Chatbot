@@ -224,8 +224,13 @@ body {
   margin-bottom: 1.5rem;
 }
 
+/* User message container is aligned to the right */
+.message-container[style*="flex-end"] {
+  align-self: flex-end;
+}
+
 .message {
-  max-width: 85%;
+  max-width: 100%;
   padding: 1rem 1.5rem;
   border-radius: 14px;
   margin-bottom: 0.5rem;
@@ -237,15 +242,12 @@ body {
 .user-message {
   background-color: var(--apple-blue);
   color: white;
-  align-self: flex-end;
   border-bottom-right-radius: 5px;
-  margin-left: auto;
 }
 
 .bot-message {
   background-color: rgba(210, 210, 215, 0.3);
   color: var(--apple-text);
-  align-self: flex-start;
   border-bottom-left-radius: 5px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -834,6 +836,60 @@ body {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+/* Star rating container */
+.stars-container {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
+/* Star rating styles */
+.feedback-star {
+  font-size: 2rem;
+  color: #d2d2d7;
+  cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+.feedback-star:hover,
+.feedback-star.selected {
+  color: #ffb400;
+}
+
+/* Rating container styles */
+.rating-container {
+  margin-bottom: 1.5rem;
+}
+
+.rating-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Comment container styles */
+.comment-container {
+  margin-bottom: 1.5rem;
+}
+
+.comment-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.feedback-comment {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--apple-border);
+  resize: vertical;
+  font-family: inherit;
+  background-color: rgba(210, 210, 215, 0.3);
 }
 
 .feedback-dialog button {
