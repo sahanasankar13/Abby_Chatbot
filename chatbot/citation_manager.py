@@ -228,7 +228,7 @@ class CitationManager:
             "citation_objects": [c.to_dict() for c in citations]
         }
 
-    def add_citation_to_text(self, text: str, source_id: Optional[str] = None, include_citations: bool = True) -> str:
+    def add_citation_to_text(self, text: str, source_id: Optional[str] = None, include_citations: bool = True, link: Optional[str] = None) -> str:
         """
         Add citation to text if needed, but only for Planned Parenthood or Abortion Policy API.
 
@@ -236,6 +236,7 @@ class CitationManager:
             text (str): Text to add citation to
             source_id (str, optional): Explicit source ID to use
             include_citations (bool): Whether to include citations in the output
+            link (str, optional): Link to use for Planned Parenthood citation
 
         Returns:
             str: Text with or without citations
@@ -260,7 +261,20 @@ class CitationManager:
             if source_id and source_id in self.SOURCES:
                 if source_id in ["planned_parenthood", "abortion_policy_api"]:
                     logger.debug(f"Using explicit source ID: {source_id}")
-                    return self._format_text_with_citations(text, [self.SOURCES[source_id]], include_citations)
+                    # Update link if provided for planned parenthood
+                    if source_id == "planned_parenthood" and link:
+                        # Create a copy of the citation to avoid modifying the original
+                        citation = Citation(
+                            source=self.SOURCES[source_id].source,
+                            url=link,
+                            title=self.SOURCES[source_id].title,
+                            authors=self.SOURCES[source_id].authors,
+                            publication_date=self.SOURCES[source_id].publication_date,
+                            accessed_date=self.SOURCES[source_id].accessed_date
+                        )
+                        return self._format_text_with_citations(text, [citation], include_citations)
+                    else:
+                        return self._format_text_with_citations(text, [self.SOURCES[source_id]], include_citations)
                 else:
                     # Don't add citation for non-approved sources
                     return text
@@ -304,9 +318,14 @@ class CitationManager:
             if citation.source not in seen_sources:
                 unique_citations.append(citation)
                 seen_sources.add(citation.source)
+        
         citations = unique_citations
-        formatted_citations = [c.to_html() for c in citations]
-        return f"{text}<br><br>{''.join(formatted_citations)}"
+        
+        # Only show sources section if we have citations
+        if citations:
+            formatted_citations = [c.to_html() for c in citations]
+            return f"{text}<br><br><h4>Sources</h4>{''.join(formatted_citations)}"
+        return text
 
 
 def quick_exit():

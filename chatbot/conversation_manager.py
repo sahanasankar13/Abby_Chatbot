@@ -143,6 +143,8 @@ class ConversationManager:
             if category == 'knowledge' and self.baseline_model.bert_rag.is_confident(message, response) and include_citations:
                 friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
             elif category == 'policy' and include_citations:
+                # For policy responses, both API and Planned Parenthood information might be used
+                # The citation manager will handle the correct sources display
                 friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'abortion_policy_api')
             elif include_citations:
                 # Default citation for general responses that aren't policy-specific
