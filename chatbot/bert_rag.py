@@ -269,16 +269,12 @@ class BertRAGModel:
         if not answer.endswith(('.', '?', '!')):
             answer = answer + '.'
         
-        # For long answers, extract the most important parts (first 3-4 sentences)
+        # For long answers, extract the most important parts (first 2 sentences)
         sentences = self._extract_sentences(answer)
         
-        if len(sentences) > 4:
-            # Use first 3 sentences for concise response
-            concise_answer = ' '.join(sentences[:3])
-            
-            # Look for a conclusion sentence (often last sentence has important info)
-            if len(sentences) > 4 and len(sentences[-1]) > 20:  # Only use if substantive
-                concise_answer += ' ' + sentences[-1]
+        if len(sentences) > 2:
+            # Use first 2 sentences for concise response
+            concise_answer = ' '.join(sentences[:2])
                 
             return concise_answer
         
@@ -304,43 +300,36 @@ class BertRAGModel:
         # Extract the most relevant answer as our primary response
         primary_answer = sorted_answers[0]['answer']
         
-        # Find the most important sentences from other answers
-        important_points = []
+        # Find one important sentence from other answers that adds new info
+        important_point = ""
         seen_content = set(self._get_key_phrases(primary_answer))
         
         for item in sorted_answers[1:]:
-            # Don't process more than 2 additional answers
-            if len(important_points) >= 2:
-                break
-                
             sentences = self._extract_sentences(item['answer'])
             if not sentences:
                 continue
                 
-            # Get the most important sentence that adds new information
-            for sentence in sentences[:2]:  # Look at first two sentences only
+            # Get the first sentence that adds new information
+            for sentence in sentences[:1]:  # Only look at first sentence
                 key_phrases = self._get_key_phrases(sentence)
                 # Check if this adds new information
                 if not any(phrase in seen_content for phrase in key_phrases):
-                    important_points.append(sentence)
-                    seen_content.update(key_phrases)
+                    important_point = sentence
                     break
+            
+            if important_point:
+                break
         
-        # Start with a direct answer
-        direct_answer = self._get_first_sentences(primary_answer, 2)
+        # Start with a direct answer (just 1 sentence)
+        direct_answer = self._get_first_sentences(primary_answer, 1)
         
-        # Build the response: direct answer + important additional points
-        response_parts = [direct_answer]
-        
-        # Add important points if they exist
-        if important_points:
-            for point in important_points:
-                if not point.strip().endswith(('.', '?', '!')):
-                    point = point + '.'
-                response_parts.append(point)
-        
-        # Join all parts into a concise response
-        concise_response = ' '.join(response_parts)
+        # Build the response: direct answer + one important additional point
+        if important_point:
+            if not important_point.strip().endswith(('.', '?', '!')):
+                important_point = important_point + '.'
+            concise_response = direct_answer + ' ' + important_point
+        else:
+            concise_response = direct_answer
         
         # Add citation
         cited_response = citation_mgr.add_citation_to_text(concise_response, "planned_parenthood")

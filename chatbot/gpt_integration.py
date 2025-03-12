@@ -144,7 +144,7 @@ class GPTModel:
     def enhance_response(self, question, rag_response):
         """
         Enhance a RAG response using GPT for better quality and empathy,
-        while keeping it concise like policy responses
+        while keeping it extremely concise like policy responses
 
         Args:
             question (str): User's question
@@ -160,19 +160,19 @@ class GPTModel:
             A knowledge base provided this information:
             "{rag_response}"
 
-            Please create a concise, friendly response that:
+            Please create an extremely concise, friendly response that:
 
-            1. Starts with a direct answer to the question in 1-2 sentences
-            2. Uses simple, everyday language (like a supportive friend talking)
-            3. Keeps the entire response to 3-5 sentences total
-            4. Is warm and supportive without being verbose
-            5. Maintains complete factual accuracy while being concise
-            6. Avoids unnecessary details and lengthy explanations
+            1. Answers the question directly in 1-2 sentences maximum
+            2. Uses simple, everyday language
+            3. Keeps the entire response to 1-2 sentences total
+            4. Maintains complete factual accuracy
+            5. Includes only the most essential information
+            6. Removes all unnecessary details and explanations
 
-            Format: Your response should be similar in length and style to this example:
-            "Yes, emergency contraception (also called the morning-after pill) can prevent pregnancy after unprotected sex. It works best when taken within 72 hours, though some brands work up to 5 days after. It works by delaying ovulation so no egg is released to meet sperm. Plan B is available over-the-counter without a prescription."
+            Format: Your response should be similar in brevity to this example:
+            "Emergency contraception can prevent pregnancy after unprotected sex if taken within 72 hours (some brands work up to 5 days). It's available over-the-counter without a prescription."
 
-            Remember to remain factually accurate, warm, and exceptionally concise.
+            Be factually accurate while being extremely concise.
             """
 
             response = self.client.chat.completions.create(
@@ -184,8 +184,8 @@ class GPTModel:
                     "role": "user",
                     "content": enhancement_prompt
                 }],
-                temperature=0.4,  # Lower temperature for more concise responses
-                max_tokens=300)  # Reduced token limit to encourage brevity
+                temperature=0.3,  # Lower temperature for more concise responses
+                max_tokens=150)  # Significantly reduced token limit to enforce brevity
 
             return response.choices[0].message.content
 
