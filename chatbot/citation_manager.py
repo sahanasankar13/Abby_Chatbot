@@ -2,6 +2,7 @@ import logging
 from typing import List, Dict, Any, Optional
 import re
 import json
+import webbrowser
 
 logger = logging.getLogger(__name__)
 
@@ -144,37 +145,55 @@ class CitationManager:
             "acog": "American College of Obstetricians and Gynecologists",
             "ai_generated": "AI Generated"
         }
+        self.default_sources = ["ai_generated"]
 
-    def extract_citations_from_text(self, text: str) -> List[Citation]:
-        """
-        Extract citations from text containing citation markers
 
-        Args:
-            text (str): Text with citation markers like [SOURCE:planned_parenthood]
-
-        Returns:
-            List[Citation]: List of extracted citations
-        """
+    def extract_citations_from_text(self, text: str) -> List[Dict[str, Any]]:
+        """Extract citations from text and return structured citation data."""
         citations = []
-        citation_pattern = r'\[SOURCE:([\w_]+)\]'
 
-        # Find all citation markers
-        matches = re.findall(citation_pattern, text)
+        # Skip citation extraction for short conversational responses
+        if len(text.split()) < 15 or "take care" in text.lower():
+            return []
 
-        # Get unique source identifiers
-        source_ids = set(matches)
+        # Check if text has explicitly marked citations
+        if "[cite:" in text:
+            pattern = r'\[cite:(.*?)\]'
+            citation_matches = re.findall(pattern, text)
 
-        # Get citation objects for each source
-        for source_id in source_ids:
-            if source_id in self.SOURCES:
-                citations.append(self.SOURCES[source_id])
-            else:
-                logger.warning(f"Unknown citation source: {source_id}")
+            for citation in citation_matches:
+                citation_parts = citation.split('|')
+                if len(citation_parts) >= 2:
+                    source_id = citation_parts[0].strip()
+                    quote = citation_parts[1].strip()
+                    page = citation_parts[2].strip() if len(citation_parts) > 2 else None
 
-        # If no citations found, use default sources
-        if not citations:
+                    citations.append({
+                        "source": self.sources.get(source_id, {"name": source_id})["name"],
+                        "quote": quote,
+                        "page": page
+                    })
+
+        # Also check for API citations
+        api_pattern = r'\[API:(.*?)\]'
+        api_matches = re.findall(api_pattern, text)
+
+        for api_citation in api_matches:
+            citations.append({
+                "source": "Abortion Policy API",
+                "quote": api_citation.strip(),
+                "page": None
+            })
+
+        # If no explicit citations but we have sources attribute, add default sources
+        if hasattr(self, 'default_sources'):
             for source_id in self.default_sources:
-                citations.append(self.SOURCES[source_id])
+                if source_id in self.sources:
+                    citations.append({
+                        "source": self.sources[source_id]["name"],
+                        "quote": None,
+                        "page": None
+                    })
 
         return citations
 
@@ -194,6 +213,8 @@ class CitationManager:
 
         # Remove citation markers from text
         clean_text = re.sub(r'\[SOURCE:[\w_]+\]', '', text)
+        clean_text = re.sub(r'\[cite:.*?\]', '', clean_text)
+        clean_text = re.sub(r'\[API:.*?\]', '', clean_text)
 
         # Format citations based on format type
         if format_type == "html":
@@ -223,3 +244,6 @@ class CitationManager:
         else:
             logger.warning(f"Unknown citation source: {source_id}")
             return text
+
+def quick_exit():
+    webbrowser.open("https://www.google.com")
