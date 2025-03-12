@@ -146,9 +146,10 @@ def view_metrics():
         from utils.metrics_analyzer import MetricsAnalyzer
         import datetime
         
-        # Get date range parameters
+        # Get filter parameters
         end_date = request.args.get('end_date')
         start_date = request.args.get('start_date')
+        session_id = request.args.get('session_id')
         
         # Parse dates
         if end_date:
@@ -170,12 +171,13 @@ def view_metrics():
         
         # Get metrics
         metrics_analyzer = MetricsAnalyzer()
-        metrics = metrics_analyzer.get_metrics(start_date, end_date)
+        metrics = metrics_analyzer.get_metrics(start_date, end_date, session_id)
         
         return render_template('admin/metrics.html', 
                               metrics=metrics, 
                               start_date=start_date_str,
-                              end_date=end_date_str)
+                              end_date=end_date_str,
+                              session_id=session_id)
     except Exception as e:
         logger.error(f"Error retrieving metrics data: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred retrieving metrics data'}), 500

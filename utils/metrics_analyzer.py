@@ -52,13 +52,14 @@ class MetricsAnalyzer:
             logger.error(f"Error loading logs: {str(e)}")
             return []
     
-    def filter_logs_by_date(self, start_date=None, end_date=None):
+    def filter_logs(self, start_date=None, end_date=None, session_id=None):
         """
-        Filter logs by date range
+        Filter logs by date range and/or session ID
         
         Args:
             start_date (datetime, optional): Start date for filtering
             end_date (datetime, optional): End date for filtering
+            session_id (str, optional): Session ID for filtering
             
         Returns:
             list: Filtered log entries
@@ -66,38 +67,47 @@ class MetricsAnalyzer:
         if not self.logs:
             return []
             
-        # Default to all logs if no dates provided
-        if not start_date and not end_date:
-            return self.logs
-            
-        # Set default end_date to now if not provided
-        if not end_date:
-            end_date = datetime.now()
-            
-        # Set default start_date to 30 days ago if not provided
-        if not start_date:
-            start_date = end_date - timedelta(days=30)
-            
-        # Filter logs by date range
-        filtered_logs = [
-            log for log in self.logs 
-            if 'timestamp' in log and start_date <= log['timestamp'] <= end_date
-        ]
+        # Default to all logs if no filters provided
+        filtered_logs = self.logs
+        
+        # Apply date filters if provided
+        if start_date or end_date:
+            # Set default end_date to now if not provided
+            if not end_date:
+                end_date = datetime.now()
+                
+            # Set default start_date to 30 days ago if not provided
+            if not start_date:
+                start_date = end_date - timedelta(days=30)
+                
+            # Filter logs by date range
+            filtered_logs = [
+                log for log in filtered_logs 
+                if 'timestamp' in log and start_date <= log['timestamp'] <= end_date
+            ]
+        
+        # Apply session ID filter if provided
+        if session_id:
+            filtered_logs = [
+                log for log in filtered_logs 
+                if 'session_id' in log and log['session_id'] == session_id
+            ]
         
         return filtered_logs
     
-    def get_metrics(self, start_date=None, end_date=None) -> Dict[str, Any]:
+    def get_metrics(self, start_date=None, end_date=None, session_id=None) -> Dict[str, Any]:
         """
         Calculate comprehensive metrics from the evaluation logs
         
         Args:
             start_date (datetime, optional): Start date for filtering
             end_date (datetime, optional): End date for filtering
+            session_id (str, optional): Session ID for filtering
             
         Returns:
             dict: Dictionary with calculated metrics
         """
-        filtered_logs = self.filter_logs_by_date(start_date, end_date)
+        filtered_logs = self.filter_logs(start_date, end_date, session_id)
         
         if not filtered_logs:
             logger.warning("No log entries found for the specified date range")
