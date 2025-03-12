@@ -1,5 +1,6 @@
 import os
 import logging
+import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from chatbot.conversation_manager import ConversationManager
 from utils.text_processing import PIIDetector # Added import for PII detection
@@ -134,7 +135,6 @@ def view_metrics():
     try:
         from utils.metrics_analyzer import MetricsAnalyzer
         from utils.feedback_manager import FeedbackManager
-        import datetime
         
         # Get filter parameters
         end_date = request.args.get('end_date')
