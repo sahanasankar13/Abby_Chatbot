@@ -36,10 +36,10 @@ def create_arrow(start, end, color='black', style='->', width=1.5, connectionsty
                                 connectionstyle=connectionstyle))
 
 # Function to create a process arrow with label
-def create_process_arrow(start, end, label, color='black', offset=(0, 0), fontsize=8):
+def create_process_arrow(start, end, label, color='black', offset=(0, 0), fontsize=8, connectionstyle="arc3,rad=0.1"):
     midx = (start[0] + end[0]) / 2 + offset[0]
     midy = (start[1] + end[1]) / 2 + offset[1]
-    create_arrow(start, end, color=color)
+    create_arrow(start, end, color=color, connectionstyle=connectionstyle)
     ax.text(midx, midy, label, ha='center', va='center', fontsize=fontsize,
             bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2'))
 
