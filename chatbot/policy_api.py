@@ -237,11 +237,8 @@ class PolicyAPI:
 
     def _format_policy_response(self, question: str, state_code: str,
                                 policy_data: Dict[str, Any]) -> str:
-        """
-        Format policy data into a user-friendly, conversational response.
-        This is where you instruct GPT to create the final text. 
-        """
-        # import GPTModel dynamically to avoid circular imports
+        """Format policy data into a conversational response."""
+        # Import GPTModel dynamically to avoid circular imports
         from chatbot.gpt_integration import GPTModel
         from chatbot.citation_manager import CitationManager
 
@@ -251,40 +248,29 @@ class PolicyAPI:
         state_name = policy_data["state_name"]
         policy_json = json.dumps(policy_data, indent=2)
 
-        # Prompt: keep it conversational, no headings, no bullet points
+        # Better prompt for concise, direct answers
         policy_prompt = f"""
         The user asked: "{question}"
 
         We have abortion policy data for {state_name} from the Abortion Policy API:
         {policy_json}
 
-        Please provide a short, conversational overview. 
-        - Do NOT use headings or bullet points.
-        - Speak naturally in short paragraphs.
-        - End with "(Source: Abortion Policy API)" only if you use the data. 
-        - If you see no relevant data, do NOT mention the source. 
-        - Emphasize that laws can change.
+        Provide a BRIEF response about abortion access in {state_name}:
+        1. Start with a direct yes/no about whether abortion is accessible in this state
+        2. Include key restrictions or important details in 1-2 short sentences
+        3. Use simple, clear language without medical jargon
+        4. Speak directly to the user in a supportive tone
+        5. Keep your response under 100 words
+        6. End with "(Source: Abortion Policy API)"
+
+        Example format: "Yes, abortion is available in [State]. The state allows abortions up to X weeks, with [any key restrictions]. Insurance coverage [brief details]."
         """
 
         try:
             response_text = self.gpt_model.get_response(policy_prompt)
-
-            # Optionally add citation marker if data was used
-            # But if your GPT prompt already adds it, you may omit this step.
-            citation_mgr = CitationManager()
-            # Add the actual marker to track for your UI, if desired
-            final_text = citation_mgr.add_citation_to_text(
-                response_text, "abortion_policy_api")
-            return final_text
-
+            return response_text
         except Exception as e:
             logger.error(f"Error formatting policy response: {str(e)}",
                          exc_info=True)
-            # Fallback: Basic text without GPT
-            fallback = (
-                f"Here's what I know about abortion policy in {state_name}, but I'm having trouble "
-                "formatting the data right now. These policies can change, so please check for updates. "
-                "(Source: Abortion Policy API)")
-            citation_mgr = CitationManager()
-            return citation_mgr.add_citation_to_text(fallback,
-                                                     "abortion_policy_api")
+            fallback = f"Abortions are {self._get_basic_policy_status(policy_data)} in {state_name}. For specific details, please contact a healthcare provider as policies may change. (Source: Abortion Policy API)"
+            return fallback

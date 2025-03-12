@@ -4,10 +4,16 @@ import re
 
 logger = logging.getLogger(__name__)
 
+
 class Citation:
     """Represents a citation source for information."""
-    def __init__(self, source: str, url: Optional[str] = None, title: Optional[str] = None, 
-                 authors: Optional[List[str]] = None, publication_date: Optional[str] = None,
+
+    def __init__(self,
+                 source: str,
+                 url: Optional[str] = None,
+                 title: Optional[str] = None,
+                 authors: Optional[List[str]] = None,
+                 publication_date: Optional[str] = None,
                  accessed_date: Optional[str] = None):
         self.source = source
         self.url = url
@@ -69,23 +75,22 @@ class Citation:
             md += f". Accessed on {self.accessed_date}"
         return md
 
+
 class CitationManager:
     """
     Manages citations for chatbot responses.
     Sources will only be added if the response is based on actual data from an API or RAG system.
     """
     SOURCES = {
-        "planned_parenthood": Citation(
-            source="Planned Parenthood",
-            url="https://www.plannedparenthood.org/",
-            title="Planned Parenthood",
-            authors=["Planned Parenthood Federation of America"]
-        ),
-        "abortion_policy_api": Citation(
-            source="Abortion Policy API",
-            url="https://www.abortionpolicyapi.com/",
-            title="Abortion Policy API"
-        )
+        "planned_parenthood":
+        Citation(source="Planned Parenthood",
+                 url="https://www.plannedparenthood.org/",
+                 title="Planned Parenthood",
+                 authors=["Planned Parenthood Federation of America"]),
+        "abortion_policy_api":
+        Citation(source="Abortion Policy API",
+                 url="https://www.abortionpolicyapi.com/",
+                 title="Abortion Policy API")
     }
 
     def __init__(self):
@@ -93,7 +98,10 @@ class CitationManager:
         self.sources = self.SOURCES
         self.default_sources = ["planned_parenthood"]
 
-    def add_citation_to_text(self, text: str, source_id: str, include_citation: bool = True) -> str:
+    def add_citation_to_text(self,
+                             text: str,
+                             source_id: str,
+                             include_citation: bool = True) -> str:
         """
         Append an inline citation (e.g. "(Source: Planned Parenthood)") to the text
         if include_citation is True. Otherwise, return the text unchanged.
@@ -128,16 +136,29 @@ class CitationManager:
         citations = self.extract_citations_from_text(text)
         # Remove citation markers from text
         clean_text = re.sub(r'\(Source: [^)]+\)', '', text).strip()
+
+        # Skip citations for conversational exchanges or when no citations found
+        is_conversational = len(clean_text.split()) < 20 or "how can i help you" in clean_text.lower()
+
+        if is_conversational or not citations:
+            return {
+                "text": clean_text,
+                "citations": [],
+                "citation_objects": []
+            }
+
         unique_citations = []
         seen_sources = set()
         for citation in citations:
             if citation.source not in seen_sources:
                 unique_citations.append(citation)
                 seen_sources.add(citation.source)
+
         if format_type == "html":
             formatted_citations = [c.to_html() for c in unique_citations]
         else:
             formatted_citations = [c.to_markdown() for c in unique_citations]
+
         return {
             "text": clean_text,
             "citations": formatted_citations,
