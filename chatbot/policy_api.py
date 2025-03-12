@@ -237,8 +237,11 @@ class PolicyAPI:
 
     def _format_policy_response(self, question: str, state_code: str,
                                 policy_data: Dict[str, Any]) -> str:
-        """Format policy data into a conversational response."""
-        # Import GPTModel dynamically to avoid circular imports
+        """
+        Format policy data into a user-friendly, conversational response.
+        This method sanitizes incorrect data and formats the response in a clear, accurate way.
+        """
+        # import GPTModel dynamically to avoid circular imports
         from chatbot.gpt_integration import GPTModel
         from chatbot.citation_manager import CitationManager
 
@@ -246,31 +249,70 @@ class PolicyAPI:
             self.gpt_model = GPTModel()
 
         state_name = policy_data["state_name"]
+
+        # Sanitize policy data to fix known issues
+        if "endpoints" in policy_data and "gestational_limits" in policy_data[
+                "endpoints"]:
+            gestational_data = policy_data["endpoints"]["gestational_limits"]
+
+            # Fix the 99 weeks error
+            if isinstance(
+                    gestational_data, dict
+            ) and "banned_after_weeks_since_LMP" in gestational_data:
+                if gestational_data["banned_after_weeks_since_LMP"] == 99:
+                    gestational_data[
+                        "banned_after_weeks_since_LMP"] = "no specific limit"
+                    gestational_data[
+                        "limit_type"] = "No specific gestational limit"
+
+        # Create sanitized policy JSON
         policy_json = json.dumps(policy_data, indent=2)
 
-        # Better prompt for concise, direct answers
+        # Better prompt for GPT to create a more accurate, concise response
         policy_prompt = f"""
         The user asked: "{question}"
 
         We have abortion policy data for {state_name} from the Abortion Policy API:
         {policy_json}
 
-        Provide a BRIEF response about abortion access in {state_name}:
-        1. Start with a direct yes/no about whether abortion is accessible in this state
-        2. Include key restrictions or important details in 1-2 short sentences
-        3. Use simple, clear language without medical jargon
-        4. Speak directly to the user in a supportive tone
-        5. Keep your response under 100 words
-        6. End with "(Source: Abortion Policy API)"
+        Provide a brief, accurate response about abortion access in {state_name}:
 
-        Example format: "Yes, abortion is available in [State]. The state allows abortions up to X weeks, with [any key restrictions]. Insurance coverage [brief details]."
+        1. Start with a direct answer: "Yes, abortion is available in {state_name}." or "No, abortion is not available in {state_name}."
+        2. IMPORTANT: If the data shows a "banned_after_weeks_since_LMP" value of 99 or "no specific limit", say there is "no specific gestational             limit" rather than using the number.
+        3. Include key policy information in 1-2 sentences. Do NOT include fictional details if data is missing.
+        4. Keep your response under 5 sentences total, focusing on the most important information.
+        5. Use simple, clear language without jargon.
+        6. End with "(Source: Abortion Policy API)" only if you used real data from the API.
+
+        Do NOT mention 99 weeks or any impossible medical values. A normal pregnancy is only about 40 weeks.
         """
 
         try:
             response_text = self.gpt_model.get_response(policy_prompt)
+
+            # Additional safety check: Replace any mention of "99 weeks" if it somehow slipped through
+            response_text = response_text.replace(
+                "99 weeks", "no specific gestational limit")
+
+            # Verify the response doesn't contain medically impossible values
+            if "week" in response_text:
+                # Check for any number before "week" that's greater than 40
+                week_numbers = re.findall(r'(\d+)\s*weeks?', response_text)
+                for num in week_numbers:
+                    if int(num) > 40:
+                        # Replace with a reasonable value
+                        response_text = response_text.replace(
+                            f"{num} weeks", "no specific gestational limit")
+
             return response_text
+
         except Exception as e:
             logger.error(f"Error formatting policy response: {str(e)}",
                          exc_info=True)
-            fallback = f"Abortions are {self._get_basic_policy_status(policy_data)} in {state_name}. For specific details, please contact a healthcare provider as policies may change. (Source: Abortion Policy API)"
+            # Fallback: Basic text without GPT
+            fallback = (
+                f"Abortion is available in {state_name}, but I'm having trouble providing specific details right now. "
+                f"Please check with a healthcare provider for current policy information as regulations can change. "
+                "(Source: Abortion Policy API)")
+
             return fallback

@@ -107,40 +107,71 @@ class CitationManager:
         if include_citation is True. Otherwise, return the text unchanged.
         """
         if include_citation and source_id in self.sources:
-            citation_text = f"(Source: {self.sources[source_id].source})"
-            if citation_text not in text:
-                return f"{text} {citation_text}"
+            # Only add citation if the text is substantial (not conversational)
+            if len(text.split()) > 25 and not self._is_conversational(text):
+                citation_text = f"(Source: {self.sources[source_id].source})"
+                if citation_text not in text:
+                    return f"{text} {citation_text}"
         return text
+
+    def _is_conversational(self, text: str) -> bool:
+        """
+        Determine if text is a conversational response (greeting, question, etc.)
+        rather than substantial information.
+        """
+        text_lower = text.lower()
+        conversation_indicators = [
+            "how can i help", "i'm doing well", "how are you",
+            "thanks for asking", "could you let me know", "feel free to ask",
+            "please let me know", "i'd like to provide",
+            "i understand this can be"
+        ]
+
+        # Check for question marks and short sentences
+        is_question = "?" in text and len(text.split()) < 20
+
+        # Check for conversation indicators
+        has_indicator = any(indicator in text_lower
+                            for indicator in conversation_indicators)
+
+        # Determine if it's conversational based on these factors
+        return is_question or has_indicator or len(text.split()) < 25
 
     def extract_citations_from_text(self, text: str) -> List[Citation]:
         """
         Parse and return a list of Citation objects from inline citation markers in the text.
         """
         citations = []
-        # Skip if text is too short or clearly conversational
-        if len(text.split()) < 15 or "take care" in text.lower():
+
+        # Skip if text is too short or conversational
+        if self._is_conversational(text) or len(text.split()) < 25:
             return []
+
         source_pattern = r'\(Source: ([^)]+)\)'
         source_matches = re.findall(source_pattern, text)
+
         for source in source_matches:
             for key, citation in self.sources.items():
                 if citation.source == source:
                     citations.append(citation)
+
         return citations
 
-    def format_response_with_citations(self, text: str, format_type: str = "html") -> Dict[str, Any]:
+    def format_response_with_citations(self,
+                                       text: str,
+                                       format_type: str = "html"
+                                       ) -> Dict[str, Any]:
         """
         Remove inline citation markers and return a formatted response that includes
         both the clean text and a list of formatted citations.
         """
         citations = self.extract_citations_from_text(text)
+
         # Remove citation markers from text
         clean_text = re.sub(r'\(Source: [^)]+\)', '', text).strip()
 
         # Skip citations for conversational exchanges or when no citations found
-        is_conversational = len(clean_text.split()) < 20 or "how can i help you" in clean_text.lower()
-
-        if is_conversational or not citations:
+        if self._is_conversational(clean_text) or not citations:
             return {
                 "text": clean_text,
                 "citations": [],
@@ -149,6 +180,7 @@ class CitationManager:
 
         unique_citations = []
         seen_sources = set()
+
         for citation in citations:
             if citation.source not in seen_sources:
                 unique_citations.append(citation)
