@@ -64,12 +64,10 @@ body {
 
 .header-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
-  width: 100%;
   padding: 0.5rem 1rem;
 }
 
@@ -278,28 +276,7 @@ body {
   gap: 0.5rem;
 }
 
-/* Quick exit button */
-.quick-exit-btn {
-  background-color: #ff3b30; /* Red for emergency exit */
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  z-index: 10;
-  margin-left: 0.5rem;
-}
-
-.quick-exit-btn:hover {
-  background-color: #cc2f27;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+/* Quick exit is now in the dropdown menu */
 
 /* Dropdown menu */
 .dropdown {
@@ -374,13 +351,7 @@ body {
   background-color: rgba(210, 210, 215, 0.3);
 }
 
-/* Responsive adjustments for header buttons */
-@media (max-width: 768px) {
-  .quick-exit-btn {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-}
+/* Responsive adjustments now handled in the dropdown */
 
 /* Feedback modal */
 .modal-overlay {
@@ -912,14 +883,7 @@ body {
   opacity: 0.8;
 }
 
-/* Quick exit button positioning */
-.quick-exit-btn {
-  position: absolute;
-  left: 1.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-}
+/* We now use the dropdown menu for all controls */
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
