@@ -1,0 +1,17 @@
+[
+  {
+    "timestamp": "2025-03-12T21:07:45.739555",
+    "duration_seconds": 300.0003881454468,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  }
+]

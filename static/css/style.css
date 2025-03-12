@@ -136,6 +136,213 @@ body {
   background-color: rgba(29, 29, 31, 0.8);
 }
 
+/* Feedback styles */
+.feedback-container {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+.feedback-container:hover {
+  opacity: 1;
+}
+
+.feedback-label {
+  margin-right: 0.5rem;
+  color: var(--apple-gray);
+}
+
+.feedback-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  color: var(--apple-gray);
+}
+
+.thumbs-up:hover {
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.thumbs-down:hover {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.feedback-thanks {
+  color: var(--apple-blue);
+  font-style: italic;
+}
+
+/* End session button */
+.end-session-btn {
+  position: absolute;
+  right: 1.5rem;
+  top: 1.5rem;
+  background-color: var(--apple-blue);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.end-session-btn:hover {
+  background-color: #005bbf;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Feedback modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+}
+
+.feedback-modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: modal-slide-in 0.3s ease-out;
+}
+
+[data-bs-theme="dark"] .feedback-modal {
+  background-color: #1d1d1f;
+  border: 1px solid #424245;
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--apple-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--apple-gray);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.feedback-rating, .feedback-comment {
+  margin-bottom: 1.5rem;
+}
+
+.rating-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rating-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem;
+  border: 1px solid var(--apple-border);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rating-btn:hover {
+  background-color: rgba(0, 113, 227, 0.1);
+}
+
+.rating-btn.selected {
+  background-color: var(--apple-blue);
+  color: white;
+  border-color: var(--apple-blue);
+}
+
+#feedbackComment {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--apple-border);
+  background-color: rgba(210, 210, 215, 0.3);
+  resize: vertical;
+}
+
+[data-bs-theme="dark"] #feedbackComment {
+  background-color: rgba(66, 66, 69, 0.6);
+  color: var(--apple-dark-text);
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--apple-border);
+  text-align: right;
+}
+
+.submit-feedback-btn {
+  background-color: var(--apple-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-feedback-btn:hover:not(:disabled) {
+  background-color: #005bbf;
+}
+
+.submit-feedback-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .form-control {
   border-radius: 18px;
   padding: 0.8rem 1.5rem;

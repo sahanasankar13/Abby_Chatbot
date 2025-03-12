@@ -3,6 +3,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
+    
+    // Add end session button to the header
+    const chatHeader = document.querySelector('.chat-header');
+    const endSessionBtn = document.createElement('button');
+    endSessionBtn.className = 'end-session-btn';
+    endSessionBtn.innerHTML = '<i class="fas fa-comment-alt"></i> End & Give Feedback';
+    endSessionBtn.addEventListener('click', openFeedbackModal);
+    chatHeader.appendChild(endSessionBtn);
 
     // Enable/disable send button based on input
     userInput.addEventListener('input', function() {
@@ -63,8 +71,43 @@ document.addEventListener('DOMContentLoaded', function() {
             const messageElement = document.createElement('div');
             messageElement.className = 'message bot-message';
             messageElement.innerHTML = message;
+            
+            // Generate a unique message ID if needed
+            const messageId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            messageElement.dataset.messageId = messageId;
 
             messageContainer.appendChild(messageElement);
+            
+            // Add feedback buttons
+            const feedbackContainer = document.createElement('div');
+            feedbackContainer.className = 'feedback-container';
+            
+            const feedbackLabel = document.createElement('span');
+            feedbackLabel.className = 'feedback-label';
+            feedbackLabel.textContent = 'Was this helpful?';
+            feedbackContainer.appendChild(feedbackLabel);
+            
+            const thumbsUpBtn = document.createElement('button');
+            thumbsUpBtn.className = 'feedback-btn thumbs-up';
+            thumbsUpBtn.innerHTML = '<i class="fas fa-thumbs-up"></i>';
+            thumbsUpBtn.title = 'This was helpful';
+            thumbsUpBtn.addEventListener('click', function() {
+                submitFeedback(messageId, 1);
+                feedbackContainer.innerHTML = '<span class="feedback-thanks">Thanks for your feedback!</span>';
+            });
+            feedbackContainer.appendChild(thumbsUpBtn);
+            
+            const thumbsDownBtn = document.createElement('button');
+            thumbsDownBtn.className = 'feedback-btn thumbs-down';
+            thumbsDownBtn.innerHTML = '<i class="fas fa-thumbs-down"></i>';
+            thumbsDownBtn.title = 'This was not helpful';
+            thumbsDownBtn.addEventListener('click', function() {
+                submitFeedback(messageId, -1);
+                feedbackContainer.innerHTML = '<span class="feedback-thanks">Thanks for your feedback!</span>';
+            });
+            feedbackContainer.appendChild(thumbsDownBtn);
+            
+            messageContainer.appendChild(feedbackContainer);
 
 
             if ((message.length < 100 && !message.includes("abortion")) ||
@@ -303,4 +346,132 @@ document.addEventListener('DOMContentLoaded', function() {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }, 300);
     });
+    
+    // Feedback handling functions
+    function submitFeedback(messageId, rating, comment = null) {
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                rating: rating,
+                comment: comment
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Feedback submitted successfully:', data);
+            // Track metrics for feedback
+            if (typeof window.trackMetric === 'function') {
+                window.trackMetric('feedback_submitted', { rating: rating });
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting feedback:', error);
+        });
+    }
+    
+    function openFeedbackModal() {
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        
+        // Create modal container
+        const modalContainer = document.createElement('div');
+        modalContainer.className = 'feedback-modal';
+        
+        // Create modal content
+        modalContainer.innerHTML = `
+            <div class="modal-header">
+                <h3>Session Feedback</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Thank you for using Abby. Your feedback helps us improve.</p>
+                <div class="feedback-rating">
+                    <p>How would you rate your overall experience?</p>
+                    <div class="rating-buttons">
+                        <button class="rating-btn" data-rating="5">Excellent</button>
+                        <button class="rating-btn" data-rating="4">Good</button>
+                        <button class="rating-btn" data-rating="3">Okay</button>
+                        <button class="rating-btn" data-rating="2">Poor</button>
+                        <button class="rating-btn" data-rating="1">Bad</button>
+                    </div>
+                </div>
+                <div class="feedback-comment">
+                    <p>Do you have any additional comments or suggestions?</p>
+                    <textarea id="feedbackComment" placeholder="Your feedback helps us improve (optional)"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="submit-feedback-btn" disabled>Submit & End Session</button>
+            </div>
+        `;
+        
+        // Add modal to body
+        modalOverlay.appendChild(modalContainer);
+        document.body.appendChild(modalOverlay);
+        
+        // Handle close button
+        const closeBtn = modalContainer.querySelector('.close-modal');
+        closeBtn.addEventListener('click', () => {
+            document.body.removeChild(modalOverlay);
+        });
+        
+        // Handle rating selection
+        const ratingBtns = modalContainer.querySelectorAll('.rating-btn');
+        const submitBtn = modalContainer.querySelector('.submit-feedback-btn');
+        let selectedRating = null;
+        
+        ratingBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Clear previous selection
+                ratingBtns.forEach(b => b.classList.remove('selected'));
+                // Add selected class to clicked button
+                btn.classList.add('selected');
+                // Store rating value
+                selectedRating = parseInt(btn.dataset.rating);
+                // Enable submit button
+                submitBtn.disabled = false;
+            });
+        });
+        
+        // Handle submit button
+        submitBtn.addEventListener('click', () => {
+            if (selectedRating !== null) {
+                const comment = document.getElementById('feedbackComment').value.trim();
+                // Convert rating scale (1-5) to thumbs format (1 for positive, -1 for negative)
+                const thumbsRating = selectedRating >= 3 ? 1 : -1;
+                
+                // Submit session feedback with a special message ID for session feedback
+                submitFeedback('session_feedback_' + Date.now(), thumbsRating, comment);
+                
+                // Thank user and reset chat
+                document.body.removeChild(modalOverlay);
+                resetChat();
+            }
+        });
+    }
+    
+    function resetChat() {
+        // Clear chat messages except for the first welcome message
+        while (chatMessages.children.length > 1) {
+            chatMessages.removeChild(chatMessages.lastChild);
+        }
+        
+        // If all messages were removed, add welcome message back
+        if (chatMessages.children.length === 0) {
+            addBotMessage("Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?");
+        }
+        
+        // Show session ended message
+        addBotMessage("Your session has been ended and your feedback has been submitted. Thank you for using Abby! If you have more questions, feel free to start a new conversation.");
+    }
 });

@@ -24,6 +24,6 @@ for package in nltk_packages:
 from app import app
 
 if __name__ == "__main__":
-    # Try alternative port if 5000 is in use
-    port = int(os.environ.get("PORT", 8080))
+    # Use port 5000 as per Replit guidelines
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)

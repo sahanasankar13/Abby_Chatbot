@@ -1,9 +1,13 @@
 import os
+import time
 import logging
+from typing import List, Dict, Any, Optional
+
 from chatbot.bert_rag import BertRAGModel
 from chatbot.gpt_integration import GPTModel
 from chatbot.policy_api import PolicyAPI
 from chatbot.response_evaluator import ResponseEvaluator
+from utils.metrics import increment_counter, record_time, record_api_call
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +306,12 @@ class BaselineModel:
             str: The model's response after safety and quality evaluation
         """
         try:
+            # Start timing for performance metrics
+            start_time = time.time()
+            
+            # Track question category for analytics
+            increment_counter(f"questions_{category}")
+            
             # Get initial response based on category
             initial_response = ""
             source_info = {}
@@ -367,6 +377,15 @@ class BaselineModel:
             # Log if the response was improved
             if final_response != initial_response:
                 logger.info("Response was improved by the evaluator")
+            
+            # Record timing metrics for this request
+            elapsed_time = time.time() - start_time
+            record_time(f"response_time_{category}", elapsed_time)
+            
+            # Track total tokens for OpenAI-based responses (approximation)
+            if category in ['conversational', 'policy']:
+                approx_tokens = len(question.split()) + len(final_response.split())
+                record_api_call("openai", approx_tokens)
             
             return final_response
 

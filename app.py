@@ -102,6 +102,11 @@ def submit_feedback():
         
         # Store feedback using the feedback manager
         from utils.feedback_manager import FeedbackManager
+        from utils.metrics import record_feedback
+        
+        # Track feedback in metrics
+        record_feedback(positive=(rating > 0))
+        
         feedback_manager = FeedbackManager()
         success = feedback_manager.add_feedback(message_id, rating, comment)
         

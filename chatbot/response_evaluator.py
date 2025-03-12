@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Any, Tuple
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from openai import OpenAI
+from utils.metrics import increment_counter, record_time, record_api_call
 
 logger = logging.getLogger(__name__)
 
@@ -630,7 +631,7 @@ class ResponseEvaluator:
     
     def _log_evaluation(self, question: str, response: str, evaluation: Dict[str, Any]) -> None:
         """
-        Log evaluation results to file for analysis
+        Log evaluation results to file for analysis and record metrics
         
         Args:
             question (str): The original question
@@ -648,6 +649,49 @@ class ResponseEvaluator:
             # Write to the JSON log file
             with open('evaluation_logs.json', 'a') as f:
                 f.write(json.dumps(log_entry) + "\n")
+            
+            # Record metrics for AWS CloudWatch
+            score = evaluation.get("score", 0)
+            
+            # Track overall evaluation counts
+            increment_counter("evaluations_total")
+            
+            # Track if response was improved
+            if evaluation.get("improved_response", "") != response:
+                increment_counter("evaluations_improved")
+            
+            # Track safety issues
+            safety = evaluation.get("safety_check", {})
+            if safety and not safety.get("is_safe", True):
+                increment_counter("safety_issues")
+                
+                # Track specific types of safety issues
+                issues = safety.get("issues", [])
+                for issue in issues:
+                    if isinstance(issue, dict) and "type" in issue:
+                        increment_counter(f"safety_issue_{issue['type']}")
+                    elif isinstance(issue, str):
+                        # Extract a category from the issue string
+                        if "harmful" in issue.lower():
+                            increment_counter("safety_issue_harmful")
+                        elif "misleading" in issue.lower():
+                            increment_counter("safety_issue_misleading")
+                        else:
+                            increment_counter("safety_issue_other")
+            
+            # Track quality scores in ranges
+            if score <= 3:
+                increment_counter("quality_score_low")
+            elif score <= 6:
+                increment_counter("quality_score_medium")
+            else:
+                increment_counter("quality_score_high")
+                
+            # Track OpenAI token usage if this was an OpenAI evaluation
+            if self.evaluation_model in ["openai", "both"]:
+                # Rough estimate of tokens used in evaluation
+                approx_tokens = (len(question.split()) + len(response.split())) * 2
+                record_api_call("openai_evaluation", approx_tokens)
                 
         except Exception as e:
             logger.error(f"Error logging evaluation: {str(e)}", exc_info=True)
