@@ -115,10 +115,10 @@ class CitationManager:
     def extract_citations_from_text(self, text: str) -> List[Citation]:
         """
         Extract citations from text and return structured citation data.
-        
+
         Args:
             text (str): Text with citation markers
-            
+
         Returns:
             List[Citation]: List of extracted citations
         """
@@ -131,11 +131,11 @@ class CitationManager:
         # Check for explicit [SOURCE:source_id] pattern (our primary citation method)
         source_pattern = r'\[SOURCE:([\w_]+)\]'
         source_matches = re.findall(source_pattern, text)
-        
+
         for source_id in source_matches:
             if source_id in self.SOURCES:
                 citations.append(self.SOURCES[source_id])
-        
+
         # Also check for older [cite:] pattern for backwards compatibility
         if "[cite:" in text:
             pattern = r'\[cite:(.*?)\]'
@@ -145,7 +145,7 @@ class CitationManager:
                 citation_parts = citation.split('|')
                 if len(citation_parts) >= 1:
                     source_id = citation_parts[0].strip()
-                    
+
                     if source_id in self.SOURCES:
                         citations.append(self.SOURCES[source_id])
 
@@ -161,7 +161,7 @@ class CitationManager:
         # add appropriate citation sources
         if len(citations) == 0:
             text_lower = text.lower()
-            
+
             # Don't add the abortion policy API citation if the text 
             # indicates we had trouble accessing the API data
             if "having trouble" in text_lower or "couldn't retrieve" in text_lower:
@@ -171,12 +171,12 @@ class CitationManager:
             elif any(term in text_lower for term in ["abortion", "policy", "legal", "law", "state", "legislation"]):
                 if "abortion_policy_api" in self.SOURCES:
                     citations.append(self.SOURCES["abortion_policy_api"])
-            
+
             # For general reproductive health information
             if any(term in text_lower for term in ["health", "pregnancy", "birth control", "contraception", "menstrual"]):
                 if "planned_parenthood" in self.SOURCES:
                     citations.append(self.SOURCES["planned_parenthood"])
-            
+
         # If still no citations, add default sources as fallback
         if len(citations) == 0 and hasattr(self, 'default_sources'):
             for source_id in self.default_sources:
@@ -203,7 +203,7 @@ class CitationManager:
         clean_text = re.sub(r'\[SOURCE:[\w_]+\]', '', text)
         clean_text = re.sub(r'\[cite:.*?\]', '', clean_text)
         clean_text = re.sub(r'\[API:.*?\]', '', clean_text)
-        
+
         # Make sure we don't have duplicate sources
         unique_citations = []
         seen_sources = set()
@@ -211,7 +211,7 @@ class CitationManager:
             if citation.source not in seen_sources:
                 unique_citations.append(citation)
                 seen_sources.add(citation.source)
-        
+
         citations = unique_citations
 
         # Format citations based on format type - don't include direct source text in answer
@@ -221,29 +221,74 @@ class CitationManager:
             formatted_citations = [c.to_markdown() for c in citations]
 
         logger.debug(f"Formatting response with {len(citations)} citations")
-        
+
         return {
             "text": clean_text.strip(),
             "citations": formatted_citations,
             "citation_objects": [c.to_dict() for c in citations]
         }
 
-    def add_citation_to_text(self, text: str, source_id: str) -> str:
+    def add_citation_to_text(self, text: str, source_id: Optional[str] = None) -> str:
         """
-        Add a citation marker to text
+        Add citation to text if needed, but only for Planned Parenthood or Abortion Policy API.
 
         Args:
-            text (str): Original text
-            source_id (str): Source identifier
+            text (str): Text to add citation to
+            source_id (str, optional): Explicit source ID to use
 
         Returns:
-            str: Text with citation marker added
+            str: Text with citation added
         """
-        if source_id in self.SOURCES:
-            return f"{text} [SOURCE:{source_id}]"
-        else:
-            logger.warning(f"Unknown citation source: {source_id}")
+        try:
+            # If text already has citation markers, don't add more
+            if "[SOURCE:" in text or "[cite:" in text or "[API:" in text:
+                logger.debug(f"Text already has citation markers, extracting citations")
+                citations = self.extract_citations_from_text(text)
+
+                # Remove any citation markers from the text for clean display
+                text = self._remove_citation_markers(text)
+
+                return self._format_text_with_citations(text, citations)
+
+            # If explicit source ID provided, only use it if it's one of our approved sources
+            if source_id and source_id in self.SOURCES:
+                if source_id in ["planned_parenthood", "abortion_policy_api"]:
+                    logger.debug(f"Using explicit source ID: {source_id}")
+                    return self._format_text_with_citations(text, [self.SOURCES[source_id]])
+                else:
+                    # Don't add citation for non-approved sources
+                    return text
+
+            # Otherwise extract citations from the text based on content
+            # This will now only get explicit source mentions due to our changes
+            citations = self.extract_citations_from_text(text)
+
+            logger.debug(f"Formatting response with {len(citations)} citations")
+            return self._format_text_with_citations(text, citations)
+        except Exception as e:
+            logger.error(f"Error adding citation to text: {str(e)}", exc_info=True)
             return text
+
+    def _remove_citation_markers(self, text: str) -> str:
+        """Helper function to remove citation markers from text."""
+        clean_text = re.sub(r'\[SOURCE:[\w_]+\]', '', text)
+        clean_text = re.sub(r'\[cite:.*?\]', '', clean_text)
+        clean_text = re.sub(r'\[API:.*?\]', '', clean_text)
+        return clean_text
+
+    def _format_text_with_citations(self, text: str, citations: List[Citation]) -> str:
+        """Helper function to format text with citations."""
+        # Make sure we don't have duplicate sources
+        unique_citations = []
+        seen_sources = set()
+        for citation in citations:
+            if citation.source not in seen_sources:
+                unique_citations.append(citation)
+                seen_sources.add(citation.source)
+        citations = unique_citations
+        formatted_citations = [c.to_html() for c in citations]
+        return f"{text}<br><br>{''.join(formatted_citations)}"
+
 
 def quick_exit():
     webbrowser.open("https://www.google.com")
