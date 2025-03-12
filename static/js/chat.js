@@ -11,15 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerMenu = document.createElement('div');
     headerMenu.className = 'header-menu';
 
-    // Add quick exit button with emergency exit styling
-    const quickExitBtn = document.createElement('button');
-    quickExitBtn.className = 'quick-exit-btn';
-    quickExitBtn.innerHTML = '<i class="fas fa-times-circle"></i> Quick Exit';
-    quickExitBtn.title = 'Immediately clear this page';
-    quickExitBtn.addEventListener('click', () => {
-        // Redirect to a neutral site immediately
-        window.location.href = 'https://www.google.com';
-    });
+    // We don't need to create a Quick Exit button here since it's already in the HTML
 
     // Add feedback button in dropdown menu
     const menuButton = document.createElement('button');
@@ -74,8 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add quick exit to the left side of header
-    chatHeader.appendChild(quickExitBtn);
+    // Quick exit button is already in the HTML
 
     // Add dropdown menu to the right side
     headerMenu.appendChild(dropdownContainer);

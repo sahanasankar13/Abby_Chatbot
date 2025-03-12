@@ -56,16 +56,21 @@ body {
   -webkit-backdrop-filter: blur(10px);
   background-color: rgba(245, 245, 247, 0.8);
   border-bottom: 1px solid var(--apple-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .header-controls {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: auto;
-  gap: 1.5rem;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 0.5rem 1rem;
 }
 
 [data-bs-theme="dark"] .chat-header {
@@ -202,9 +207,6 @@ body {
 
 /* Quick exit button */
 .quick-exit-btn {
-  position: absolute;
-  left: 1.5rem;
-  top: 1.5rem;
   background-color: #ff3b30; /* Red for emergency exit */
   color: white;
   border: none;
@@ -217,6 +219,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   z-index: 10;
+  margin-left: 0.5rem;
 }
 
 .quick-exit-btn:hover {
