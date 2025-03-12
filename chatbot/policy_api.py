@@ -206,11 +206,8 @@ class PolicyAPI:
         if not state_code and conversation_history:
             logger.info("No state found in current question, checking conversation history")
             
-            # Directly check for iowa or other state names in simple form
-            simple_states = {
-                "iowa": "IA", "california": "CA", "texas": "TX", "new york": "NY", 
-                "florida": "FL", "illinois": "IL", "ohio": "OH"
-            }
+            # Use the full state dictionary instead of a limited set
+            all_states = state_patterns.copy()
             
             # Iterate through conversation history from newest to oldest
             for message in reversed(conversation_history):
@@ -218,8 +215,8 @@ class PolicyAPI:
                     msg = message['message'].lower()
                     logger.info(f"Checking history message: '{msg}'")
                     
-                    # First try simple direct match
-                    for state_name, code in simple_states.items():
+                    # First try direct match with all states
+                    for state_name, code in all_states.items():
                         if state_name in msg:
                             logger.info(f"Direct match! Found state {state_name} in message")
                             state_code = code

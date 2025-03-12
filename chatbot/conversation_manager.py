@@ -192,6 +192,11 @@ class ConversationManager:
                     if potential_location in states:
                         logger.info(f"Found location in message using phrase '{phrase}': {potential_location}")
                         return potential_location
+                    # Try more advanced matching for partial matches
+                    for state in states:
+                        if potential_location in state or state in potential_location:
+                            logger.info(f"Found partial state match: '{potential_location}' matches '{state}'")
+                            return state
         
         # Check if the message contains "there" or similar referential terms and look for states in history
         referential_terms = ["there", "that state", "this state", "that place"]

@@ -82,16 +82,59 @@ class GPTModel:
             logger.error(f"Error getting GPT response: {str(e)}", exc_info=True)
             return "I'm sorry, I'm having trouble connecting to my knowledge base right now. Please try again later."
 
-    def enhance_response(self, question, rag_response):
+    def detect_policy_question(self, question, conversation_history=None):
         """
-        Enhance a RAG response with GPT to make it more conversational and complete
+        Use GPT to detect if a question is about abortion policy/access in a specific state
 
         Args:
             question (str): User's question
-            rag_response (str): Response from the RAG model
+            conversation_history (list, optional): Previous conversation messages
 
         Returns:
-            str: Enhanced response
+            bool: True if the question is about abortion policy, False otherwise
+        """
+        try:
+            # If we've already determined this is a policy question, don't waste tokens
+            if "abortion" in question.lower() and any(term in question.lower() for term in ["legal", "allowed", "can i get", "access"]):
+                return True
+
+            # For more subtle questions, especially those with referential terms, use GPT
+            history_context = ""
+            if conversation_history:
+                # Get the last few user messages for context
+                user_messages = [msg['message'] for msg in conversation_history if msg['sender'] == 'user'][-3:]
+                if user_messages:
+                    history_context = "Previous messages:\n" + "\n".join(user_messages)
+
+            prompt = f"""
+            Analyze this question to determine if it's about abortion access, legality, or policy in a specific state.
+            Return ONLY "yes" if it's asking about state-specific abortion policy/access, or "no" otherwise.
+
+            {history_context}
+
+            Question: {question}
+
+            Is this about state-specific abortion policy/access (yes/no):
+            """
+
+            response = self.get_response(prompt).strip().lower()
+            return "yes" in response
+
+        except Exception as e:
+            logger.error(f"Error detecting policy question: {str(e)}")
+            # Default to False on error
+            return False
+
+    def enhance_response(self, question, rag_response):
+        """
+        Enhance a RAG response using GPT for better quality and empathy
+
+        Args:
+            question (str): User's question
+            rag_response (str): Response from the RAG system
+
+        Returns:
+            str: Enhanced response with better quality and empathy
         """
         try:
             enhancement_prompt = f"""
@@ -237,7 +280,7 @@ class GPTModel:
             response = self.client.chat.completions.create(
                 messages=messages,
                 model=self.model,
-                max_tokens=500, #Added max_tokens here.  Assumed it was missing.
+                max_tokens=500,
                 temperature=temperature
             )
 

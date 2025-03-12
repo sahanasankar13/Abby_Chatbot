@@ -86,6 +86,11 @@ class BaselineModel:
             logger.info(f"Special case check: Question about abortion with history: {question_lower}")
             access_indicators = ['get', 'have', 'legal', 'available', 'there', 'allowed', 'can i']
 
+            # Special case for referential questions about a location mentioned before
+            if ('there' in question_lower or 'that state' in question_lower) and any(indicator in question_lower for indicator in access_indicators):
+                logger.info("Detected referential location question - treating as policy question")
+                return 'policy'
+
             # If question contains "abortion" and any access indicators, check for state info in history
             if any(indicator in question_lower for indicator in access_indicators):
                 logger.info(f"Found access indicator in question: {[ind for ind in access_indicators if ind in question_lower]}")
@@ -104,13 +109,17 @@ class BaselineModel:
                                 state_found = True
                                 return 'policy'
 
-                        # Check for "I live in" patterns
-                        if any(f"i live in {state}" in msg_lower for state in states) or \
-                           any(f"i'm in {state}" in msg_lower for state in states) or \
-                           any(f"i am in {state}" in msg_lower for state in states):
-                            logger.info(f"Found 'I live in state' pattern in history")
-                            return 'policy'
-
+                        # Check for "I live in" patterns with any state
+                        location_phrases = ["i live in", "i'm in", "i am in", "i'm from", "i am from"]
+                        for phrase in location_phrases:
+                            if phrase in msg_lower:
+                                location_part = msg_lower.split(phrase)[1].strip()
+                                # Look for a state name in this part
+                                for state in states:
+                                    if state in location_part:
+                                        logger.info(f"Found location context with phrase '{phrase}': {state}")
+                                        return 'policy'
+                                        
                         # More general check for state mentions
                         for state in states:
                             if state in msg_lower:
@@ -124,6 +133,15 @@ class BaselineModel:
         if any(indicator in question_lower for indicator in information_indicators):
             return 'knowledge'
 
+        # Use GPT to detect more complex policy questions that our rules might miss
+        try:
+            if ('abortion' in question_lower or 'pregnancy' in question_lower):
+                if self.gpt_model.detect_policy_question(question, conversation_history):
+                    logger.info("GPT detected policy question")
+                    return 'policy'
+        except Exception as e:
+            logger.error(f"Error using GPT for policy detection: {str(e)}")
+            
         # Default to conversational
         return 'conversational'
 
