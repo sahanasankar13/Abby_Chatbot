@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 graphicTitle.textContent = graphic.title;
                 
                 const graphicDesc = document.createElement('div');
-                graphicDesc.className = 'graphic-description';
+                graphicDesc.className = 'graphic-description';raphicDesc.className = 'graphic-description';
                 graphicDesc.textContent = graphic.description;
                 
                 const svgContainer = document.createElement('div');
@@ -290,4 +290,253 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Focus input field on page load
     userInput.focus();
+});
+document.addEventListener('DOMContentLoaded', function() {
+    // Chat container and input elements
+    const chatContainer = document.querySelector('.messages-container');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    
+    // Theme toggle functionality
+    const themeToggle = document.querySelector('.theme-toggle');
+    themeToggle.addEventListener('click', function() {
+        document.documentElement.setAttribute('data-bs-theme', 
+            document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
+        
+        // Update icon
+        const icon = this.querySelector('i');
+        if (icon.classList.contains('fa-moon')) {
+            icon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            icon.classList.replace('fa-sun', 'fa-moon');
+        }
+    });
+    
+    // Quick exit button (redirect to Google)
+    const quickExitBtn = document.querySelector('.quick-exit-btn');
+    if (quickExitBtn) {
+        quickExitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'https://www.google.com';
+        });
+    }
+    
+    // End session button
+    const endSessionBtn = document.getElementById('end-session');
+    if (endSessionBtn) {
+        endSessionBtn.addEventListener('click', function() {
+            // Clear chat history via API
+            fetch('/api/clear-history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('History cleared successfully:', data);
+                
+                // Add end session message
+                const botMessage = {
+                    text: "Your session has been ended and history has been cleared. If you have more questions in the future, feel free to ask!",
+                    sender: 'bot'
+                };
+                
+                // Add the message to UI
+                appendMessage(botMessage.text, botMessage.sender);
+                
+                // Clear the input field
+                userInput.value = '';
+                
+                // Disable input temporarily to prevent sending new messages right after ending
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                
+                // Re-enable after a short delay
+                setTimeout(() => {
+                    userInput.disabled = false;
+                    sendButton.disabled = false;
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error clearing history:', error);
+            });
+        });
+    }
+    
+    // Send message when button is clicked or Enter is pressed
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Function to send user message and get response
+    function sendMessage() {
+        const message = userInput.value.trim();
+        if (message) {
+            // Display user message
+            appendMessage(message, 'user');
+            
+            // Clear input field
+            userInput.value = '';
+            
+            // Display typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
+            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+            chatContainer.appendChild(typingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Send request to server
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove typing indicator
+                document.querySelector('.typing-indicator').remove();
+                
+                // Handle response
+                if (data.error) {
+                    appendMessage('Sorry, there was an error processing your request. Please try again.', 'bot');
+                } else {
+                    appendMessage(data.response, 'bot', data.message_id, data.citations, data.graphics);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Remove typing indicator
+                if (document.querySelector('.typing-indicator')) {
+                    document.querySelector('.typing-indicator').remove();
+                }
+                appendMessage('Sorry, there was an error connecting to the server. Please try again.', 'bot');
+            });
+        }
+    }
+    
+    // Function to append message to chat
+    function appendMessage(text, sender, messageId = null, citations = [], graphics = []) {
+        // Create message container
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `${sender}-message message`;
+        
+        if (messageId) {
+            messageContainer.dataset.messageId = messageId;
+        }
+        
+        // Create message content
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        messageContent.innerHTML = formatMessage(text);
+        messageContainer.appendChild(messageContent);
+        
+        // Add citations if available
+        if (citations && citations.length > 0) {
+            const citationsContainer = document.createElement('div');
+            citationsContainer.className = 'citations-container';
+            
+            const citationsTitle = document.createElement('div');
+            citationsTitle.className = 'citations-title';
+            citationsTitle.textContent = 'Sources:';
+            
+            const citationsList = document.createElement('div');
+            citationsList.className = 'citations-list';
+            
+            citations.forEach(citation => {
+                const citationItem = document.createElement('div');
+                citationItem.className = 'citation';
+                citationItem.innerHTML = citation;
+                citationsList.appendChild(citationItem);
+            });
+            
+            citationsContainer.appendChild(citationsTitle);
+            citationsContainer.appendChild(citationsList);
+            messageContainer.appendChild(citationsContainer);
+        }
+        
+        // Add feedback options for bot messages
+        if (sender === 'bot' && messageId) {
+            const feedbackContainer = document.createElement('div');
+            feedbackContainer.className = 'feedback-container';
+            
+            const feedbackText = document.createElement('div');
+            feedbackText.className = 'feedback-text';
+            feedbackText.textContent = 'Was this helpful?';
+            
+            const thumbsUp = document.createElement('button');
+            thumbsUp.className = 'feedback-button thumbs-up';
+            thumbsUp.innerHTML = '<i class="fas fa-thumbs-up"></i>';
+            thumbsUp.addEventListener('click', function() {
+                submitFeedback(messageId, 1);
+                feedbackContainer.innerHTML = '<div class="feedback-thank-you">Thanks for your feedback!</div>';
+                setTimeout(() => {
+                    feedbackContainer.style.opacity = '0';
+                }, 2000);
+            });
+            
+            const thumbsDown = document.createElement('button');
+            thumbsDown.className = 'feedback-button thumbs-down';
+            thumbsDown.innerHTML = '<i class="fas fa-thumbs-down"></i>';
+            thumbsDown.addEventListener('click', function() {
+                submitFeedback(messageId, -1);
+                feedbackContainer.innerHTML = '<div class="feedback-thank-you">Thanks for your feedback!</div>';
+                setTimeout(() => {
+                    feedbackContainer.style.opacity = '0';
+                }, 2000);
+            });
+            
+            feedbackContainer.appendChild(feedbackText);
+            feedbackContainer.appendChild(thumbsUp);
+            feedbackContainer.appendChild(thumbsDown);
+            messageContainer.appendChild(feedbackContainer);
+        }
+        
+        // Add to chat container
+        chatContainer.appendChild(messageContainer);
+        
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Function to submit feedback
+    function submitFeedback(messageId, rating) {
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                rating: rating
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Feedback submitted successfully:', data);
+        })
+        .catch(error => {
+            console.error('Error submitting feedback:', error);
+        });
+    }
+    
+    // Function to format message text with markdown-like syntax
+    function formatMessage(text) {
+        // Replace URLs with clickable links
+        let formattedText = text.replace(
+            /(https?:\/\/[^\s]+)/g, 
+            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+        );
+        
+        // Replace line breaks with <br>
+        formattedText = formattedText.replace(/\n/g, '<br>');
+        
+        return formattedText;
+    }
 });
