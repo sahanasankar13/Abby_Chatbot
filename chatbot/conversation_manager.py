@@ -43,13 +43,25 @@ class ConversationManager:
             abortion_indicators = [
                 "need an abortion", "want an abortion", "get an abortion", 
                 "abortion there", "abort", "terminate", "terminate pregnancy", 
-                "pregnancy termination", "can i get an abortion"
+                "pregnancy termination", "can i get an abortion", "abortion in",
+                "where can i get an abortion", "where to get an abortion"
             ]
             if any(indicator in message_lower for indicator in abortion_indicators):
                 logger.info("Detected abortion request, treating as policy question with state context")
                 
-                # Extract location context if available
+                # Extract location context with enhanced search through history
                 location_context = self._extract_location(message, self.conversation_history)
+                
+                # If not found, do a more comprehensive search in history
+                if not location_context:
+                    for entry in reversed(self.conversation_history):
+                        if entry['sender'] == 'user':
+                            potential_location = self._extract_location(entry['message'], [])
+                            if potential_location:
+                                location_context = potential_location
+                                logger.info(f"Found location in history message: {location_context}")
+                                break
+                
                 logger.info(f"Location context for abortion question: {location_context}")
                 
                 # If we have a location context, provide direct policy information
@@ -64,7 +76,11 @@ class ConversationManager:
                         force_category='policy'
                     )
                     
-                    # Format with citations
+                    # Format with citations based on whether we got real policy data
+                    if "I'm sorry, I'm having trouble providing policy information" in response:
+                        # Only use Planned Parenthood as source if we didn't get policy data
+                        response = self.citation_manager.add_citation_to_text(response, 'planned_parenthood')
+                    
                     formatted = self.citation_manager.format_response_with_citations(response)
                     self.add_to_history('bot', formatted['text'])
                     return formatted
@@ -73,7 +89,7 @@ class ConversationManager:
                     logger.info("No location context found, providing empathetic response asking for location")
                     empathetic_response = (
                         "I understand this can be a difficult and personal situation, and I'm here to support you. "
-                        "To provide accurate information about abortion access, I'd need to know which state you're in. "
+                        "To provide accurate information about abortion access, I'd need to know which state you're asking about. "
                         "Different states have different laws and regulations. Could you let me know which state you're asking about?"
                     )
                     
@@ -170,12 +186,17 @@ class ConversationManager:
         }
         
         # Check current message for location
-        message_lower = message.lower()
+        message_lower = message.lower().strip()
         location_phrases = ["i live in", "i'm in", "i am in", "i'm from", "i am from"]
         
-        # First check for direct state mentions in current message
+        # First check if message is a direct state name
+        if message_lower in states:
+            logger.info(f"Message is a direct state name: {message_lower}")
+            return message_lower
+            
+        # Check for direct state mentions in current message
         for state in states:
-            if state in message_lower:
+            if f" {state} " in f" {message_lower} " or message_lower.startswith(f"{state} ") or message_lower.endswith(f" {state}"):
                 logger.info(f"Found direct state mention in message: {state}")
                 return state
         
@@ -199,7 +220,7 @@ class ConversationManager:
                             return state
         
         # Check if the message contains "there" or similar referential terms and look for states in history
-        referential_terms = ["there", "that state", "this state", "that place"]
+        referential_terms = ["there", "that state", "this state", "that place", "it", "here"]
         if any(term in message_lower for term in referential_terms):
             logger.info("Message contains referential location term, checking history for most recent state mention")
             
@@ -210,7 +231,7 @@ class ConversationManager:
                     
                     # Direct state mentions in history
                     for state in states:
-                        if state in entry_lower:
+                        if f" {state} " in f" {entry_lower} " or entry_lower.startswith(f"{state} ") or entry_lower.endswith(f" {state}"):
                             logger.info(f"Found state '{state}' in history for referential context")
                             return state
                     
@@ -232,7 +253,7 @@ class ConversationManager:
                 
                 # Direct state mentions
                 for state in states:
-                    if state in entry_lower:
+                    if f" {state} " in f" {entry_lower} " or entry_lower.startswith(f"{state} ") or entry_lower.endswith(f" {state}"):
                         logger.info(f"Found state mention in history: {state}")
                         return state
                 

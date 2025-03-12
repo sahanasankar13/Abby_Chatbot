@@ -171,7 +171,7 @@ class PolicyAPI:
             # Check if we got any data at all
             if not policy_data.get("success") and not any(endpoint for endpoint in policy_data["endpoints"].values() if "error" not in endpoint):
                 logger.error("No policy data retrieved from any endpoint")
-                return {"error": "Failed to retrieve policy data from any endpoint"}
+                return {"error": "Failed to retrieve policy data from any endpoint", "state_attempted": state_code}
                 
             return policy_data
                 
@@ -243,6 +243,11 @@ class PolicyAPI:
         
         if "error" in policy_data:
             logger.warning(f"Error in policy data: {policy_data['error']}")
+            if "state_attempted" in policy_data:
+                state_name = state_names.get(policy_data["state_attempted"].upper(), policy_data["state_attempted"])
+                logger.info(f"Failed to get data for {state_name}, returning state-specific general information")
+                # Return a tailored response for the state that doesn't cite the API
+                return f"I'm sorry, I'm having trouble accessing specific policy information for {state_name} at the moment. Abortion policies vary by state and may change. For the most accurate and up-to-date information about abortion access in {state_name}, I recommend contacting Planned Parenthood directly or visiting their website. They can provide current information about options available to you in {state_name}."
             return self._get_general_policy_information(question)
         
         # Format the policy data into a user-friendly response

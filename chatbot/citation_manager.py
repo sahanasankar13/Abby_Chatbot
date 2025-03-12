@@ -162,8 +162,13 @@ class CitationManager:
         if len(citations) == 0:
             text_lower = text.lower()
             
+            # Don't add the abortion policy API citation if the text 
+            # indicates we had trouble accessing the API data
+            if "having trouble" in text_lower or "couldn't retrieve" in text_lower:
+                if "planned_parenthood" in self.SOURCES:
+                    citations.append(self.SOURCES["planned_parenthood"])
             # For abortion policy related information
-            if any(term in text_lower for term in ["abortion", "policy", "legal", "law", "state", "legislation"]):
+            elif any(term in text_lower for term in ["abortion", "policy", "legal", "law", "state", "legislation"]):
                 if "abortion_policy_api" in self.SOURCES:
                     citations.append(self.SOURCES["abortion_policy_api"])
             
