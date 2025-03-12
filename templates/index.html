@@ -9,13 +9,28 @@
                     <i class="fas fa-times-circle"></i> Quick Exit
                 </a>
             </div>
-            <div>
-                <button class="theme-toggle" title="Toggle dark/light mode">
-                    <i class="fas fa-moon"></i>
+            <div class="dropdown">
+                <button class="btn btn-link dropdown-toggle menu-toggle" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog"></i>
                 </button>
-                <a href="{{ url_for('view_metrics') }}" class="text-muted small admin-link">
-                    <i class="bi bi-gear"></i> Admin
-                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
+                    <li>
+                        <button class="dropdown-item theme-toggle" type="button">
+                            <i class="fas fa-moon me-2"></i> <span class="theme-text">Dark Mode</span>
+                        </button>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('view_metrics') }}">
+                            <i class="bi bi-graph-up me-2"></i> View Metrics
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{{ url_for('view_feedback') }}">
+                            <i class="bi bi-chat-square-text me-2"></i> View Feedback
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
         <h1>Abby</h1>
