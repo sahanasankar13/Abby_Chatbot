@@ -1,45 +1,84 @@
-# Gunicorn configuration file
 import multiprocessing
+import os
+import sys
+import logging
+
+# Logging setup
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s [%(process)d] [%(levelname)s] %(message)s',
+    '%Y-%m-%d %H:%M:%S %z'
+))
+logger.addHandler(handler)
 
 # Bind to 0.0.0.0:5000
-bind = "0.0.0.0:5000"
+bind = '0.0.0.0:5000'
 
-# Worker Options
-# Use 2-4 workers per CPU core for web applications
-workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = "sync"
+# Number of worker processes
+workers = int(os.environ.get('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
+
+# Worker class type
+worker_class = 'sync'
+
+# Maximum number of simultaneous clients
 worker_connections = 1000
-timeout = 120  # Increased timeout for longer AI operations
-keepalive = 5
 
-# Process Name
-proc_name = "reproductive_health_chatbot"
+# Maximum requests before worker restart
+max_requests = 1000
+max_requests_jitter = 50
 
-# Logging
-errorlog = "-"  # Log to stderr
-loglevel = "info"
-accesslog = "-"  # Log to stdout
-access_log_format = '%({X-Forwarded-For}i)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+# Timeout (seconds)
+timeout = 120
 
-# Server Mechanics
-preload_app = True  # Pre-load application code before worker processes fork
+# Disable request line rewriting in logs
+access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %({X-Forwarded-For}i)s'
 
-# Server Socket
-backlog = 2048  # Maximum number of pending connections
+# Enable logging
+accesslog = '-'
+errorlog = '-'
+loglevel = os.environ.get('LOG_LEVEL', 'info').lower()
 
-# SSL Configuration
-# For SSL in production, use a proper SSL termination at load balancer level
-# keyfile = "/path/to/keyfile"
-# certfile = "/path/to/certfile"
-# ca_certs = "/path/to/ca_certs"
+# Statsd monitoring (if available)
+statsd_host = os.environ.get('STATSD_HOST')
+statsd_prefix = 'reproductive-health-chatbot'
 
-# Debugging
-reload = False  # Set to False in production, True for development
-spew = False  # Set to True to log all executed statements
-
-# Server Hooks
+# Called after the server is started
 def on_starting(server):
-    server.log.info("Starting Reproductive Health Chatbot")
+    logger.info("Starting Gunicorn server for Reproductive Health Chatbot")
+    
+    # Initializing application resources
+    logger.info("Initializing application resources...")
+    
+    # Log environment
+    env = os.environ.get('FLASK_ENV', 'development')
+    logger.info(f"Environment: {env}")
+    
+    # Check API keys
+    if not os.environ.get('OPENAI_API_KEY'):
+        logger.warning("OPENAI_API_KEY environment variable not set")
+    
+    if not os.environ.get('ABORTION_POLICY_API_KEY'):
+        logger.warning("ABORTION_POLICY_API_KEY environment variable not set")
 
+# Called when a worker is exiting
+def worker_exit(server, worker):
+    logger.info(f"Worker {worker.pid} exiting")
+
+# Called just before the master process is terminated
 def on_exit(server):
-    server.log.info("Shutting down Reproductive Health Chatbot")
+    logger.info("Shutting down Gunicorn server")
+    
+    # Clean up any resources if needed
+    logger.info("Cleaning up resources...")
+    
+    logger.info("Shutdown complete")
+
+# Called when a worker receives SIGTERM
+def worker_abort(worker):
+    logger.info(f"Worker {worker.pid} was aborted")
+
+# Called every time when a new worker process is forked
+def post_fork(server, worker):
+    logger.info(f"Worker {worker.pid} spawned")

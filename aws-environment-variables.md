@@ -1,41 +1,146 @@
-# AWS Environment Variables Configuration
+# AWS Environment Variables Guide
 
-When deploying the Reproductive Health Chatbot to AWS Elastic Beanstalk, you'll need to configure the following environment variables in the AWS Elastic Beanstalk Console.
+This document outlines the environment variables required for deploying the Reproductive Health Chatbot on AWS.
 
-## Required Environment Variables
+## Core Environment Variables
 
-| Variable Name | Description | Example Value |
-|---------------|-------------|---------------|
-| `OPENAI_API_KEY` | Your OpenAI API key for GPT-4 integration | sk-... |
-| `ABORTION_POLICY_API_KEY` | API key for abortion policy information | abc123... |
-| `FLASK_ENV` | Flask environment mode | production |
-| `FLASK_APP` | Flask application entry point | app.py |
+These variables are essential for the application to function correctly:
 
-## Optional Environment Variables
+| Variable Name | Description | Required | Default |
+|---------------|-------------|----------|---------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT-4 integration | Yes | None |
+| `ABORTION_POLICY_API_KEY` | API key for accessing abortion policy data | Yes | None |
+| `FLASK_ENV` | Flask environment setting | Yes | `development` |
+| `SESSION_SECRET` | Secret key for Flask sessions | Yes | None |
 
-| Variable Name | Description | Default Value |
-|---------------|-------------|---------------|
-| `LOG_LEVEL` | Logging level | INFO |
-| `DATABASE_URL` | Database connection URL (if using a database) | None |
-| `SESSION_SECRET` | Secret key for Flask sessions | Auto-generated if not provided |
+## Database Configuration (If Applicable)
 
-## How to Set Environment Variables in AWS Elastic Beanstalk
+If using a database:
 
-1. Navigate to the AWS Elastic Beanstalk Console
-2. Select your application and environment
-3. Go to "Configuration" in the left navigation panel
-4. Under "Software", click "Modify"
-5. Scroll down to the "Environment properties" section
-6. Add each key-value pair
-7. Click "Apply" to update the configuration
+| Variable Name | Description | Required | Default |
+|---------------|-------------|----------|---------|
+| `DATABASE_URL` | Connection string for the database | No | SQLite (local) |
 
-## Important Security Notes
+## Application Configuration
 
-- Never commit API keys or secrets to your repository
-- Use AWS Parameter Store or Secrets Manager for highly sensitive values
-- Regularly rotate your API keys and secrets
-- Ensure proper IAM roles and permissions are configured
+Optional application configuration variables:
 
-## Verification
+| Variable Name | Description | Required | Default |
+|---------------|-------------|----------|---------|
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | `INFO` |
+| `MAX_TOKENS` | Maximum tokens for GPT responses | No | `300` |
+| `MODEL_NAME` | GPT model to use | No | `gpt-4o` |
 
-After deployment, you can verify that environment variables are correctly set by checking your application logs in the AWS Elastic Beanstalk Console.
+## AWS-Specific Configuration
+
+Variables specific to AWS deployments:
+
+| Variable Name | Description | Required | Default |
+|---------------|-------------|----------|---------|
+| `AWS_REGION` | AWS region for services | No | Deployment region |
+| `AWS_LOG_GROUP` | CloudWatch log group | No | `/reproductive-health-chatbot` |
+
+## Security Recommendations
+
+For secure configuration in AWS:
+
+1. **Use Parameter Store or Secrets Manager**:
+   ```
+   # Retrieve secrets in your application
+   import boto3
+   
+   ssm = boto3.client('ssm', region_name='your-region')
+   response = ssm.get_parameter(
+       Name='/reproductive-health-chatbot/OPENAI_API_KEY',
+       WithDecryption=True
+   )
+   openai_api_key = response['Parameter']['Value']
+   ```
+
+2. **Environment Variable Encryption**:
+   - When using Elastic Beanstalk, enable environment variable encryption.
+   - For ECS/EKS, use secrets as environment variables.
+
+3. **IAM Role Configuration**:
+   - Create a role with minimal permissions needed for accessing secrets.
+   - Example policy:
+     ```json
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Action": [
+             "ssm:GetParameter"
+           ],
+           "Resource": "arn:aws:ssm:region:account-id:parameter/reproductive-health-chatbot/*"
+         }
+       ]
+     }
+     ```
+
+## Setting Environment Variables in Different AWS Services
+
+### Elastic Beanstalk
+
+```bash
+eb setenv OPENAI_API_KEY=your-api-key ABORTION_POLICY_API_KEY=your-api-key FLASK_ENV=production SESSION_SECRET=your-secret
+```
+
+### ECS
+
+In task definition JSON:
+```json
+"environment": [
+  {
+    "name": "FLASK_ENV",
+    "value": "production"
+  }
+],
+"secrets": [
+  {
+    "name": "OPENAI_API_KEY",
+    "valueFrom": "arn:aws:ssm:region:account-id:parameter/reproductive-health-chatbot/OPENAI_API_KEY"
+  },
+  {
+    "name": "ABORTION_POLICY_API_KEY",
+    "valueFrom": "arn:aws:ssm:region:account-id:parameter/reproductive-health-chatbot/ABORTION_POLICY_API_KEY"
+  }
+]
+```
+
+### EC2 (Using systemd)
+
+In your systemd service file:
+```
+[Service]
+Environment="FLASK_ENV=production"
+Environment="LOG_LEVEL=INFO"
+# Use EnvironmentFile for secrets
+EnvironmentFile=/etc/reproductive-health-chatbot/env
+```
+
+Contents of `/etc/reproductive-health-chatbot/env`:
+```
+OPENAI_API_KEY=your-api-key
+ABORTION_POLICY_API_KEY=your-api-key
+SESSION_SECRET=your-secret
+```
+
+## Testing Environment Variables
+
+To verify environment variables are correctly set up:
+
+```python
+# Add this to a route in app.py for debugging
+@app.route('/api/env-check')
+def env_check():
+    env_vars = {
+        'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY') is not None,
+        'ABORTION_POLICY_API_KEY': os.environ.get('ABORTION_POLICY_API_KEY') is not None,
+        'FLASK_ENV': os.environ.get('FLASK_ENV'),
+    }
+    return jsonify(env_vars)
+```
+
+**SECURITY WARNING**: Remove this route before production deployment. This is only for validation during setup.
