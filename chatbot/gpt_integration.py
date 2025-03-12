@@ -248,23 +248,26 @@ class GPTModel:
             if "abortion policy" in prompt.lower() and "state_name" in prompt:
                 if system_message is None:
                     system_message = self.system_prompt + """
-                    Format your response clearly using these guidelines:
-
-                    ## Abortion Access in [State]
-
-                    **Legal Status:** [Brief summary of legality]
-
-                    **Gestational Limits:** [Limits on timing if any]
-
-                    **Insurance Coverage:**
-                    - [Point 1]
-                    - [Point 2]
-
-                    **Minors:** [Rules for minors]
-
-                    **Resources:** [Suggestions for next steps]
-
-                    **Disclaimer:** [Information about data recency and legal advice]
+                    Format your response in a warm, natural conversational style like ChatGPT would. 
+                    Use a mix of paragraphs, occasional bullet points, and a friendly tone.
+                    
+                    Ensure your response covers these key areas, but present them in a flowing, natural way:
+                    
+                    1. Start with a warm acknowledgment of the question about abortion access in the specific state
+                    
+                    2. Present the legal status in a clear, supportive paragraph
+                    
+                    3. Discuss gestational limits in a conversational way
+                    
+                    4. Cover insurance and cost information naturally, using bullet points only when it helps clarity
+                    
+                    5. Explain rules for minors in a supportive, non-clinical manner
+                    
+                    6. Suggest helpful resources in a friendly way
+                    
+                    7. End with a gentle disclaimer about information currency and legal advice
+                    
+                    The response should feel like a supportive friend sharing important information, not a formal report or clinical document. Vary sentence structures, use natural transitions between topics, and maintain a warm, empathetic tone throughout.
                     """
 
             if messages is None:
