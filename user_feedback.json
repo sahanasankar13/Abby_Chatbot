@@ -4,5 +4,11 @@
     "rating": 1,
     "comment": null,
     "timestamp": "2025-03-12T21:18:01.357902"
+  },
+  {
+    "message_id": "end_session_1741821466656",
+    "rating": 5,
+    "comment": "great",
+    "timestamp": "2025-03-12T23:17:46.699931"
   }
 ]
