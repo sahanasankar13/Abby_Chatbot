@@ -90,7 +90,7 @@ class Citation:
 class CitationManager:
     """Manages citations for chatbot responses"""
 
-    # Standard citation sources
+    # Standard citation sources - limited to only Abortion Policy API and Planned Parenthood links
     SOURCES = {
         "planned_parenthood": Citation(
             source="Planned Parenthood",
@@ -98,38 +98,10 @@ class CitationManager:
             title="Planned Parenthood",
             authors=["Planned Parenthood Federation of America"],
         ),
-        "acog": Citation(
-            source="American College of Obstetricians and Gynecologists",
-            url="https://www.acog.org/",
-            title="ACOG",
-            authors=["American College of Obstetricians and Gynecologists"],
-        ),
-        "cdc": Citation(
-            source="Centers for Disease Control and Prevention",
-            url="https://www.cdc.gov/",
-            title="CDC",
-            authors=["Centers for Disease Control and Prevention"],
-        ),
-        "who": Citation(
-            source="World Health Organization",
-            url="https://www.who.int/",
-            title="WHO",
-            authors=["World Health Organization"],
-        ),
         "abortion_policy_api": Citation(
             source="Abortion Policy API",
             url="https://www.abortionpolicyapi.com/",
             title="Abortion Policy API",
-        ),
-        "guttmacher": Citation(
-            source="Guttmacher Institute",
-            url="https://www.guttmacher.org/",
-            title="Guttmacher Institute",
-        ),
-        "ai_generated": Citation(
-            source="AI-generated response",
-            title="AI-generated content",
-            publication_date="2025",
         )
     }
 

@@ -22,19 +22,22 @@ class GPTModel:
             self.client = OpenAI(api_key=api_key)
             self.model = "gpt-4o"  # the newest OpenAI model is "gpt-4o" which was released May 13, 2024
             self.system_prompt = """
-            You are a compassionate and knowledgeable reproductive health assistant. Your goal is to provide accurate, 
-            non-judgmental information about reproductive health, contraception, and related topics.
+            You are a compassionate friend who's knowledgeable about reproductive health. Your goal is to provide accurate, 
+            supportive information while making users feel heard, understood, and cared for.
 
             Important guidelines:
-            1. Be empathetic and supportive in your responses.
-            2. Provide factual, evidence-based information.
-            3. Be inclusive and respectful of all identities and choices.
-            4. When uncertain, acknowledge limitations and suggest consulting healthcare providers.
-            5. Avoid political statements but provide factual information about laws when asked.
-            6. Keep responses concise but comprehensive.
-            7. Use plain, accessible language while being medically accurate.
+            1. Be deeply empathetic and warm - use a conversational, friendly tone as if talking to a friend.
+            2. Start responses with understanding statements that acknowledge feelings ("I understand this can be concerning..." or "It makes sense you'd want to know about...")
+            3. Use natural language that avoids medical jargon when possible - explain terms simply when necessary.
+            4. Include gentle reassurances throughout your responses.
+            5. When appropriate, validate the user's feelings and normalize their questions or concerns.
+            6. Use shorter sentences and simple words that feel more like natural conversation.
+            7. Include occasional supportive phrases like "I'm here to help" or "Please feel free to ask more questions."
+            8. End responses with a gentle invitation to continue the conversation.
+            9. Balance warmth with accuracy - never sacrifice factual information for empathy.
+            10. Stay judgment-free while respecting diverse backgrounds, identities, and situations.
 
-            Remember that users may be in vulnerable situations, so prioritize empathy while delivering accurate information.
+            Remember: You're a caring friend first, an information source second. Most users need emotional support alongside information. Speak to the human being, not just their question.
             """
 
             logger.info("GPT Model initialized successfully")
@@ -87,12 +90,18 @@ class GPTModel:
             A knowledge base provided this information:
             "{rag_response}"
 
-            Please enhance this response to make it:
-            1. More conversational and empathetic
-            2. Well-structured and easy to understand
-            3. Complete and informative
+            Please transform this information into a warm, supportive conversation with a friend. Your response should:
 
+            1. Start with an acknowledgment of feelings or validation (e.g., "I understand you're wondering about..." or "It's completely normal to have questions about...")
+            2. Use simple, everyday language that feels like a supportive friend talking
+            3. Include gentle reassurances throughout your response
+            4. Break down complex medical concepts into easy-to-understand explanations
+            5. Add transitional phrases between sections to maintain a natural conversational flow
+            6. End with an invitation to keep the conversation going
+
+            Remember to maintain complete factual accuracy while making the tone deeply human and empathetic.
             Respond directly to the user's question without mentioning that you're enhancing a previous response.
+            Use a warm, supportive tone throughout as if comforting a friend.
             """
 
             response = self.client.chat.completions.create(
@@ -185,7 +194,7 @@ class GPTModel:
             # For policy queries, add formatting instructions
             if "abortion policy" in prompt.lower() and "state_name" in prompt:
                 if system_message is None:
-                    system_message = self.system_message + """
+                    system_message = self.system_prompt + """
                     Format your response clearly using these guidelines:
 
                     ## Abortion Access in [State]
@@ -208,7 +217,7 @@ class GPTModel:
             if messages is None:
                 # Use the default system message if none provided
                 if system_message is None:
-                    system_message = self.system_message
+                    system_message = self.system_prompt
 
                 messages = [
                     {"role": "system", "content": system_message},
