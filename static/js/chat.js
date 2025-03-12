@@ -76,53 +76,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Graphics functionality disabled
         // We're keeping the structure but not rendering any graphics
         
-        messagesContainer.appendChild(messageContainer);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        chatMessages.appendChild(messageContainer);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
         
         // Hide typing indicator
-        typingIndicator.style.display = 'none';
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.style.display = 'none';
+        }
     } catch (error) {
         console.error('Error adding bot message:', error);
         // Fallback display method
         const messageElement = document.createElement('div');
         messageElement.className = 'message bot-message';
         messageElement.textContent = message;
-        messagesContainer.appendChild(messageElement);
-        typingIndicator.style.display = 'none';
-            messageContainer.appendChild(citationsContainer);
-        }
-        
-        // Add graphics if available
-        if (graphics && graphics.length > 0) {
-            const graphicsContainer = document.createElement('div');
-            graphicsContainer.className = 'graphics-container';
-            
-            graphics.forEach(graphic => {
-                if (graphic.type === 'svg') {
-                    const graphicElement = document.createElement('div');
-                    graphicElement.className = 'graphic';
-                    
-                    const graphicTitle = document.createElement('h4');
-                    graphicTitle.textContent = graphic.title;
-                    graphicElement.appendChild(graphicTitle);
-                    
-                    if (graphic.description) {
-                        const graphicDesc = document.createElement('p');
-                        graphicDesc.className = 'graphic-description';
-                        graphicDesc.textContent = graphic.description;
-                        graphicElement.appendChild(graphicDesc);
-                    }
-                    
-                    const svgContainer = document.createElement('div');
-                    svgContainer.className = 'svg-container';
-                    svgContainer.innerHTML = graphic.content;
-                    graphicElement.appendChild(svgContainer);
-                    
-                    graphicsContainer.appendChild(graphicElement);
-                }
-            });
-            
-            messageContainer.appendChild(graphicsContainer);
+        chatMessages.appendChild(messageElement);
+        hideTypingIndicator();
         }
 
         chatMessages.appendChild(messageContainer);

@@ -54,18 +54,16 @@ def chat():
             # Get response from conversation manager
             response_data = conversation_manager.process_message(message)
             
-        # Import visual info if needed
-        from chatbot.visual_info import VisualInfoGraphics
-        visual_info = VisualInfoGraphics()
-        
-        # Add visual graphics if relevant
-        response_data = visual_info.add_graphics_to_response(response_data, message)
+        # Graphics disabled per user request
+        # from chatbot.visual_info import VisualInfoGraphics
+        # visual_info = VisualInfoGraphics()
+        # response_data = visual_info.add_graphics_to_response(response_data, message)
 
         return jsonify({
             'response': response_data['text'],
             'citations': response_data['citations'],
             'citation_objects': response_data['citation_objects'],
-            'graphics': response_data.get('graphics', [])
+            'graphics': []  # Empty array to avoid frontend errors
         })
 
     except Exception as e:
