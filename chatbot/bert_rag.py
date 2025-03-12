@@ -94,7 +94,7 @@ class BertRAGModel:
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
     
-    def get_response(self, question, top_k=3):
+    def get_response(self, question, top_k=5):
         """
         Get response for a given question using RAG
         
@@ -112,20 +112,90 @@ class BertRAGModel:
             # Search for similar questions
             distances, indices = self.index.search(question_embedding, top_k)
             
+            # If multiple good matches, combine answers
+            if len(indices[0]) > 1 and distances[0][1] < 12.0:
+                return self._combine_top_answers(question, distances[0], indices[0])
+            
             # Get the most similar question's answer
             best_idx = indices[0][0]
             best_answer = self.qa_pairs[best_idx]['Answer']
+            best_question = self.qa_pairs[best_idx]['Question']
             
             logger.debug(f"RAG found answer with distance: {distances[0][0]}")
+            logger.debug(f"Question match: '{best_question}' for query '{question}'")
+            
             return best_answer
         
         except Exception as e:
             logger.error(f"Error getting RAG response: {str(e)}", exc_info=True)
             return "I'm sorry, I couldn't find a good answer to your question."
     
-    def is_confident(self, question, response, threshold=10.0):
+    def _combine_top_answers(self, question, distances, indices, max_answers=3):
+        """
+        Combine the top answers for better response
+        
+        Args:
+            question (str): The original question
+            distances (list): Distances of top matches
+            indices (list): Indices of top matches
+            max_answers (int): Maximum number of answers to combine
+        
+        Returns:
+            str: Combined answer
+        """
+        relevant_answers = []
+        
+        # Get the top answers that are within a reasonable distance
+        for i in range(min(max_answers, len(indices))):
+            if distances[i] < 15.0:  # Only include answers with reasonable similarity
+                idx = indices[i]
+                answer = self.qa_pairs[idx]['Answer']
+                question_match = self.qa_pairs[idx]['Question']
+                category = self.qa_pairs[idx].get('Category', 'General')
+                
+                relevant_answers.append({
+                    'answer': answer,
+                    'question': question_match,
+                    'distance': distances[i],
+                    'category': category
+                })
+        
+        # If only one good match, just return it
+        if len(relevant_answers) == 1:
+            return relevant_answers[0]['answer']
+        
+        # Combine answers into a comprehensive response
+        combined = "Based on your question, here's what I know:\n\n"
+        
+        # Group by category if available
+        by_category = {}
+        for item in relevant_answers:
+            cat = item['category']
+            if cat not in by_category:
+                by_category[cat] = []
+            by_category[cat].append(item)
+        
+        # Add information by category
+        for category, items in by_category.items():
+            if category != 'General':
+                combined += f"## {category}\n"
+            
+            for item in items:
+                # Extract the most important part of the answer
+                answer_text = item['answer']
+                if len(answer_text) > 300:
+                    sentences = answer_text.split('. ')
+                    if len(sentences) > 3:
+                        answer_text = '. '.join(sentences[:3]) + '.'
+                
+                combined += f"{answer_text}\n\n"
+        
+        return combined
+    
+    def is_confident(self, question, response, threshold=8.0):
         """
         Determine if the RAG model is confident in its response
+        Uses multiple metrics for better confidence assessment
         
         Args:
             question (str): The original question
@@ -139,15 +209,72 @@ class BertRAGModel:
             # Generate embedding for the question
             question_embedding = self.generate_embeddings([question])
             
-            # Search for the closest question
-            distances, _ = self.index.search(question_embedding, 1)
+            # Search for the closest questions
+            distances, indices = self.index.search(question_embedding, 3)
             
-            # Lower distance means higher confidence
-            confidence = distances[0][0]
-            logger.debug(f"Confidence score: {confidence}")
+            # Primary confidence: distance to closest match
+            primary_confidence = distances[0][0]
             
-            return confidence < threshold
+            # Secondary confidence: gap between first and second match
+            # A big gap means the first match is distinctly better
+            secondary_confidence = 0
+            if len(distances[0]) > 1:
+                secondary_confidence = distances[0][1] - distances[0][0]
+            
+            # Get the matched question text for semantic similarity check
+            matched_question = self.qa_pairs[indices[0][0]]['Question']
+            
+            # Log confidence metrics
+            logger.debug(f"Primary confidence (distance): {primary_confidence}")
+            logger.debug(f"Secondary confidence (gap): {secondary_confidence}")
+            logger.debug(f"Matched question: {matched_question}")
+            
+            # Decision logic:
+            # 1. If primary confidence is very good, trust it
+            if primary_confidence < threshold * 0.7:
+                logger.debug("High confidence based on primary score")
+                return True
+                
+            # 2. If primary is okay and secondary shows a clear winner, trust it
+            if primary_confidence < threshold and secondary_confidence > 2.0:
+                logger.debug("Confidence based on primary score and distinct winner")
+                return True
+                
+            # 3. If primary is just above threshold but very close to original question semantically, trust it
+            if primary_confidence < threshold * 1.2 and self._is_semantically_similar(question, matched_question):
+                logger.debug("Confidence based on semantic similarity")
+                return True
+                
+            # Otherwise, not confident
+            return False
         
         except Exception as e:
             logger.error(f"Error checking confidence: {str(e)}", exc_info=True)
             return False
+    
+    def _is_semantically_similar(self, q1, q2):
+        """
+        Check if two questions are semantically similar
+        
+        Args:
+            q1 (str): First question
+            q2 (str): Second question
+        
+        Returns:
+            bool: True if semantically similar
+        """
+        # Simple keyword matching
+        q1_words = set(q1.lower().split())
+        q2_words = set(q2.lower().split())
+        
+        # Calculate Jaccard similarity
+        intersection = len(q1_words.intersection(q2_words))
+        union = len(q1_words.union(q2_words))
+        
+        if union == 0:
+            return False
+            
+        similarity = intersection / union
+        logger.debug(f"Semantic similarity: {similarity}")
+        
+        return similarity > 0.4

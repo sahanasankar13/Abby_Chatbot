@@ -2,6 +2,7 @@ import os
 import logging
 from flask import Flask, render_template, request, jsonify
 from chatbot.conversation_manager import ConversationManager
+from utils.text_processing import PIIDetector # Added import for PII detection
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,31 +20,41 @@ def index():
     """Render the main chat interface"""
     return render_template('index.html')
 
-@app.route('/chat', methods=['POST'])
+@app.route('/api/chat', methods=['POST']) # Added /api/chat endpoint
 def chat():
-    """Process chat messages and return responses"""
+    """
+    Chat API endpoint with PII detection
+    """
     try:
-        data = request.json
-        user_message = data.get('message', '')
-        
-        if not user_message:
-            return jsonify({"error": "No message provided"}), 400
-        
-        logger.debug(f"Received message: {user_message}")
-        
-        # Process the message through the conversation manager
-        response = conversation_manager.process_message(user_message)
-        logger.debug(f"Generated response: {response}")
-        
-        return jsonify({
-            "response": response
-        })
-    
+        # Get message from request
+        data = request.get_json()
+        if not data or 'message' not in data:
+            return jsonify({'error': 'Missing message parameter'}), 400
+
+        message = data['message']
+
+        # Check for PII in the message
+        pii_detector = PIIDetector()
+
+        pii_warning = pii_detector.warn_about_pii(message)
+        if pii_warning:
+            logger.warning("PII detected in user message")
+
+            # If PII is detected, redact it before processing
+            redacted_message, _ = pii_detector.redact_pii(message)
+            response = conversation_manager.process_message(redacted_message)
+
+            # Add PII warning to the response
+            response = f"{pii_warning}\n\n{response}"
+        else:
+            # Get response from conversation manager
+            response = conversation_manager.process_message(message)
+
+        return jsonify({'response': response})
+
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}", exc_info=True)
-        return jsonify({
-            "error": "Sorry, I encountered an error processing your message. Please try again."
-        }), 500
+        logger.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred processing your request'}), 500
 
 @app.route('/health')
 def health_check():

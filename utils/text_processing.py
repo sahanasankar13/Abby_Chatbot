@@ -107,3 +107,149 @@ def is_question(text):
     first_word = text.lower().split()[0] if text else ''
     
     return first_word in question_starters
+import re
+import logging
+from typing import List, Tuple, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
+
+class PIIDetector:
+    """
+    Detects and redacts Personally Identifiable Information (PII) in text
+    """
+    def __init__(self):
+        """Initialize PII detection patterns"""
+        # Patterns for various PII types
+        self.patterns = {
+            'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            'phone': r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b',
+            'ssn': r'\b\d{3}[-]?\d{2}[-]?\d{4}\b',
+            'credit_card': r'\b(?:\d{4}[-\s]?){3}\d{4}\b',
+            'address': r'\b\d+\s+([A-Za-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Plaza|Plz|Terrace|Ter|Place|Pl)\b',
+            'zip_code': r'\b\d{5}(?:[-\s]\d{4})?\b',
+            'date_of_birth': r'\b(0[1-9]|1[0-2])[-/.](0[1-9]|[12][0-9]|3[01])[-/.](19|20)\d{2}\b'
+        }
+        
+        # Compile patterns for efficiency
+        self.compiled_patterns = {k: re.compile(v, re.IGNORECASE) for k, v in self.patterns.items()}
+        
+        logger.info("PII Detector initialized")
+    
+    def detect_pii(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Detect PII in text
+        
+        Args:
+            text (str): Text to check for PII
+            
+        Returns:
+            List[Dict]: List of detected PII items with type and location
+        """
+        pii_items = []
+        
+        for pii_type, pattern in self.compiled_patterns.items():
+            for match in pattern.finditer(text):
+                pii_items.append({
+                    'type': pii_type,
+                    'value': match.group(),
+                    'start': match.start(),
+                    'end': match.end()
+                })
+        
+        return pii_items
+    
+    def has_pii(self, text: str) -> bool:
+        """
+        Check if text contains any PII
+        
+        Args:
+            text (str): Text to check
+            
+        Returns:
+            bool: True if PII is detected
+        """
+        return any(pattern.search(text) for pattern in self.compiled_patterns.values())
+    
+    def redact_pii(self, text: str) -> Tuple[str, List[Dict[str, Any]]]:
+        """
+        Redact PII from text
+        
+        Args:
+            text (str): Text containing PII
+            
+        Returns:
+            Tuple[str, List]: Redacted text and list of redacted items
+        """
+        redacted_text = text
+        detected_items = self.detect_pii(text)
+        
+        # Sort in reverse order to maintain correct indices when replacing
+        detected_items.sort(key=lambda x: x['start'], reverse=True)
+        
+        for item in detected_items:
+            pii_type = item['type']
+            start = item['start']
+            end = item['end']
+            
+            # Create redaction placeholder based on type
+            if pii_type == 'email':
+                redaction = '[EMAIL REDACTED]'
+            elif pii_type == 'phone':
+                redaction = '[PHONE REDACTED]'
+            elif pii_type == 'ssn':
+                redaction = '[SSN REDACTED]'
+            elif pii_type == 'credit_card':
+                redaction = '[CREDIT CARD REDACTED]'
+            elif pii_type == 'address':
+                redaction = '[ADDRESS REDACTED]'
+            elif pii_type == 'zip_code':
+                redaction = '[ZIP CODE REDACTED]'
+            elif pii_type == 'date_of_birth':
+                redaction = '[DOB REDACTED]'
+            else:
+                redaction = '[REDACTED]'
+            
+            # Replace the PII with redaction
+            redacted_text = redacted_text[:start] + redaction + redacted_text[end:]
+        
+        return redacted_text, detected_items
+    
+    def warn_about_pii(self, text: str) -> Optional[str]:
+        """
+        Generate warning message if PII is detected
+        
+        Args:
+            text (str): Text to check
+            
+        Returns:
+            Optional[str]: Warning message or None if no PII detected
+        """
+        detected_items = self.detect_pii(text)
+        
+        if not detected_items:
+            return None
+            
+        # Count PII by type
+        pii_types = {}
+        for item in detected_items:
+            pii_type = item['type']
+            pii_types[pii_type] = pii_types.get(pii_type, 0) + 1
+        
+        # Create warning message
+        warning = "I noticed you may have shared personal information in your message. "
+        warning += "For your privacy and security, please avoid sharing "
+        
+        pii_list = []
+        for pii_type, count in pii_types.items():
+            pii_list.append(f"{pii_type.replace('_', ' ')}")
+        
+        if len(pii_list) == 1:
+            warning += f"{pii_list[0]}."
+        elif len(pii_list) == 2:
+            warning += f"{pii_list[0]} or {pii_list[1]}."
+        else:
+            warning += ", ".join(pii_list[:-1]) + f", or {pii_list[-1]}."
+        
+        warning += " This information will not be stored, but it's best practice to keep it private."
+        
+        return warning
