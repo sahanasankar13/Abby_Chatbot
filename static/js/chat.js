@@ -34,11 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageElement = document.createElement('div');
         messageElement.className = 'message bot-message';
         messageElement.innerHTML = message;
-        
+
         chatMessages.appendChild(messageElement);
         scrollToBottom();
     }
-    
+
     // Add initial bot message
     addBotMessage('Hi there! I\'m your reproductive health assistant. How can I help you today?');
 
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show typing indicator
         showTypingIndicator();
-        
+
         // Send message to server
         fetch('/api/chat', {
             method: 'POST',
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             // Hide typing indicator
             hideTypingIndicator();
-            
+
             // Add bot response
             if (data.error) {
                 addBotMessage("I'm sorry, something went wrong. Please try again later.");
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             // Hide typing indicator
             hideTypingIndicator();
-            
+
             // Show error message
             addBotMessage("I'm sorry, I couldn't connect to the server. Please try again later.");
             console.error('Error:', error);
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error("Network response was not ok: " + response.status);
             }
             return response.json();
         })
@@ -180,32 +180,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return text;
     }
-    
+
     // Function to add user message to chat
     function addUserMessage(message) {
         const messageElement = document.createElement('div');
         messageElement.className = 'message user-message';
         messageElement.textContent = message;
-        
+
         chatMessages.appendChild(messageElement);
         scrollToBottom();
     }
-    
+
     // Function to show typing indicator
     function showTypingIndicator() {
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'typing-indicator';
         typingIndicator.id = 'typingIndicator';
-        
+
         for (let i = 0; i < 3; i++) {
             const dot = document.createElement('span');
             typingIndicator.appendChild(dot);
         }
-        
+
         chatMessages.appendChild(typingIndicator);
         scrollToBottom();
     }
-    
+
     // Function to hide typing indicator
     function hideTypingIndicator() {
         const typingIndicator = document.getElementById('typingIndicator');
@@ -213,18 +213,18 @@ document.addEventListener('DOMContentLoaded', function() {
             typingIndicator.remove();
         }
     }
-    
+
     // Function to scroll to bottom of chat
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-    
+
     // Theme toggle functionality
     const themeToggle = document.querySelector('.theme-toggle');
     if (themeToggle) {
         themeToggle.addEventListener('click', function() {
             document.body.classList.toggle('dark-mode');
-            
+
             // Update icon
             const icon = this.querySelector('i');
             if (icon.classList.contains('fa-moon')) {
@@ -232,12 +232,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 icon.classList.replace('fa-sun', 'fa-moon');
             }
-            
+
             // Save preference
             const isDarkMode = document.body.classList.contains('dark-mode');
             localStorage.setItem('darkMode', isDarkMode);
         });
-        
+
         // Check for saved theme preference
         const savedDarkMode = localStorage.getItem('darkMode') === 'true';
         if (savedDarkMode) {

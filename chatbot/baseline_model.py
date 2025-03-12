@@ -1,5 +1,6 @@
 import os
 import logging
+import random
 from chatbot.bert_rag import BertRAGModel
 from chatbot.gpt_integration import GPTModel
 from chatbot.policy_api import PolicyAPI
@@ -62,6 +63,50 @@ class BaselineModel:
         # Default to conversational
         return 'conversational'
     
+    def _is_greeting(self, question):
+        """
+        Check if the question is a simple greeting
+        
+        Args:
+            question (str): The user's question
+            
+        Returns:
+            bool: True if the message is a greeting, False otherwise
+        """
+        # Convert to lowercase and strip punctuation
+        clean_question = question.lower().strip().rstrip('?!.,')
+        
+        # List of common greetings
+        greetings = [
+            'hi', 'hello', 'hey', 'greetings', 'good morning', 'good afternoon', 
+            'good evening', 'how are you', 'how are you doing', 'how is it going',
+            'what\'s up', 'whats up', 'sup', 'yo', 'hi there', 'hello there',
+            'how do you do', 'nice to meet you', 'hi how are you'
+        ]
+        
+        # Check if the entire message is a greeting
+        for greeting in greetings:
+            if clean_question == greeting or clean_question.startswith(greeting + ' '):
+                return True
+                
+        return False
+        
+    def _get_greeting_response(self):
+        """
+        Generate a friendly greeting response
+        
+        Returns:
+            str: A friendly greeting
+        """
+        greeting_responses = [
+            "Hi there! I'm your reproductive health assistant. How can I help you today?",
+            "Hello! I'm here to provide information about reproductive health. What would you like to know?",
+            "Hi! I'm doing well, thanks for asking. I'm ready to answer your reproductive health questions.",
+            "Hello! I'm here and ready to assist with any reproductive health questions you might have.",
+            "Hi there! I'm your AI assistant for reproductive health information. How can I assist you today?"
+        ]
+        return random.choice(greeting_responses)
+    
     def process_question(self, question):
         """
         Process a question using the appropriate model based on its category
@@ -74,6 +119,11 @@ class BaselineModel:
             str: The model's response
         """
         try:
+            # First check if this is a simple greeting
+            if self._is_greeting(question):
+                logger.debug("Detected greeting, providing standard response")
+                return self._get_greeting_response()
+                
             # Check if this is a multi-query question
             if " and " in question.lower() or ";" in question:
                 return self._handle_multi_query(question)
