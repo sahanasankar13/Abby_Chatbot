@@ -72,6 +72,7 @@ class VisualInfoGraphics:
     def suggest_graphics(self, text: str) -> List[str]:
         """
         Suggest relevant graphics based on message content
+        Focus on timeline-related content only
         
         Args:
             text (str): Message text to analyze
@@ -82,34 +83,23 @@ class VisualInfoGraphics:
         suggestions = []
         text_lower = text.lower()
         
-        # Topic detection logic
-        if 'period' in text_lower or 'menstrual' in text_lower or 'cycle' in text_lower:
+        # Only suggest timeline-related graphics
+        
+        # Menstrual cycle timeline
+        if ('timeline' in text_lower or 'phases' in text_lower or 'stages' in text_lower or 'cycle' in text_lower) and \
+           ('period' in text_lower or 'menstrual' in text_lower or 'menstruation' in text_lower):
             suggestions.append('menstrual_cycle')
             
-        if 'contraception' in text_lower or 'birth control' in text_lower or 'condom' in text_lower or 'iud' in text_lower:
-            suggestions.append('contraception_effectiveness')
-            
-        if 'pregnancy' in text_lower or 'trimester' in text_lower or 'fetal' in text_lower:
+        # Pregnancy timeline
+        if ('timeline' in text_lower or 'development' in text_lower or 'stages' in text_lower or 'weeks' in text_lower or 'trimesters' in text_lower) and \
+           ('pregnancy' in text_lower or 'fetal' in text_lower or 'fetus' in text_lower or 'baby' in text_lower):
             suggestions.append('pregnancy_stages')
-            
-        if 'anatomy' in text_lower or 'reproductive' in text_lower:
-            if 'female' in text_lower or 'woman' in text_lower or 'women' in text_lower:
-                suggestions.append('reproductive_anatomy_female')
-            elif 'male' in text_lower or 'man' in text_lower or 'men' in text_lower:
-                suggestions.append('reproductive_anatomy_male')
-            else:
-                # If gender not specified, suggest both
-                suggestions.append('reproductive_anatomy_female')
-                suggestions.append('reproductive_anatomy_male')
-                
-        if 'sti' in text_lower or 'std' in text_lower or 'sexually transmitted' in text_lower or 'safe sex' in text_lower:
-            suggestions.append('sti_prevention')
             
         return suggestions
     
     def add_graphics_to_response(self, response: Dict[str, Any], message: str) -> Dict[str, Any]:
         """
-        Add relevant graphics to a response based on message content
+        Add relevant timeline graphics to a response based on message content
         
         Args:
             response (Dict[str, Any]): Original response dictionary
@@ -118,23 +108,41 @@ class VisualInfoGraphics:
         Returns:
             Dict[str, Any]: Response with graphics added
         """
-        # Skip graphics for simple greetings or very short messages
-        combined_text = message + ' ' + response['text']
-        if len(message.strip().split()) <= 3:
-            # For short messages, be more restrictive with graphic suggestions
-            if not any(keyword in combined_text.lower() for keyword in 
-                      ['pregnancy', 'contraception', 'menstrual', 'anatomy', 'std', 'sti']):
-                response['graphics'] = []
-                return response
+        # Initialize with empty graphics
+        response['graphics'] = []
         
+        # Check if user is explicitly asking for a timeline
+        combined_text = message.lower() + ' ' + response['text'].lower()
+        timeline_keywords = ['timeline', 'stages', 'phases', 'development', 'cycle', 'weeks', 
+                          'trimesters', 'progression', 'process']
+        
+        # Only show graphics if explicitly talking about timelines
+        has_timeline_keywords = any(keyword in combined_text for keyword in timeline_keywords)
+        
+        if not has_timeline_keywords:
+            # No timeline-related keywords found, don't show graphics
+            return response
+            
+        # Skip graphics for simple greetings or very short messages
+        if len(message.strip().split()) <= 5:
+            # Only show graphics for longer, specific questions about timelines
+            return response
+        
+        # Get suggested timeline-related graphics
         suggested_topics = self.suggest_graphics(combined_text)
+        
+        if not suggested_topics:
+            # No relevant timeline graphics found
+            return response
+            
         graphics = []
         
-        # Limit to max 2 graphics per response to avoid overwhelming the user
-        for topic in suggested_topics[:2]:
+        # Only show timeline graphics, limit to 1 per response
+        for topic in suggested_topics[:1]:
             graphic = self.get_graphic(topic)
             if graphic:
                 graphics.append(graphic)
+                logger.debug(f"Adding timeline graphic: {topic}")
         
         # Add graphics to response
         response['graphics'] = graphics
