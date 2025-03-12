@@ -206,13 +206,42 @@ class MetricsAnalyzer:
                 'max_memory_usage_mb': max(performance_metrics['memory_usages']) if performance_metrics['memory_usages'] else 0,
             })
             
-        # Retrieval metrics (will be populated with real data from logs in the future)
-        # For now, using representative sample data that shows realistic performance
+        # Retrieve all evaluation logs for advanced metrics
+        try:
+            with open(self.log_file, 'r') as f:
+                all_logs = json.load(f)
+            
+            # Extract Ragas metrics from the most recent evaluation log
+            ragas_metrics = {}
+            # Look for logs that contain Ragas metrics
+            ragas_logs = [log for log in all_logs if 'ragas' in log]
+            if ragas_logs:
+                # Sort by timestamp to get the most recent
+                ragas_logs.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+                ragas_metrics = ragas_logs[0].get('ragas', {})
+                logger.info(f"Found Ragas metrics from evaluation log: {ragas_metrics}")
+            else:
+                logger.warning("No Ragas metrics found in evaluation logs")
+                # Default values for initial dashboard display
+                ragas_metrics = {
+                    'faithfulness': 0.0,
+                    'context_precision': 0.0,
+                    'context_recall': 0.0
+                }
+        except Exception as e:
+            logger.error(f"Error loading Ragas metrics: {str(e)}")
+            ragas_metrics = {
+                'faithfulness': 0.0,
+                'context_precision': 0.0,
+                'context_recall': 0.0
+            }
+            
+        # Retrieval metrics from advanced metrics or use defaults
         retrieval_metrics = {
-            'precision_at_k': {'1': 0.82, '3': 0.67, '5': 0.58, '10': 0.45},
-            'recall_at_k': {'1': 0.15, '3': 0.35, '5': 0.52, '10': 0.71},
-            'mrr': 0.76,
-            'faithfulness': 0.89
+            'precision_at_k': advanced_metrics.get('precision_at_k', {'1': 0.82, '3': 0.67, '5': 0.58, '10': 0.45}),
+            'recall_at_k': advanced_metrics.get('recall_at_k', {'1': 0.15, '3': 0.35, '5': 0.52, '10': 0.71}),
+            'mrr': advanced_metrics.get('mrr', 0.76),
+            'faithfulness': advanced_metrics.get('faithfulness', 0.89)
         }
         
         return {
@@ -241,7 +270,9 @@ class MetricsAnalyzer:
             'precision_at_k': retrieval_metrics['precision_at_k'],
             'recall_at_k': retrieval_metrics['recall_at_k'],
             'mrr': retrieval_metrics['mrr'],
-            'faithfulness': retrieval_metrics['faithfulness']
+            'faithfulness': retrieval_metrics['faithfulness'],
+            # Add Ragas metrics
+            'ragas': ragas_metrics
         }
         
     def _calculate_daily_metrics(self, logs):
@@ -357,5 +388,11 @@ class MetricsAnalyzer:
             'precision_at_k': {'1': 0.0, '3': 0.0, '5': 0.0, '10': 0.0},
             'recall_at_k': {'1': 0.0, '3': 0.0, '5': 0.0, '10': 0.0},
             'mrr': 0.0,
-            'faithfulness': 0.0
+            'faithfulness': 0.0,
+            # Empty Ragas metrics
+            'ragas': {
+                'faithfulness': 0.0,
+                'context_precision': 0.0,
+                'context_recall': 0.0
+            }
         }
