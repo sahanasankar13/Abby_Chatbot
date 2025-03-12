@@ -92,7 +92,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const message = userInput.value.trim();
         if (message === '') return;
+        
+        // Check if user typed "end" to end the session
+        if (message.toLowerCase() === 'end') {
+            // Add user message to chat
+            addUserMessage(message);
+            
+            // Clear input
+            userInput.value = '';
+            sendButton.disabled = true;
+            
+            // Remove typing indicator if present
+            removeTypingIndicator();
+            
+            // End the session
+            endSession();
+            return;
+        }
 
+        // For normal messages
         // Add user message to chat
         addUserMessage(message);
 
@@ -558,8 +576,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function endSession() {
-        // Add end session message
-        addBotMessage("Your session has been ended. Thank you for using Abby! If you have more questions, feel free to start a new conversation.");
+        // Simple goodbye message
+        addBotMessage("Thanks for chatting with Abby. Your session has ended and your conversation history has been cleared. Take care!");
+        
+        // Clear history on the server
+        fetch('/api/clear-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('History cleared successfully:', data);
+        })
+        .catch(error => {
+            console.error('Error clearing history:', error);
+        });
         
         // Reset the chat after a brief delay
         setTimeout(() => {

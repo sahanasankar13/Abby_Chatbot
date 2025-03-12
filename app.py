@@ -180,6 +180,26 @@ def view_metrics():
         logger.error(f"Error retrieving metrics data: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred retrieving metrics data'}), 500
 
+@app.route('/api/clear-history', methods=['POST'])
+def clear_history():
+    """
+    API endpoint for clearing conversation history when a session ends
+    """
+    try:
+        # Clear the conversation history
+        success = conversation_manager.clear_history()
+        
+        if success:
+            logger.info("Conversation history cleared successfully via API endpoint")
+            return jsonify({'success': True, 'message': 'Conversation history cleared successfully'})
+        else:
+            logger.error("Failed to clear conversation history")
+            return jsonify({'error': 'Failed to clear conversation history'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error clearing conversation history: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred clearing conversation history'}), 500
+
 @app.route('/health')
 def health_check():
     """Health check endpoint for monitoring"""
