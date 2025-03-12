@@ -203,7 +203,149 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check for special command: "end"
         if (message.toLowerCase() === 'end') {
-            // Clear history without feedback
+            // Show feedback dialog before ending session
+            const feedbackDialog = document.createElement('div');
+            feedbackDialog.className = 'feedback-dialog';
+            feedbackDialog.id = 'end-session-feedback';
+            
+            const dialogContent = document.createElement('div');
+            dialogContent.className = 'feedback-dialog-content';
+            
+            const title = document.createElement('h3');
+            title.textContent = 'Before you go...';
+            
+            const text = document.createElement('p');
+            text.textContent = 'Would you like to provide feedback on your experience?';
+            
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'feedback-dialog-buttons';
+            
+            const provideFeedbackBtn = document.createElement('button');
+            provideFeedbackBtn.className = 'provide-feedback-btn';
+            provideFeedbackBtn.textContent = 'Provide Feedback';
+            provideFeedbackBtn.addEventListener('click', function() {
+                // Open feedback form (you could implement this)
+                feedbackDialog.remove();
+                
+                // Show feedback form
+                showFeedbackForm();
+            });
+            
+            const skipFeedbackBtn = document.createElement('button');
+            skipFeedbackBtn.className = 'skip-feedback-btn';
+            skipFeedbackBtn.textContent = 'No Thanks';
+            skipFeedbackBtn.addEventListener('click', function() {
+                feedbackDialog.remove();
+                clearSessionHistory();
+            });
+            
+            buttonsContainer.appendChild(provideFeedbackBtn);
+            buttonsContainer.appendChild(skipFeedbackBtn);
+            
+            dialogContent.appendChild(title);
+            dialogContent.appendChild(text);
+            dialogContent.appendChild(buttonsContainer);
+            
+            feedbackDialog.appendChild(dialogContent);
+            document.body.appendChild(feedbackDialog);
+            
+            return;
+        }
+        
+        function showFeedbackForm() {
+            const feedbackForm = document.createElement('div');
+            feedbackForm.className = 'feedback-dialog';
+            feedbackForm.id = 'feedback-form-dialog';
+            
+            const formContent = document.createElement('div');
+            formContent.className = 'feedback-dialog-content';
+            
+            const title = document.createElement('h3');
+            title.textContent = 'Your Feedback';
+            
+            const ratingContainer = document.createElement('div');
+            ratingContainer.className = 'rating-container';
+            
+            const ratingLabel = document.createElement('label');
+            ratingLabel.textContent = 'How would you rate your experience?';
+            ratingLabel.className = 'rating-label';
+            
+            const starsContainer = document.createElement('div');
+            starsContainer.className = 'stars-container';
+            
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('span');
+                star.className = 'feedback-star';
+                star.innerHTML = '★';
+                star.dataset.value = i;
+                star.addEventListener('click', function() {
+                    document.querySelectorAll('.feedback-star').forEach(s => s.classList.remove('selected'));
+                    for (let j = 1; j <= i; j++) {
+                        document.querySelector(`.feedback-star[data-value="${j}"]`).classList.add('selected');
+                    }
+                });
+                starsContainer.appendChild(star);
+            }
+            
+            const commentContainer = document.createElement('div');
+            commentContainer.className = 'comment-container';
+            
+            const commentLabel = document.createElement('label');
+            commentLabel.textContent = 'Any additional comments?';
+            commentLabel.className = 'comment-label';
+            
+            const commentInput = document.createElement('textarea');
+            commentInput.className = 'feedback-comment';
+            commentInput.placeholder = 'Your comments help us improve...';
+            
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'feedback-dialog-buttons';
+            
+            const submitBtn = document.createElement('button');
+            submitBtn.className = 'provide-feedback-btn';
+            submitBtn.textContent = 'Submit Feedback';
+            submitBtn.addEventListener('click', function() {
+                // Get selected rating
+                const selectedRating = document.querySelector('.feedback-star.selected');
+                const rating = selectedRating ? parseInt(selectedRating.dataset.value) : 0;
+                const comment = commentInput.value.trim();
+                
+                // Submit feedback (you could implement this to use your feedback API)
+                console.log('Feedback:', { rating, comment });
+                
+                // Close form and clear history
+                feedbackForm.remove();
+                clearSessionHistory();
+            });
+            
+            const skipBtn = document.createElement('button');
+            skipBtn.className = 'skip-feedback-btn';
+            skipBtn.textContent = 'Skip';
+            skipBtn.addEventListener('click', function() {
+                feedbackForm.remove();
+                clearSessionHistory();
+            });
+            
+            ratingContainer.appendChild(ratingLabel);
+            ratingContainer.appendChild(starsContainer);
+            
+            commentContainer.appendChild(commentLabel);
+            commentContainer.appendChild(commentInput);
+            
+            buttonsContainer.appendChild(skipBtn);
+            buttonsContainer.appendChild(submitBtn);
+            
+            formContent.appendChild(title);
+            formContent.appendChild(ratingContainer);
+            formContent.appendChild(commentContainer);
+            formContent.appendChild(buttonsContainer);
+            
+            feedbackForm.appendChild(formContent);
+            document.body.appendChild(feedbackForm);
+        }
+        
+        function clearSessionHistory() {
+            // Clear history
             fetch('/api/clear-history', {
                 method: 'POST',
                 headers: {
@@ -222,8 +364,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error ending session:', error);
                 addBotMessage("I'm sorry, there was a problem ending your session. Please try again.");
             });
-            return;
         }
+    }
         
         // Normal message handling
         addTypingIndicator();
