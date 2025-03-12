@@ -36,6 +36,11 @@ class BaselineModel:
                           'parental consent', 'waiting period', 'insurance', 'medicaid', 'coverage', 'laws']
 
         question_lower = question.lower()
+        
+        # Direct policy pattern detection (what is the abortion policy in [state])
+        if "abortion policy in" in question_lower or "abortion policies in" in question_lower:
+            logger.debug("Direct abortion policy question with state detected")
+            return 'policy'
 
         # Check for explicit state mentions combined with abortion/policy keywords
         states = ["alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", 
@@ -64,13 +69,23 @@ class BaselineModel:
             return 'policy'
 
         # If question mentions abortion and a state, categorize as policy
-        if ('abortion' in question_lower and 
-            (any(state in question_lower for state in states) or
-             any(f" {abbr} " in f" {question_lower} " for abbr in state_abbrevs))):
+        state_mentioned = any(f" {state} " in f" {question_lower} " or
+                             question_lower.endswith(f" {state}") or
+                             question_lower.startswith(f"{state} ") 
+                             for state in states)
+                             
+        abbr_mentioned = any(f" {abbr} " in f" {question_lower} " or
+                            question_lower.endswith(f" {abbr}") or
+                            question_lower.startswith(f"{abbr} ") 
+                            for abbr in state_abbrevs)
+                         
+        if 'abortion' in question_lower and (state_mentioned or abbr_mentioned):
+            logger.debug(f"Question mentions abortion and a state: {question}")
             return 'policy'
 
         # Check for policy-related keywords
         if any(keyword in question_lower for keyword in policy_keywords):
+            logger.debug(f"Question contains policy keyword: {[kw for kw in policy_keywords if kw in question_lower]}")
             return 'policy'
 
         # Special case for abortion-related questions with action verbs

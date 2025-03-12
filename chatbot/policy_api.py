@@ -73,13 +73,58 @@ class PolicyAPI:
             "washington dc": "DC", "dc": "DC"
         }
         
+        # Handle common misspellings
+        misspelling_corrections = {
+            "tennesse": "tennessee",
+            "tenessee": "tennessee",
+            "tennesee": "tennessee",
+            "misouri": "missouri",
+            "pensilvania": "pennsylvania",
+            "pensylvania": "pennsylvania",
+            "massachusets": "massachusetts",
+            "massachussetts": "massachusetts",
+            "masachusetts": "massachusetts",
+            "conneticut": "connecticut",
+            "conecticut": "connecticut",
+            "mississipi": "mississippi",
+            "louisana": "louisiana",
+            "montanna": "montana",
+            "oklohoma": "oklahoma",
+            "arisona": "arizona",
+            "arkansaw": "arkansas",
+            "colorodo": "colorado",
+            "cailifornia": "california",
+            "califonia": "california",
+            "virgina": "virginia"
+        }
+        
         # Also check for state abbreviations (in isolation)
         abbrev_pattern = r'\b([A-Za-z]{2})\b'
         import re
         
         question_lower = question.lower()
         
-        # Check for state names
+        # Correct misspellings
+        for misspelled, correct in misspelling_corrections.items():
+            if misspelled in question_lower:
+                logger.debug(f"Corrected misspelling from '{misspelled}' to '{correct}'")
+                question_lower = question_lower.replace(misspelled, correct)
+        
+        # Enhanced matching: Check for "in [state]" and similar patterns
+        state_context_patterns = ["in ", "for ", "about ", "policy in ", "laws in "]
+        for pattern in state_context_patterns:
+            if pattern in question_lower:
+                parts = question_lower.split(pattern)
+                # Look at the part after the pattern
+                if len(parts) > 1:
+                    context_part = parts[1].strip()
+                    # Check each state against the beginning of this part
+                    for state_name, code in state_patterns.items():
+                        if context_part.startswith(state_name) or context_part == state_name:
+                            logger.debug(f"Found state '{state_name}' after '{pattern}' in question")
+                            return code
+                        
+        # Check for direct state names in question (simple contains)
         for state_name, code in state_patterns.items():
             if state_name in question_lower:
                 logger.debug(f"Found state name {state_name} in question")
@@ -340,12 +385,19 @@ class PolicyAPI:
             str: Formatted response
         """
         from chatbot.gpt_integration import GPTModel
+        from chatbot.citation_manager import CitationManager
         
         if not self.gpt_model:
             self.gpt_model = GPTModel()
         
         # Get state name for better readability using the class constant
         state_name = self.STATE_NAMES.get(state_code.upper(), state_code)
+        
+        # Log the received policy data for debugging
+        logger.debug(f"Formatting policy data for {state_name}: {json.dumps(policy_data, indent=2)[:500]}...")
+        
+        # Add citation for the Abortion Policy API
+        citation_mgr = CitationManager()
         
         # Convert policy data to readable format with special parsing for our new structure
         formatted_data = {
