@@ -118,42 +118,62 @@ class PolicyAPI:
             return {"error": "API key not configured"}
         
         try:
-            headers = {
-                "x-api-key": self.api_key,
-                "Content-Type": "application/json"
+            # Define endpoints to fetch
+            endpoints = {
+                "waiting_periods": "waiting_periods",
+                "insurance_coverage": "insurance_coverage",
+                "gestational_limits": "gestational_limits",
+                "minors": "minors"
             }
             
-            url = f"{self.base_url}/policy_by_state/{state_code.upper()}"
-            logger.debug(f"Making policy API request to: {url}")
+            # Ensure state code is uppercase
+            state_code = state_code.upper()
+            
+            # Use 'token' in headers as discovered in testing
+            headers = {"token": self.api_key}
             
             # Log the API key (first few characters only for security)
             masked_key = self.api_key[:3] + "*" * (len(self.api_key) - 3) if self.api_key else "None"
             logger.debug(f"Using API key: {masked_key}")
             
-            response = requests.get(url, headers=headers)
+            # Combined policy data object
+            policy_data = {
+                "state_code": state_code,
+                "endpoints": {}
+            }
             
-            # Log complete response for debugging
-            logger.debug(f"API Response status: {response.status_code}")
-            logger.debug(f"API Response headers: {response.headers}")
+            # Collect data from all endpoints
+            for key, endpoint in endpoints.items():
+                url = f"{self.base_url}/{endpoint}/states/{state_code}"
+                logger.debug(f"Making request to endpoint: {url}")
+                
+                # Add slight delay to avoid rate limiting
+                import time
+                time.sleep(0.5)
+                
+                try:
+                    response = requests.get(url, headers=headers)
+                    logger.debug(f"API Response status for {key}: {response.status_code}")
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data:  # if data is not empty
+                            policy_data["endpoints"][key] = data
+                            # Set success flag since we got data from at least one endpoint
+                            policy_data["success"] = True
+                    else:
+                        logger.warning(f"Endpoint {key} failed with status {response.status_code}: {response.text}")
+                        policy_data["endpoints"][key] = {"error": f"Status code {response.status_code}"}
+                except Exception as endpoint_error:
+                    logger.error(f"Error fetching {key} endpoint: {str(endpoint_error)}")
+                    policy_data["endpoints"][key] = {"error": str(endpoint_error)}
             
-            try:
-                response_content = response.json() if response.content else {}
-                logger.debug(f"API Response content: {response_content}")
-            except Exception as json_err:
-                logger.error(f"Could not parse response as JSON: {str(json_err)}")
-                logger.debug(f"Raw response content: {response.text}")
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                logger.error(f"API error: {response.status_code} - {response.text}")
-                # Add more detailed error information for debugging
-                error_info = {
-                    "error": f"API returned status code {response.status_code}",
-                    "error_detail": response.text,
-                    "request_url": url
-                }
-                return error_info
+            # Check if we got any data at all
+            if not policy_data.get("success") and not any(endpoint for endpoint in policy_data["endpoints"].values() if "error" not in endpoint):
+                logger.error("No policy data retrieved from any endpoint")
+                return {"error": "Failed to retrieve policy data from any endpoint"}
+                
+            return policy_data
                 
         except Exception as e:
             logger.error(f"Error fetching policy data: {str(e)}", exc_info=True)
@@ -233,20 +253,83 @@ class PolicyAPI:
         if not self.gpt_model:
             self.gpt_model = GPTModel()
         
-        # Convert policy data to readable format
-        formatted_data = json.dumps(policy_data, indent=2)
+        # Get state name for better readability
+        state_names = {
+            "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", 
+            "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", 
+            "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho", 
+            "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", 
+            "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland", 
+            "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", 
+            "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", 
+            "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York", 
+            "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", 
+            "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina", 
+            "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", 
+            "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", 
+            "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
+        }
+        state_name = state_names.get(state_code.upper(), state_code)
+        
+        # Convert policy data to readable format with special parsing for our new structure
+        formatted_data = {
+            "state_name": state_name,
+            "state_code": state_code
+        }
+        
+        # Extract data from each endpoint
+        endpoints_data = policy_data.get("endpoints", {})
+        
+        # Extract waiting periods info
+        if "waiting_periods" in endpoints_data:
+            wp_data = endpoints_data["waiting_periods"].get(state_name, {})
+            formatted_data["waiting_periods"] = wp_data
+        
+        # Extract insurance coverage info
+        if "insurance_coverage" in endpoints_data:
+            ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
+            formatted_data["insurance_coverage"] = ic_data
+        
+        # Extract gestational limits info
+        if "gestational_limits" in endpoints_data:
+            gl_data = endpoints_data["gestational_limits"].get(state_name, {})
+            formatted_data["gestational_limits"] = gl_data
+            
+            # Extract key gestational limit info for the prompt
+            if "banned_after_weeks_since_LMP" in gl_data:
+                formatted_data["weeks_limit"] = gl_data["banned_after_weeks_since_LMP"]
+            
+            if "exception_life" in gl_data:
+                formatted_data["exception_life"] = gl_data["exception_life"]
+                
+            if "exception_health" in gl_data:
+                formatted_data["exception_health"] = gl_data["exception_health"]
+        
+        # Extract minors info
+        if "minors" in endpoints_data:
+            minors_data = endpoints_data["minors"].get(state_name, {})
+            formatted_data["minors"] = minors_data
+            
+            # Extract key minors info
+            if "allows_minor_to_consent_to_abortion" in minors_data:
+                formatted_data["minor_consent"] = minors_data["allows_minor_to_consent_to_abortion"]
+        
+        # Format the data as JSON string for the prompt
+        formatted_json = json.dumps(formatted_data, indent=2)
         
         prompt = f"""
         The user asked: "{question}"
         
-        This question is about abortion policy in the state with code {state_code}.
+        This question is about abortion policy in {state_name} (state code: {state_code}).
         
-        Here is the policy data for this state:
-        {formatted_data}
+        Here is the policy data from the Abortion Policy API for this state:
+        {formatted_json}
         
         Please provide a clear, accurate response that directly answers the user's question using this policy data.
+        Focus on the specific policy areas the question is about.
         
         Format the response in a user-friendly way with appropriate headings and bullet points.
+        Include appropriate citations to the Abortion Policy API.
         Be sure to mention that this information is current according to the API data, but policies may change.
         Include a disclaimer that this is for informational purposes only and not legal advice.
         
@@ -254,50 +337,67 @@ class PolicyAPI:
         """
         
         try:
-            return self.gpt_model.get_response(prompt)
+            # Add a citation to the abortion policy API
+            from chatbot.citation_manager import CitationManager
+            citation_mgr = CitationManager()
+            response = self.gpt_model.get_response(prompt)
+            return citation_mgr.add_citation_to_text(response, "abortion_policy_api")
         except Exception as e:
             logger.error(f"Error formatting policy response: {str(e)}")
             
             # Fallback response using the raw data
-            state_names = {
-                "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", 
-                "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", 
-                "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho", 
-                "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", 
-                "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland", 
-                "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", 
-                "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", 
-                "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York", 
-                "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", 
-                "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina", 
-                "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", 
-                "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", 
-                "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
-            }
-            
-            state_name = state_names.get(state_code.upper(), state_code)
-            
             response = f"Here is information about abortion policy in {state_name}:\n\n"
             
-            # Extract key information from policy data
-            if "banned" in policy_data:
-                response += f"• Abortion banned: {policy_data['banned']}\n"
+            # Format each section of the policy data
+            if "gestational_limits" in endpoints_data:
+                gl_data = endpoints_data["gestational_limits"].get(state_name, {})
+                response += "## Gestational Limits\n"
                 
-            if "gestational_limit_in_weeks" in policy_data:
-                limit = policy_data['gestational_limit_in_weeks']
-                if limit:
-                    response += f"• Gestational limit: {limit} weeks\n"
-                else:
-                    response += "• No specific gestational limit mentioned in the data\n"
+                if "banned_after_weeks_since_LMP" in gl_data:
+                    weeks = gl_data["banned_after_weeks_since_LMP"]
+                    if weeks == 99:  # API uses 99 to indicate no specific ban
+                        response += "• No specific week limit mentioned\n"
+                    else:
+                        response += f"• Abortion banned after {weeks} weeks since last menstrual period\n"
+                        
+                if "exception_life" in gl_data:
+                    response += f"• Exception for life of the pregnant person: {gl_data['exception_life']}\n"
                     
-            if "waiting_period_in_hours" in policy_data:
-                waiting = policy_data['waiting_period_in_hours']
-                if waiting:
-                    response += f"• Waiting period required: {waiting} hours\n"
+                if "exception_health" in gl_data:
+                    response += f"• Health exception: {gl_data['exception_health']}\n"
                     
-            if "counseling" in policy_data:
-                response += f"• Counseling required: {policy_data['counseling']}\n"
+                response += "\n"
                 
-            response += "\nThis information is provided for informational purposes only and is not legal advice. Policies may change, so please consult with a healthcare provider or legal professional for the most current information."
+            if "waiting_periods" in endpoints_data:
+                wp_data = endpoints_data["waiting_periods"].get(state_name, {})
+                if wp_data:
+                    response += "## Waiting Periods\n"
+                    for key, value in wp_data.items():
+                        if key != "Last Updated":
+                            response += f"• {key.replace('_', ' ').title()}: {value}\n"
+                    response += "\n"
+                    
+            if "insurance_coverage" in endpoints_data:
+                ic_data = endpoints_data["insurance_coverage"].get(state_name, {})
+                if ic_data:
+                    response += "## Insurance Coverage\n"
+                    for key, value in ic_data.items():
+                        if key != "Last Updated":
+                            response += f"• {key.replace('_', ' ').title()}: {value}\n"
+                    response += "\n"
+                    
+            if "minors" in endpoints_data:
+                minors_data = endpoints_data["minors"].get(state_name, {})
+                if minors_data:
+                    response += "## Minors\n"
+                    for key, value in minors_data.items():
+                        if key != "Last Updated":
+                            response += f"• {key.replace('_', ' ').title()}: {value}\n"
+                    response += "\n"
+                
+            response += "This information is provided for informational purposes only and is not legal advice. Policies may change, so please consult with a healthcare provider or legal professional for the most current information."
             
-            return response
+            # Add a citation to the abortion policy API
+            from chatbot.citation_manager import CitationManager
+            citation_mgr = CitationManager()
+            return citation_mgr.add_citation_to_text(response, "abortion_policy_api")
