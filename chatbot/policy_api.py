@@ -2,6 +2,7 @@ import os
 import logging
 import requests
 import json
+import re
 from typing import Dict, Any, Optional, List, Union
 
 logger = logging.getLogger(__name__)
@@ -212,13 +213,35 @@ class PolicyAPI:
                 logger.info(
                     f"Extracted state code from question: {state_code}")
 
-        # 3) If still None, we disclaim we only have US data
+        # 3) If still None, we disclaim we only have US data, but provide more helpful response
         if not state_code:
             logger.debug(
-                "No valid US state recognized -> returning fallback message.")
-            return (
-                "I'm sorry, but I only have policy information for U.S. states right now. "
-                "I don't have data about abortion policies in that location.")
+                "No valid US state recognized -> returning enhanced international response.")
+            
+            # Check if the question mentions a specific non-US country
+            non_us_countries = ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
+                               'china', 'japan', 'brazil', 'spain', 'italy', 'russia']
+            
+            mentioned_country = None
+            for country in non_us_countries:
+                if country in question.lower():
+                    mentioned_country = country
+                    break
+            
+            if mentioned_country:
+                return (
+                    f"I understand you're asking about abortion access in {mentioned_country.title()}. "
+                    f"While I have detailed policy information only for U.S. states, I recommend consulting "
+                    f"local healthcare providers or reproductive health organizations in {mentioned_country.title()} "
+                    f"for accurate, up-to-date information. International organizations like the World Health "
+                    f"Organization (WHO) may also provide relevant resources."
+                )
+            else:
+                return (
+                    "I'm sorry, but I only have detailed policy information for U.S. states right now. "
+                    "For information about abortion policies in other countries, I recommend consulting "
+                    "local healthcare providers or international organizations like the World Health Organization (WHO). "
+                    "Would you like me to provide information about a specific U.S. state instead?")
 
         # 4) Fetch policy data
         policy_data = self.get_policy_data(state_code)
@@ -350,8 +373,11 @@ class PolicyAPI:
                                          'china', 'japan', 'brazil', 'spain', 'italy', 'russia']:
                 logger.debug(f"Non-US country detected: {location_context}")
                 return (
-                    f"I'm sorry, but I only have detailed policy information for U.S. states right now. "
-                    f"I don't have specific data about abortion policies in {location_context}.")
+                    f"I understand you're asking about abortion access in {location_context.title()}. "
+                    f"While I have detailed policy information only for U.S. states, I recommend consulting "
+                    f"local healthcare providers or reproductive health organizations in {location_context.title()} "
+                    f"for accurate, up-to-date information. International organizations like the World Health "
+                    f"Organization (WHO) may also provide relevant resources.")
 
             # Convert to state code for API call
             state_code = self.get_state_code(location_context)
