@@ -26,6 +26,9 @@ from chatbot.baseline_model import BaselineModel
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Default sample size for evaluation - can be overridden by the API
+SAMPLE_SIZE = 20
+
 def load_qa_data() -> List[Dict[str, str]]:
     """
     Load question-answer pairs from Planned Parenthood data
@@ -186,13 +189,14 @@ def save_metrics_to_log(metrics: Dict[str, Any], log_file: str = "evaluation_log
 
 def main():
     """Main function to run the Ragas metrics calculation"""
-    logger.info("Starting Ragas metrics calculation")
+    global SAMPLE_SIZE
+    logger.info(f"Starting Ragas metrics calculation with sample size: {SAMPLE_SIZE}")
     
     # Load QA data
     qa_pairs = load_qa_data()
     
     # Prepare evaluation data
-    questions, ground_truth = prepare_evaluation_data(qa_pairs, sample_size=20)
+    questions, ground_truth = prepare_evaluation_data(qa_pairs, sample_size=SAMPLE_SIZE)
     
     # Initialize model
     model = BaselineModel()

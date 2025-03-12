@@ -4,6 +4,8 @@ import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from chatbot.conversation_manager import ConversationManager
 from utils.text_processing import PIIDetector # Added import for PII detection
+from utils.advanced_metrics import AdvancedMetricsCalculator, generate_performance_report
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -135,6 +137,7 @@ def view_metrics():
     try:
         from utils.metrics_analyzer import MetricsAnalyzer
         from utils.feedback_manager import FeedbackManager
+        from utils.advanced_metrics import generate_performance_report
         
         # Get filter parameters
         end_date = request.args.get('end_date')
@@ -160,9 +163,47 @@ def view_metrics():
         start_date_str = start_date.strftime('%Y-%m-%d')
         end_date_str = end_date.strftime('%Y-%m-%d')
         
-        # Get metrics
+        # Get metrics from the metrics analyzer
         metrics_analyzer = MetricsAnalyzer()
         metrics = metrics_analyzer.get_metrics(start_date, end_date, session_id)
+        
+        # Get Ragas metrics from the evaluation logs
+        try:
+            # Use the generate_performance_report function to get Ragas metrics
+            performance_report = generate_performance_report(start_date=start_date, end_date=end_date)
+            
+            # Add Ragas metrics to the metrics dictionary
+            if 'summary' in performance_report and performance_report['summary']:
+                # Extract Ragas metrics if available
+                if 'ragas' not in metrics:
+                    metrics['ragas'] = {}
+                    
+                for metric_type, metric_values in performance_report['summary'].items():
+                    if metric_type == 'ragas':
+                        # Copy Ragas metrics directly
+                        metrics['ragas'] = metric_values
+                        
+                # Ensure all Ragas metrics exist with default values if missing
+                ragas_defaults = {
+                    'faithfulness': 0.0,
+                    'context_precision': 0.0,
+                    'context_recall': 0.0,
+                    'ragas_error': None
+                }
+                for key, default_value in ragas_defaults.items():
+                    if key not in metrics['ragas']:
+                        metrics['ragas'][key] = default_value
+            
+            logger.info("Successfully loaded Ragas metrics from evaluation logs")
+        except Exception as e:
+            logger.warning(f"Error loading Ragas metrics: {str(e)}")
+            # Create empty Ragas metrics
+            metrics['ragas'] = {
+                'faithfulness': 0.0,
+                'context_precision': 0.0,
+                'context_recall': 0.0,
+                'ragas_error': str(e)
+            }
         
         # Filter by question type if specified
         if question_type != 'all' and question_type in ['policy', 'knowledge', 'conversational']:
@@ -278,6 +319,49 @@ def view_metrics():
         return render_template('error.html', 
                              error_message="An error occurred retrieving dashboard data.",
                              error_details=str(e))
+
+@app.route('/admin/run-ragas-evaluation', methods=['POST'])
+def run_ragas_evaluation():
+    """
+    Run Ragas metrics evaluation on sample data
+    This is a long-running task, so we run it in a background thread
+    """
+    try:
+        from scripts.calculate_ragas_metrics import main as run_ragas
+        
+        # Get optional parameters
+        data = request.get_json() or {}
+        sample_size = data.get('sample_size', 20)
+        
+        # Start the evaluation in a background thread
+        def run_evaluation():
+            try:
+                logger.info(f"Starting Ragas evaluation with sample_size={sample_size}")
+                # Update the sample size in the main function
+                import scripts.calculate_ragas_metrics
+                scripts.calculate_ragas_metrics.SAMPLE_SIZE = sample_size
+                # Run the evaluation
+                run_ragas()
+                logger.info("Ragas evaluation completed successfully")
+            except Exception as e:
+                logger.error(f"Error in Ragas evaluation thread: {str(e)}", exc_info=True)
+        
+        # Start the evaluation thread
+        thread = threading.Thread(target=run_evaluation)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Ragas evaluation started in background thread'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting Ragas evaluation: {str(e)}", exc_info=True)
+        return jsonify({
+            'error': 'Failed to start Ragas evaluation',
+            'details': str(e)
+        }), 500
 
 @app.route('/api/clear-history', methods=['POST'])
 def clear_history():
