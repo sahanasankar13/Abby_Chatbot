@@ -84,7 +84,7 @@ class GPTModel:
                     "content": question
                 }],
                 temperature=0.7,
-                max_tokens=500)
+                max_tokens=1200)
 
             return response.choices[0].message.content
 
@@ -189,7 +189,7 @@ class GPTModel:
                     "content": enhancement_prompt
                 }],
                 temperature=0.4,  # Balanced temperature for natural yet consistent responses
-                max_tokens=750)  # Increased token limit to allow for detailed responses
+                max_tokens=1200)  # Increased token limit to allow for detailed responses
 
             return response.choices[0].message.content
 
@@ -259,7 +259,7 @@ class GPTModel:
                     "content": policy_prompt
                 }],
                 temperature=0.3,
-                max_tokens=800)
+                max_tokens=1200)
 
             return response.choices[0].message.content
 
@@ -301,7 +301,7 @@ class GPTModel:
             response = self.client.chat.completions.create(
                 messages=messages,
                 model=self.model,
-                max_tokens=500,
+                max_tokens=1000,
                 temperature=temperature)
 
             return response.choices[0].message.content.strip()
