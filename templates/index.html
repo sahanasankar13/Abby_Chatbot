@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container chat-container">
+    <div class="chat-header">
+        <button class="theme-toggle" title="Toggle dark/light mode">
+            <i class="fas fa-moon"></i>
+        </button>
+        <h1>Reproductive Health Assistant</h1>
+        <p>Ask me questions about reproductive health, contraception, and more.</p>
+    </div>
+    
+    <div id="chatMessages" class="chat-messages">
+        <!-- Messages will be added here dynamically -->
+    </div>
+    
+    <div class="chat-input">
+        <form id="chatForm">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    class="form-control" 
+                    placeholder="Type your question here (you can ask multiple questions at once)..." 
+                    autocomplete="off"
+                    aria-label="Message"
+                >
+                <button 
+                    type="submit" 
+                    id="sendButton" 
+                    class="btn btn-primary"
+                    disabled
+                >
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
