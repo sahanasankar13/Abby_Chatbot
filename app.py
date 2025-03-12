@@ -70,6 +70,65 @@ def chat():
         logger.error(f"Error in chat endpoint: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your request'}), 500
 
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    """
+    API endpoint for submitting user feedback on chatbot responses
+    """
+    try:
+        # Get feedback data from request
+        data = request.get_json()
+        if not data or 'message_id' not in data or 'rating' not in data:
+            return jsonify({'error': 'Missing required feedback parameters'}), 400
+
+        message_id = data['message_id']
+        rating = data['rating']  # 1 for thumbs up, -1 for thumbs down
+        comment = data.get('comment', None)  # Optional comment
+        
+        # Check for PII in the comment if provided
+        if comment:
+            pii_detector = PIIDetector()
+            if pii_detector.has_pii(comment):
+                # Redact any PII from the comment
+                logger.warning("PII detected in feedback comment, redacting")
+                comment, redacted_items = pii_detector.redact_pii(comment)
+                logger.info(f"Redacted {len(redacted_items)} PII items from feedback comment")
+        
+        # Log the feedback with redacted comment for debugging
+        logger.info(f"Received feedback for message {message_id}: rating={rating}")
+        
+        # Store feedback using the feedback manager
+        from utils.feedback_manager import FeedbackManager
+        feedback_manager = FeedbackManager()
+        success = feedback_manager.add_feedback(message_id, rating, comment)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Feedback recorded successfully'})
+        else:
+            return jsonify({'error': 'Failed to record feedback'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error processing feedback: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred processing your feedback'}), 500
+
+@app.route('/admin/feedback', methods=['GET'])
+def view_feedback():
+    """
+    Admin dashboard for viewing feedback statistics
+    """
+    try:
+        from utils.feedback_manager import FeedbackManager
+        feedback_manager = FeedbackManager()
+        
+        # Get all feedback data
+        all_feedback = feedback_manager.get_all_feedback()
+        stats = feedback_manager.get_feedback_stats()
+        
+        return render_template('admin/feedback.html', feedback=all_feedback, stats=stats)
+    except Exception as e:
+        logger.error(f"Error retrieving feedback data: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred retrieving feedback data'}), 500
+
 @app.route('/health')
 def health_check():
     """Health check endpoint for monitoring"""

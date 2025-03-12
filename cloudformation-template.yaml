@@ -166,7 +166,7 @@ Resources:
       Roles:
         - !Ref EC2Role
 
-  # SSM Parameters for API Keys
+  # SSM Parameters for API Keys and Secrets
   OpenAIApiKeyParameter:
     Type: 'AWS::SSM::Parameter'
     Properties:
@@ -182,6 +182,14 @@ Resources:
       Type: 'SecureString'
       Value: !Ref AbortionPolicyApiKey
       Description: 'Abortion Policy API Key for the Reproductive Health Chatbot'
+      
+  SessionSecretParameter:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: '/reproductive-health-chatbot/SESSION_SECRET'
+      Type: 'SecureString'
+      Value: !Join ['', ['reproductive-health-', !Ref 'AWS::StackName', '-', !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]]]
+      Description: 'Session Secret for Flask application'
 
   # Load Balancer Resources
   ApplicationLoadBalancer:
@@ -260,16 +268,25 @@ Resources:
             pip install --upgrade pip
             pip install -r requirements-aws.txt
             
-            # Get API keys from Parameter Store
+            # Get API keys and secrets from Parameter Store
             OPENAI_API_KEY=$(aws ssm get-parameter --name "/reproductive-health-chatbot/OPENAI_API_KEY" --with-decryption --region ${AWS::Region} --query "Parameter.Value" --output text)
             ABORTION_POLICY_API_KEY=$(aws ssm get-parameter --name "/reproductive-health-chatbot/ABORTION_POLICY_API_KEY" --with-decryption --region ${AWS::Region} --query "Parameter.Value" --output text)
+            SESSION_SECRET=$(aws ssm get-parameter --name "/reproductive-health-chatbot/SESSION_SECRET" --with-decryption --region ${AWS::Region} --query "Parameter.Value" --output text)
             
             # Create .env file
             cat > /var/www/html/.env << EOF
             OPENAI_API_KEY=$OPENAI_API_KEY
             ABORTION_POLICY_API_KEY=$ABORTION_POLICY_API_KEY
+            SESSION_SECRET=$SESSION_SECRET
             FLASK_ENV=production
+            LOG_LEVEL=INFO
+            AWS_LOG_GROUP=/reproductive-health-chatbot
             EOF
+            
+            # Create data directories with proper permissions
+            mkdir -p /var/www/html/data
+            chown ec2-user:ec2-user /var/www/html/data
+            chmod 750 /var/www/html/data
             
             # Set up systemd service
             cat > /etc/systemd/system/reproductive-health-chatbot.service << EOF

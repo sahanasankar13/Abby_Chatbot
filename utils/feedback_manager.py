@@ -60,6 +60,15 @@ class FeedbackManager:
             bool: True if feedback was added successfully
         """
         try:
+            # Double-check for PII in comment if provided
+            if comment:
+                from utils.text_processing import PIIDetector
+                pii_detector = PIIDetector()
+                
+                if pii_detector.has_pii(comment):
+                    logger.warning("PII detected in feedback comment during storage, redacting")
+                    comment, _ = pii_detector.redact_pii(comment)
+            
             # Create new feedback object
             feedback = UserFeedback(
                 message_id=message_id,

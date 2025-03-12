@@ -96,7 +96,8 @@ class ConversationManager:
                     # Add citation since we're discussing reproductive health
                     cited_response = self.citation_manager.add_citation_to_text(empathetic_response, 'planned_parenthood')
                     formatted_response = self.citation_manager.format_response_with_citations(cited_response)
-                    self.add_to_history('bot', formatted_response['text'])
+                    message_id = self.add_to_history('bot', formatted_response['text'])
+                    formatted_response['message_id'] = message_id
                     return formatted_response
             
             # Detect question type for adding appropriate friendly elements
@@ -271,24 +272,47 @@ class ConversationManager:
         logger.info("No location context found in message or history")
         return None
     
-    def add_to_history(self, sender, message):
+    def add_to_history(self, sender, message, message_id=None):
         """
         Add a message to the conversation history
         
         Args:
             sender (str): 'user' or 'bot'
             message (str): Message content
+            message_id (str, optional): Unique ID for the message
+            
+        Returns:
+            str: The message ID used
         """
+        import uuid
+        from utils.text_processing import PIIDetector
+        
+        # Generate message ID if not provided
+        if not message_id:
+            message_id = str(uuid.uuid4())
+        
+        # Check for and redact PII in user messages
+        if sender == 'user':
+            pii_detector = PIIDetector()
+            if pii_detector.has_pii(message):
+                logger.warning("PII detected in user message, redacting before storing in history")
+                redacted_message, _ = pii_detector.redact_pii(message)
+                message = redacted_message
+                logger.info("User message redacted for PII in conversation history")
+            
         timestamp = time.time()
         self.conversation_history.append({
             'sender': sender,
             'message': message,
+            'message_id': message_id,
             'timestamp': timestamp
         })
         
         # Keep only the last 10 messages to avoid memory issues
         if len(self.conversation_history) > 10:
             self.conversation_history = self.conversation_history[-10:]
+            
+        return message_id
     
     def get_history(self):
         """
