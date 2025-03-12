@@ -497,21 +497,33 @@ class ResponseEvaluator:
             logger.error(f"Error validating sources: {str(e)}", exc_info=True)
             return {"is_valid": True, "issues": ["Source validation failed but proceeding with caution"]}
 
-    def generate_safe_alternative(self, question: str, response: str, issues: List[str]) -> str:
+    def generate_safe_alternative(self, question: str, response: str, issues: List) -> str:
         """
         Generate a safe alternative response when safety issues are detected
         
         Args:
             question (str): Original question
             response (str): Problematic response
-            issues (List[str]): List of safety issues
+            issues (List): List of safety issues (can be strings or dicts)
             
         Returns:
             str: A safer alternative response
         """
         try:
             if self.evaluation_model in ["openai", "both"]:
-                issues_text = "; ".join(issues)
+                # Process issues to ensure they're all strings
+                processed_issues = []
+                for issue in issues:
+                    if isinstance(issue, dict):
+                        # Extract relevant information from dictionary
+                        if 'category' in issue and 'concern' in issue:
+                            processed_issues.append(f"{issue['category']}: {issue['concern']}")
+                        else:
+                            processed_issues.append(str(issue))
+                    else:
+                        processed_issues.append(str(issue))
+                
+                issues_text = "; ".join(processed_issues)
                 
                 safety_prompt = f"""
                 The following chatbot response to a reproductive health question has safety issues:
