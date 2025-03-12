@@ -189,6 +189,13 @@ function setup_monitoring {
         aws logs create-log-group --log-group-name "${LOG_GROUP}"
     fi
     
+    # Create Ragas metrics log group
+    RAGAS_LOG_GROUP="/reproductive-health-chatbot/ragas-metrics"
+    if ! aws logs describe-log-groups --log-group-name-prefix "${RAGAS_LOG_GROUP}" | grep -q "${RAGAS_LOG_GROUP}"; then
+        echo "Creating CloudWatch log group for Ragas metrics: ${RAGAS_LOG_GROUP}"
+        aws logs create-log-group --log-group-name "${RAGAS_LOG_GROUP}"
+    fi
+    
     # Create basic CloudWatch alarm for high CPU
     ALARM_NAME="${APP_NAME}-high-cpu"
     if ! aws cloudwatch describe-alarms --alarm-names "${ALARM_NAME}" | grep -q "${ALARM_NAME}"; then
@@ -206,6 +213,54 @@ function setup_monitoring {
             --evaluation-periods 2 \
             --alarm-actions arn:aws:sns:${REGION}:$(aws sts get-caller-identity --query 'Account' --output text):${APP_NAME}-alerts
     fi
+    
+    # Create CloudWatch dashboard for Ragas metrics
+    DASHBOARD_NAME="${APP_NAME}-${ENVIRONMENT_NAME}-dashboard"
+    echo "Creating CloudWatch dashboard for monitoring Ragas metrics: ${DASHBOARD_NAME}"
+    aws cloudwatch put-dashboard \
+        --dashboard-name "${DASHBOARD_NAME}" \
+        --dashboard-body '{
+            "widgets": [
+                {
+                    "type": "metric",
+                    "x": 0,
+                    "y": 0,
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "metrics": [
+                            [ "ReproductiveHealthChatbot", "ragas.faithfulness", { "stat": "Average" } ],
+                            [ ".", "ragas.context_precision", { "stat": "Average" } ],
+                            [ ".", "ragas.context_recall", { "stat": "Average" } ]
+                        ],
+                        "view": "timeSeries",
+                        "stacked": false,
+                        "region": "'"${REGION}"'",
+                        "title": "Ragas Metrics",
+                        "period": 3600
+                    }
+                },
+                {
+                    "type": "metric",
+                    "x": 12,
+                    "y": 0,
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "metrics": [
+                            [ "ReproductiveHealthChatbot", "response.quality_score", { "stat": "Average" } ],
+                            [ ".", "response.relevance_score", { "stat": "Average" } ],
+                            [ ".", "response.safety_score", { "stat": "Average" } ]
+                        ],
+                        "view": "timeSeries",
+                        "stacked": false,
+                        "region": "'"${REGION}"'",
+                        "title": "Response Quality Metrics",
+                        "period": 3600
+                    }
+                }
+            ]
+        }'
     
     echo -e "${GREEN}Monitoring and logging setup completed!${NC}"
 }
@@ -237,7 +292,11 @@ function display_deployment_info {
     echo -e "Environment: ${ENVIRONMENT_NAME}"
     echo -e "Region: ${REGION}"
     echo -e "Deployment Type: ${DEPLOYMENT_TYPE}"
+    echo -e "CloudWatch Dashboard: https://${REGION}.console.aws.amazon.com/cloudwatch/home?region=${REGION}#dashboards:name=${APP_NAME}-${ENVIRONMENT_NAME}-dashboard"
+    echo -e "Ragas Metrics Log Group: ${RAGAS_LOG_GROUP}"
     echo -e "\nRemember to set environment variables using the 'aws-environment-variables.md' guide."
+    echo -e "\nImportant: Ragas metrics will be automatically evaluated and sent to CloudWatch."
+    echo -e "You can access the metrics dashboard and configure alarms for them through the CloudWatch console."
 }
 
 # Main

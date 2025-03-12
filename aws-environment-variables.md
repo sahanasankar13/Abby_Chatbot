@@ -32,6 +32,8 @@ Optional application configuration variables:
 | `MODEL_NAME` | GPT model to use | No | `gpt-4o` |
 | `RAGAS_SAMPLE_SIZE` | Default sample size for Ragas evaluations | No | `50` |
 | `EVALUATION_MODEL` | Model for response evaluation (`openai`, `local`, or `both`) | No | `both` |
+| `RAGAS_EVALUATION_INTERVAL` | Interval (in hours) between scheduled Ragas evaluations | No | `24` |
+| `RAGAS_METRICS_TO_CLOUDWATCH` | Whether to send Ragas metrics to CloudWatch | No | `true` |
 
 ## AWS-Specific Configuration
 

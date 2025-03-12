@@ -281,6 +281,11 @@ Resources:
             FLASK_ENV=production
             LOG_LEVEL=INFO
             AWS_LOG_GROUP=/reproductive-health-chatbot
+            AWS_REGION=${AWS::Region}
+            RAGAS_SAMPLE_SIZE=50
+            EVALUATION_MODEL=both
+            RAGAS_EVALUATION_INTERVAL=24
+            RAGAS_METRICS_TO_CLOUDWATCH=true
             EOF
             
             # Create data directories with proper permissions
