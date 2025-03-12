@@ -2,6 +2,7 @@ import logging
 import time
 from chatbot.baseline_model import BaselineModel
 from chatbot.friendly_bot import FriendlyBot
+from chatbot.citation_manager import CitationManager
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ class ConversationManager:
         try:
             self.baseline_model = BaselineModel()
             self.friendly_bot = FriendlyBot()
+            self.citation_manager = CitationManager()
             self.conversation_history = []
             
             logger.info("Conversation Manager initialized successfully")
