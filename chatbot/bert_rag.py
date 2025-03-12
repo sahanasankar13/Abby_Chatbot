@@ -13,11 +13,13 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import nltk
 
-# Download required NLTK resources if not already available
+# Check for required NLTK resources - main.py should have already downloaded them
+# If not, we'll download them here as a fallback
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
+
 try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
@@ -41,7 +43,24 @@ class BertRAGModel:
 
             # Stemmer for text preprocessing
             self.stemmer = PorterStemmer()
-            self.stop_words = set(stopwords.words('english'))
+            
+            # Define stopwords manually to avoid NLTK dependency issues
+            self.stop_words = {
+                'a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as', 'what',
+                'which', 'this', 'that', 'these', 'those', 'then', 'just', 'so', 'than', 'such',
+                'when', 'while', 'who', 'whom', 'where', 'why', 'how', 'all', 'any', 'both',
+                'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
+                'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will',
+                'don', 'should', 'now', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours',
+                'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him',
+                'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself',
+                'they', 'them', 'their', 'theirs', 'themselves', 'am', 'is', 'are', 'was',
+                'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does',
+                'did', 'doing', 'to', 'from', 'in', 'out', 'on', 'off', 'over', 'under',
+                'again', 'further', 'for', 'of', 'by', 'about', 'against', 'between', 'into',
+                'through', 'during', 'before', 'after', 'above', 'below', 'up', 'down', 'with',
+                'at', 'on', 'by'
+            }
 
             # Load and index the data
             self.qa_pairs = load_reproductive_health_data()
@@ -102,8 +121,8 @@ class BertRAGModel:
         text = text.lower()
         text = re.sub(f'[{re.escape(string.punctuation)}]', ' ', text)
         
-        # Tokenize
-        tokens = word_tokenize(text)
+        # Simple tokenization without relying on nltk's word_tokenize
+        tokens = text.split()
         
         # Remove stopwords and stem
         tokens = [self.stemmer.stem(word) for word in tokens if word not in self.stop_words]

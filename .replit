@@ -8,7 +8,7 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
-runButton = "Start application"
+runButton = "Start Application"
 
 [[workflows.workflow]]
 name = "Project"
@@ -33,6 +33,22 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Download NLTK Data"
+author = 40411021
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python download_nltk_data.py"
+
+[[workflows.workflow]]
+name = "Start Application"
+author = 40411021
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
 
 [[ports]]
 localPort = 5000
