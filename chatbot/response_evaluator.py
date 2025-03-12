@@ -113,6 +113,8 @@ class ResponseEvaluator:
         Returns:
             dict: Evaluation results including scores, issues, and improved response
         """
+        # Store the original response for reference in policy detection
+        evaluation_result = {"original_response": response}
         try:
             # Perform safety check first
             safety_check = self.perform_safety_check(question, response)
@@ -405,30 +407,39 @@ class ResponseEvaluator:
         """Use OpenAI to check for safety issues"""
         try:
             safety_prompt = f"""
-            Examine this chatbot response about reproductive health for any potential safety issues:
+            Examine this chatbot response about reproductive health ONLY for offensive language or content:
             
             User question: "{question}"
             Chatbot response: "{response}"
             
-            Identify any issues in these categories:
-            1. Harmful advice or misinformation
-            2. Inappropriate medical recommendations
-            3. Misleading pregnancy or abortion information
-            4. Stigmatizing or judgmental language
-            5. Inaccurate medical facts
+            ONLY identify issues if there are:
+            1. Offensive language
+            2. Discriminatory content
+            3. Stigmatizing or judgmental language
+            4. Hateful terminology
+            5. NSFW content
+            
+            DO NOT flag content for:
+            - Policy accuracy or recency 
+            - Potential legal changes
+            - Medical comprehensiveness
+            - Being too cautious
+            - Any other factual issues
+            
+            Abortion policy information is always acceptable as long as it's presented neutrally.
             
             Return a JSON structure with:
             - "has_issues": true or false
-            - "issues": list of specific safety concerns (empty if none found)
+            - "issues": list of specific offensive language concerns (empty if none found)
             
-            Be particularly alert to any content that could lead to physical or emotional harm.
+            Only mark has_issues as true if there is genuinely offensive language or hate speech.
             """
             
             safety_response = self.client.chat.completions.create(
                 model=self.openai_model,
                 messages=[{
                     "role": "system",
-                    "content": "You are a safety expert focusing on reproductive health information."
+                    "content": "You are a content moderation expert focusing only on offensive language, not factual accuracy."
                 }, {
                     "role": "user",
                     "content": safety_prompt
@@ -582,19 +593,42 @@ class ResponseEvaluator:
             bool: True if the improved response should be used
         """
         try:
-            # Always use improved response if safety issues were found
+            # Check for policy information in the response
+            response = evaluation_result.get("original_response", "")
+            has_policy_info = any(term in response.lower() for term in 
+                                ["abortion law", "abortion ban", "legal in", "restrictions", "weeks of pregnancy",
+                                 "policy in", "allowed in", "permitted in", "state law", "state policy"])
+            
+            # Skip improving response if it contains policy information
+            if has_policy_info:
+                logger.info("Skipping improvement for policy information response")
+                return False
+            
+            # Only use improved response if genuinely offensive content was found
             if "safety_check" in evaluation_result and not evaluation_result["safety_check"].get("is_safe", True):
-                logger.info("Using improved response due to safety concerns")
-                return True
+                issues = evaluation_result["safety_check"].get("issues", [])
+                # Check if any of the issues are about offensive language
+                has_offensive_issues = any("offensive" in str(issue).lower() or 
+                                          "discriminatory" in str(issue).lower() or 
+                                          "hateful" in str(issue).lower() or
+                                          "stigmatizing" in str(issue).lower() or
+                                          "judgmental" in str(issue).lower() for issue in issues)
+                if has_offensive_issues:
+                    logger.info("Using improved response due to offensive content concerns")
+                    return True
             
-            # Always use improved response if source issues were found
+            # Always use improved response if source issues were found (non-policy responses)
             if "source_validation" in evaluation_result and not evaluation_result["source_validation"].get("is_valid", True):
-                logger.info("Using improved response due to source validation concerns")
-                return True
+                if not has_policy_info:
+                    logger.info("Using improved response due to source validation concerns")
+                    return True
             
-            # Use the improved response if the original score is below 7
-            score = evaluation_result.get('score', 5)
-            return score < 7
+            # Use the improved response if the original score is below 7 (non-policy responses)
+            if not has_policy_info:
+                score = evaluation_result.get('score', 5)
+                return score < 7
+                
+            return False
         except Exception as e:
             logger.error(f"Error determining if improved response should be used: {str(e)}", exc_info=True)
             return False
