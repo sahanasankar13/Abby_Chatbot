@@ -519,8 +519,10 @@ class ResponseEvaluator:
                         if 'category' in issue and 'concern' in issue:
                             processed_issues.append(f"{issue['category']}: {issue['concern']}")
                         else:
+                            # Convert dictionary to JSON string
                             processed_issues.append(json.dumps(issue))
                     else:
+                        # Convert any non-string issues to strings
                         processed_issues.append(str(issue))
                 
                 issues_text = "; ".join(processed_issues)
