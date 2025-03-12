@@ -108,8 +108,8 @@ class CitationManager:
         """
         if include_citation and source_id in self.sources:
             # Only add citation if the text is substantial (not conversational)
-            # Lowered the word count threshold to be more generous with citations
-            if len(text.split()) > 15 and not self._is_conversational(text):
+            # Using consistent threshold of 10 words across all methods
+            if len(text.split()) > 10 and not self._is_conversational(text):
                 citation_text = f"(Source: {self.sources[source_id].source})"
                 if citation_text not in text:
                     return f"{text} {citation_text}"
@@ -129,7 +129,8 @@ class CitationManager:
         ]
 
         # Check for question marks and short sentences
-        is_question = "?" in text and len(text.split()) < 20
+        # Using consistent threshold of 10 words across all methods
+        is_question = "?" in text and len(text.split()) < 10
 
         # Check for conversation indicators
         has_indicator = any(indicator in text_lower
@@ -146,8 +147,8 @@ class CitationManager:
         citations = []
 
         # Skip if text is too short or conversational
-        # Lowered threshold to match add_citation_to_text
-        if self._is_conversational(text) or len(text.split()) < 15:
+        # Using consistent threshold of 10 words across all methods
+        if self._is_conversational(text) or len(text.split()) < 10:
             return []
 
         source_pattern = r'\(Source: ([^)]+)\)'
