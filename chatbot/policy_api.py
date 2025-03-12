@@ -13,11 +13,14 @@ class PolicyAPI:
     def __init__(self):
         """Initialize the Policy API client"""
         logger.info("Initializing Policy API")
-        self.api_key = os.environ.get("ABORTION_POLICY_API_KEY")
+        # Check for various environment variable names for the API key
+        self.api_key = os.environ.get("ABORTION_POLICY_API_KEY") or os.environ.get("POLICY_API_KEY")
         self.base_url = "https://api.abortionpolicyapi.com/v1"
         
         if not self.api_key:
             logger.warning("Abortion Policy API key not found in environment variables")
+        else:
+            logger.info("Abortion Policy API key found")
         
         self.gpt_model = None
         logger.info("Policy API initialized successfully")
@@ -32,6 +35,51 @@ class PolicyAPI:
         Returns:
             Optional[str]: State code if found, None otherwise
         """
+        # First try a rule-based approach for common patterns
+        state_patterns = {
+            "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", 
+            "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE", 
+            "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID", 
+            "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS", 
+            "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD", 
+            "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS", 
+            "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV", 
+            "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY", 
+            "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", 
+            "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", 
+            "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT", 
+            "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV", 
+            "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC", 
+            "washington dc": "DC", "dc": "DC"
+        }
+        
+        # Also check for state abbreviations (in isolation)
+        abbrev_pattern = r'\b([A-Za-z]{2})\b'
+        import re
+        
+        question_lower = question.lower()
+        
+        # Check for state names
+        for state_name, code in state_patterns.items():
+            if state_name in question_lower:
+                logger.debug(f"Found state name {state_name} in question")
+                return code
+        
+        # Check for state abbreviations (case insensitive)
+        abbrevs = re.findall(abbrev_pattern, question)
+        if abbrevs:
+            # Convert to uppercase for consistency
+            potential_abbrevs = [abbr.upper() for abbr in abbrevs]
+            logger.debug(f"Found potential state abbreviations: {potential_abbrevs}")
+            
+            # Check if any of the found abbreviations are valid state codes
+            valid_state_codes = set(state_patterns.values())
+            for abbr in potential_abbrevs:
+                if abbr in valid_state_codes:
+                    logger.debug(f"Matched valid state code: {abbr}")
+                    return abbr
+        
+        # Fall back to GPT for more complex cases
         from chatbot.gpt_integration import GPTModel
         
         if not self.gpt_model:
@@ -52,7 +100,7 @@ class PolicyAPI:
                 return None
             return response if len(response) == 2 else None
         except Exception as e:
-            logger.error(f"Error extracting state: {str(e)}")
+            logger.error(f"Error extracting state from GPT: {str(e)}")
             return None
     
     def get_policy_data(self, state_code: str) -> Dict[str, Any]:

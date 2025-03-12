@@ -44,10 +44,18 @@ class BaselineModel:
                  "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", 
                  "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", 
                  "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", 
-                 "wisconsin", "wyoming"]
+                 "wisconsin", "wyoming", "dc", "district of columbia", "washington dc"]
+        
+        # Check for state abbreviations
+        state_abbrevs = ["al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", 
+                         "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", 
+                         "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", 
+                         "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc"]
         
         # If question mentions abortion and a state, categorize as policy
-        if ('abortion' in question_lower and any(state in question_lower for state in states)):
+        if ('abortion' in question_lower and 
+            (any(state in question_lower for state in states) or
+             any(f" {abbr} " in f" {question_lower} " for abbr in state_abbrevs))):
             return 'policy'
         
         # Check for policy-related keywords
