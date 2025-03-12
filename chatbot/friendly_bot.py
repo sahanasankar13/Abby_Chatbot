@@ -53,11 +53,12 @@ class FriendlyBot:
             str: Enhanced friendly response
         """
         try:
-            # Determine if this is a new conversation (simple check for greeting words)
-            is_greeting = any(word in message.lower() for word in ["hello", "hi ", "hey", "welcome"])
+            # Determine if this is a new conversation (more comprehensive check for greeting words or phrases)
+            greeting_words = ["hello", "hi ", "hey", "welcome", "how are you", "doing well", "thanks for asking"]
+            is_greeting = any(word in message.lower() for word in greeting_words)
             
-            # Don't modify already friendly greetings
-            if is_greeting:
+            # Don't modify conversational exchanges or greetings
+            if is_greeting or len(message.split()) < 15:  # Simple response or greeting
                 return message
             
             # Start with empathy for personal questions

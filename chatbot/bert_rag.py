@@ -146,7 +146,7 @@ class BertRAGModel:
             # Check if this is a conversational query instead of a health question
             if self._is_conversational_query(question):
                 logger.debug(f"Detected conversational query: '{question}'")
-                return "I'm doing well, thanks for asking! I'm Abby, your reproductive health assistant. How can I help you today?"
+                return "I'm doing well, thanks for asking! How can I help you today?"
             
             # First check for exact matches (case-insensitive) to prioritize them
             normalized_question = question.lower().strip('?. ')
