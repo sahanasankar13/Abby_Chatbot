@@ -57,7 +57,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Handle lists
         text = text.replace(/^\*\s+(.+)$/gm, '<li>$1</li>');
-        text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+        
+        // Safely wrap list items in a ul tag
+        const hasListItems = text.indexOf('<li>') !== -1;
+        if (hasListItems) {
+            // Find all sequences of adjacent list items
+            text = text.replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/g, '<ul>$1</ul>');
+        }
 
         // Handle bold text
         text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -70,7 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Handle paragraphs - ensure this is applied after other formatters
         text = text.replace(/^(.+)$/gm, function(match, content) {
-            if (content.startsWith('<h') || content.startsWith('<ul') || content.startsWith('<li') || !content.trim()) {
+            if (content.startsWith('<h') || content.startsWith('<ul') || 
+                content.startsWith('<li') || !content.trim()) {
                 return content;
             }
             return '<p>' + content + '</p>';
@@ -145,31 +152,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    // Theme toggle functionality (Preserved from original)
-    const themeToggle = document.querySelector('.theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-
-            // Update icon
-            const icon = this.querySelector('i');
-            if (icon.classList.contains('fa-moon')) {
-                icon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                icon.classList.replace('fa-sun', 'fa-moon');
-            }
-
-            // Save preference
-            const isDarkMode = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDarkMode);
-        });
-
-        // Check for saved theme preference
-        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-        if (savedDarkMode) {
-            document.body.classList.add('dark-mode');
-            themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
-        }
-    }
 });
