@@ -3,14 +3,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
-    
+
     // Add header buttons menu
     const chatHeader = document.querySelector('.chat-header');
-    
+
     // Create a header menu container (right side)
     const headerMenu = document.createElement('div');
     headerMenu.className = 'header-menu';
-    
+
     // Add quick exit button with emergency exit styling
     const quickExitBtn = document.createElement('button');
     quickExitBtn.className = 'quick-exit-btn';
@@ -20,17 +20,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Redirect to a neutral site immediately
         window.location.href = 'https://www.google.com';
     });
-    
+
     // Add feedback button in dropdown menu
     const menuButton = document.createElement('button');
     menuButton.className = 'header-menu-button';
     menuButton.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
     menuButton.title = 'Menu';
-    
+
     // Create the dropdown content
     const dropdownContent = document.createElement('div');
     dropdownContent.className = 'dropdown-content';
-    
+
     // Add feedback option to dropdown
     const feedbackOption = document.createElement('a');
     feedbackOption.href = '#';
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         openFeedbackModal();
     });
-    
+
     // Add end session option to dropdown
     const endSessionOption = document.createElement('a');
     endSessionOption.href = '#';
@@ -48,22 +48,22 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         endSession();
     });
-    
+
     // Add options to dropdown
     dropdownContent.appendChild(feedbackOption);
     dropdownContent.appendChild(endSessionOption);
-    
+
     // Create dropdown container
     const dropdownContainer = document.createElement('div');
     dropdownContainer.className = 'dropdown';
     dropdownContainer.appendChild(menuButton);
     dropdownContainer.appendChild(dropdownContent);
-    
+
     // Toggle dropdown visibility when clicking the menu button
     menuButton.addEventListener('click', () => {
         dropdownContent.classList.toggle('show');
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.matches('.header-menu-button') && 
@@ -73,10 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Add quick exit to the left side of header
     chatHeader.appendChild(quickExitBtn);
-    
+
     // Add dropdown menu to the right side
     headerMenu.appendChild(dropdownContainer);
     chatHeader.appendChild(headerMenu);
@@ -92,19 +92,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const message = userInput.value.trim();
         if (message === '') return;
-        
+
         // Check if user typed "end" to end the session
         if (message.toLowerCase() === 'end') {
             // Add user message to chat
             addUserMessage(message);
-            
+
             // Clear input
             userInput.value = '';
             sendButton.disabled = true;
-            
+
             // Remove typing indicator if present
             removeTypingIndicator();
-            
+
             // End the session
             endSession();
             return;
@@ -158,22 +158,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const messageElement = document.createElement('div');
             messageElement.className = 'message bot-message';
             messageElement.innerHTML = message;
-            
+
             // Generate a unique message ID if needed
             const messageId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
             messageElement.dataset.messageId = messageId;
 
             messageContainer.appendChild(messageElement);
-            
+
             // Add feedback buttons
             const feedbackContainer = document.createElement('div');
             feedbackContainer.className = 'feedback-container';
-            
+
             const feedbackLabel = document.createElement('span');
             feedbackLabel.className = 'feedback-label';
             feedbackLabel.textContent = 'Was this helpful?';
             feedbackContainer.appendChild(feedbackLabel);
-            
+
             const thumbsUpBtn = document.createElement('button');
             thumbsUpBtn.className = 'feedback-btn thumbs-up';
             thumbsUpBtn.innerHTML = '<i class="fas fa-thumbs-up"></i>';
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 feedbackContainer.innerHTML = '<span class="feedback-thanks">Thanks for your feedback!</span>';
             });
             feedbackContainer.appendChild(thumbsUpBtn);
-            
+
             const thumbsDownBtn = document.createElement('button');
             thumbsDownBtn.className = 'feedback-btn thumbs-down';
             thumbsDownBtn.innerHTML = '<i class="fas fa-thumbs-down"></i>';
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 feedbackContainer.innerHTML = '<span class="feedback-thanks">Thanks for your feedback!</span>';
             });
             feedbackContainer.appendChild(thumbsDownBtn);
-            
+
             messageContainer.appendChild(feedbackContainer);
 
 
@@ -425,21 +425,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add initial welcome message - without feedback buttons
     const welcomeMessage = "Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?";
-    
+
     // Special handling for the welcome message - no feedback buttons
     const welcomeContainer = document.createElement('div');
     welcomeContainer.className = 'message-container';
-    
+
     const messageElement = document.createElement('div');
     messageElement.className = 'message bot-message';
     messageElement.innerHTML = welcomeMessage;
-    
+
     welcomeContainer.appendChild(messageElement);
     welcomeContainer.style.opacity = '0';
     welcomeContainer.style.transform = 'translateY(10px)';
-    
+
     chatMessages.appendChild(welcomeContainer);
-    
+
     setTimeout(() => {
         welcomeContainer.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
         welcomeContainer.style.opacity = '1';
@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }, 300);
     });
-    
+
     // Feedback handling functions
     function submitFeedback(messageId, rating, comment = null) {
         fetch('/api/feedback', {
@@ -484,16 +484,16 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error submitting feedback:', error);
         });
     }
-    
+
     function openFeedbackModal() {
         // Create modal overlay
         const modalOverlay = document.createElement('div');
         modalOverlay.className = 'modal-overlay';
-        
+
         // Create modal container
         const modalContainer = document.createElement('div');
         modalContainer.className = 'feedback-modal';
-        
+
         // Create modal content
         modalContainer.innerHTML = `
             <div class="modal-header">
@@ -522,29 +522,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button class="skip-feedback-btn">Skip & Close</button>
             </div>
         `;
-        
+
         // Add modal to body
         modalOverlay.appendChild(modalContainer);
         document.body.appendChild(modalOverlay);
-        
+
         // Handle close button
         const closeBtn = modalContainer.querySelector('.close-modal');
         closeBtn.addEventListener('click', () => {
             document.body.removeChild(modalOverlay);
         });
-        
+
         // Handle skip button
         const skipBtn = modalContainer.querySelector('.skip-feedback-btn');
         skipBtn.addEventListener('click', () => {
             document.body.removeChild(modalOverlay);
             resetChat();
         });
-        
+
         // Handle rating selection
         const ratingBtns = modalContainer.querySelectorAll('.rating-btn');
         const submitBtn = modalContainer.querySelector('.submit-feedback-btn');
         let selectedRating = null;
-        
+
         ratingBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 // Clear previous selection
@@ -557,28 +557,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
             });
         });
-        
+
         // Handle submit button
         submitBtn.addEventListener('click', () => {
             if (selectedRating !== null) {
                 const comment = document.getElementById('feedbackComment').value.trim();
                 // Convert rating scale (1-5) to thumbs format (1 for positive, -1 for negative)
                 const thumbsRating = selectedRating >= 3 ? 1 : -1;
-                
+
                 // Submit session feedback with a special message ID for session feedback
                 submitFeedback('session_feedback_' + Date.now(), thumbsRating, comment);
-                
+
                 // Thank user and reset chat
                 document.body.removeChild(modalOverlay);
                 resetChat();
             }
         });
     }
-    
+
     function endSession() {
         // Simple goodbye message
         addBotMessage("Thanks for chatting with Abby. Your session has ended and your conversation history has been cleared. Take care!");
-        
+
         // Clear history on the server
         fetch('/api/clear-history', {
             method: 'POST',
@@ -593,51 +593,51 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error clearing history:', error);
         });
-        
+
         // Reset the chat after a brief delay
         setTimeout(() => {
             // Clear all messages
             while (chatMessages.children.length > 0) {
                 chatMessages.removeChild(chatMessages.lastChild);
             }
-            
+
             // Add welcome message back with special handling
             const welcomeMessage = "Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?";
-            
+
             const welcomeContainer = document.createElement('div');
             welcomeContainer.className = 'message-container';
-            
+
             const messageElement = document.createElement('div');
             messageElement.className = 'message bot-message';
             messageElement.innerHTML = welcomeMessage;
-            
+
             welcomeContainer.appendChild(messageElement);
             chatMessages.appendChild(welcomeContainer);
         }, 2000);
     }
-    
+
     function resetChat() {
         // Clear chat messages except for the first welcome message
         while (chatMessages.children.length > 1) {
             chatMessages.removeChild(chatMessages.lastChild);
         }
-        
+
         // If all messages were removed, add welcome message back
         if (chatMessages.children.length === 0) {
             // Add welcome message with special handling (no feedback buttons)
             const welcomeMessage = "Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?";
-            
+
             const welcomeContainer = document.createElement('div');
             welcomeContainer.className = 'message-container';
-            
+
             const messageElement = document.createElement('div');
             messageElement.className = 'message bot-message';
             messageElement.innerHTML = welcomeMessage;
-            
+
             welcomeContainer.appendChild(messageElement);
             chatMessages.appendChild(welcomeContainer);
         }
-        
+
         // Show session ended message
         addBotMessage("Your session has been ended and your feedback has been submitted. Thank you for using Abby! If you have more questions, feel free to start a new conversation.");
     }

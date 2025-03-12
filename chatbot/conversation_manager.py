@@ -308,6 +308,28 @@ class ConversationManager:
                     formatted_response['message_id'] = message_id
                     return formatted_response
 
+            # Check if this is a state name after a previous abortion question
+            is_state_after_abortion = False
+            if len(message.split()) == 1 and self._check_for_state_names(message):
+                # Look backwards in history for abortion context
+                for entry in reversed(self.conversation_history):
+                    if entry['sender'] == 'bot' and "abortion" in entry['message'].lower():
+                        is_state_after_abortion = True
+                        logger.info(f"Detected state name '{message}' after abortion question, handling as policy query")
+                        # Construct a new query with the state name to get policy information
+                        abortion_query = f"What are the abortion laws in {message}?"
+                        response = self.baseline_model.process_question(
+                            abortion_query,
+                            self.conversation_history,
+                            location_context=message,
+                            force_category='policy')
+                        response = self.citation_manager.add_citation_to_text(
+                            response, 'abortion_policy_api')
+                        formatted = self.citation_manager.format_response_with_citations(response)
+                        self.add_to_history('bot', formatted['text'])
+                        return formatted
+                        break
+                        
             # Check if this is a simple greeting that should have a brief response
             simple_greeting_indicators = ["hi", "hello", "hey", "good morning", "good afternoon", 
                                         "good evening", "how are you", "what's up", "greetings"]

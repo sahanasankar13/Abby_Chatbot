@@ -58,6 +58,16 @@ body {
   border-bottom: 1px solid var(--apple-border);
 }
 
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: auto;
+  gap: 0.75rem;
+}
+
 [data-bs-theme="dark"] .chat-header {
   background-color: rgba(29, 29, 31, 0.8);
 }
