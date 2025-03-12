@@ -527,19 +527,20 @@ class BertRAGModel:
             if important_point:
                 break
         
-        # Start with a direct answer (just 1 sentence)
-        direct_answer = self._get_first_sentences(primary_answer, 1)
+        # Include more content from the primary answer (3 sentences instead of 1)
+        direct_answer = self._get_first_sentences(primary_answer, 3)
         
-        # Build the response: direct answer + one important additional point
+        # Build a more comprehensive response by including more information
+        # Add the full primary answer rather than just the first sentence
         if important_point:
             if not important_point.strip().endswith(('.', '?', '!')):
                 important_point = important_point + '.'
-            concise_response = direct_answer + ' ' + important_point
+            comprehensive_response = primary_answer + ' ' + important_point
         else:
-            concise_response = direct_answer
+            comprehensive_response = primary_answer
         
         # Add citation
-        cited_response = citation_mgr.add_citation_to_text(concise_response, "planned_parenthood")
+        cited_response = citation_mgr.add_citation_to_text(comprehensive_response, "planned_parenthood") 
         return cited_response
         
     def _get_first_sentences(self, text, num_sentences=2):
