@@ -147,9 +147,14 @@ class BaselineModel:
                 return self._handle_multi_query(question, conversation_history)
 
             # Single query flow
-            # Categorize the question (passing conversation history for context awareness)
-            category = self.categorize_question(question, conversation_history)
-            logger.debug(f"Question category: {category}")
+            # Use forced category if provided, otherwise categorize normally
+            if force_category:
+                category = force_category
+                logger.debug(f"Using forced category: {category}")
+            else:
+                # Categorize the question (passing conversation history for context awareness)
+                category = self.categorize_question(question, conversation_history)
+                logger.debug(f"Question category: {category}")
 
             # Process according to category
             return self._process_single_query(question, category, conversation_history, location_context)

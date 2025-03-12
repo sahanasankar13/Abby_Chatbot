@@ -40,20 +40,48 @@ class ConversationManager:
             
             # Special handling for abortion requests
             message_lower = message.lower()
-            if "need an abortion" in message_lower or "want an abortion" in message_lower or "get an abortion" in message_lower:
-                logger.info("Detected abortion request, providing empathetic response with guidance")
-                empathetic_response = (
-                    "I understand this can be a difficult and personal situation, and I'm here to support you. "
-                    "I can provide information about abortion policies in your state, general information about "
-                    "abortion procedures, or help connect you with resources. Would you like to know about "
-                    "abortion policies in your area, general information about abortion options, or something else?"
-                )
+            abortion_indicators = [
+                "need an abortion", "want an abortion", "get an abortion", 
+                "abortion there", "abort", "terminate", "terminate pregnancy", 
+                "pregnancy termination", "can i get an abortion"
+            ]
+            if any(indicator in message_lower for indicator in abortion_indicators):
+                logger.info("Detected abortion request, treating as policy question with state context")
                 
-                # Add citation since we're discussing reproductive health
-                cited_response = self.citation_manager.add_citation_to_text(empathetic_response, 'planned_parenthood')
-                formatted_response = self.citation_manager.format_response_with_citations(cited_response)
-                self.add_to_history('bot', formatted_response['text'])
-                return formatted_response
+                # Extract location context if available
+                location_context = self._extract_location(message, self.conversation_history)
+                logger.info(f"Location context for abortion question: {location_context}")
+                
+                # If we have a location context, provide direct policy information
+                if location_context:
+                    logger.info(f"Using location context '{location_context}' for direct policy response")
+                    
+                    # Force policy categorization and pass location context
+                    response = self.baseline_model.process_question(
+                        message, 
+                        self.conversation_history, 
+                        location_context=location_context, 
+                        force_category='policy'
+                    )
+                    
+                    # Format with citations
+                    formatted = self.citation_manager.format_response_with_citations(response)
+                    self.add_to_history('bot', formatted['text'])
+                    return formatted
+                else:
+                    # No location context, provide empathetic response asking for location
+                    logger.info("No location context found, providing empathetic response asking for location")
+                    empathetic_response = (
+                        "I understand this can be a difficult and personal situation, and I'm here to support you. "
+                        "To provide accurate information about abortion access, I'd need to know which state you're in. "
+                        "Different states have different laws and regulations. Could you let me know which state you're asking about?"
+                    )
+                    
+                    # Add citation since we're discussing reproductive health
+                    cited_response = self.citation_manager.add_citation_to_text(empathetic_response, 'planned_parenthood')
+                    formatted_response = self.citation_manager.format_response_with_citations(cited_response)
+                    self.add_to_history('bot', formatted_response['text'])
+                    return formatted_response
             
             # Detect question type for adding appropriate friendly elements
             question_type = self.friendly_bot.detect_question_type(message)
@@ -64,10 +92,14 @@ class ConversationManager:
             if location_context:
                 logger.info(f"Detected location context: {location_context}")
             
-            # Get response from baseline model, passing conversation history for context
+            # Get response from baseline model, passing conversation history and location context
             start_time = time.time()
-            # Pass the conversation history for context awareness
-            response = self.baseline_model.process_question(message, self.conversation_history)
+            # Pass the conversation history and location context for complete context awareness
+            response = self.baseline_model.process_question(
+                message, 
+                self.conversation_history, 
+                location_context=location_context
+            )
             processing_time = time.time() - start_time
             logger.debug(f"Baseline model processing time: {processing_time:.2f} seconds")
             
@@ -141,6 +173,13 @@ class ConversationManager:
         message_lower = message.lower()
         location_phrases = ["i live in", "i'm in", "i am in", "i'm from", "i am from"]
         
+        # First check for direct state mentions in current message
+        for state in states:
+            if state in message_lower:
+                logger.info(f"Found direct state mention in message: {state}")
+                return state
+        
+        # Check for location phrases in current message
         for phrase in location_phrases:
             if phrase in message_lower:
                 # Extract the part after the phrase
@@ -151,12 +190,48 @@ class ConversationManager:
                     potential_location = location_words[0].strip('.,!?')
                     # Check if it's a valid state
                     if potential_location in states:
+                        logger.info(f"Found location in message using phrase '{phrase}': {potential_location}")
                         return potential_location
+        
+        # Check if the message contains "there" or similar referential terms and look for states in history
+        referential_terms = ["there", "that state", "this state", "that place"]
+        if any(term in message_lower for term in referential_terms):
+            logger.info("Message contains referential location term, checking history for most recent state mention")
+            
+            # Look through conversation history for most recent state mention
+            for entry in reversed(history):
+                if entry['sender'] == 'user':
+                    entry_lower = entry['message'].lower()
                     
-        # Check history for location mentions
+                    # Direct state mentions in history
+                    for state in states:
+                        if state in entry_lower:
+                            logger.info(f"Found state '{state}' in history for referential context")
+                            return state
+                    
+                    # Location phrases in history
+                    for phrase in location_phrases:
+                        if phrase in entry_lower:
+                            location_part = entry_lower.split(phrase)[1].strip()
+                            location_words = location_part.split()
+                            if location_words:
+                                potential_location = location_words[0].strip('.,!?')
+                                if potential_location in states:
+                                    logger.info(f"Found location '{potential_location}' in history for referential context")
+                                    return potential_location
+        
+        # Check history for any location mentions if not found in current message
         for entry in reversed(history):
             if entry['sender'] == 'user':
                 entry_lower = entry['message'].lower()
+                
+                # Direct state mentions
+                for state in states:
+                    if state in entry_lower:
+                        logger.info(f"Found state mention in history: {state}")
+                        return state
+                
+                # Location phrases
                 for phrase in location_phrases:
                     if phrase in entry_lower:
                         location_part = entry_lower.split(phrase)[1].strip()
@@ -164,8 +239,10 @@ class ConversationManager:
                         if location_words:
                             potential_location = location_words[0].strip('.,!?')
                             if potential_location in states:
+                                logger.info(f"Found location in history using phrase '{phrase}': {potential_location}")
                                 return potential_location
         
+        logger.info("No location context found in message or history")
         return None
     
     def add_to_history(self, sender, message):
