@@ -45,9 +45,19 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Feedback Dashboard</h1>
-            <p class="lead">Monitor and analyze user feedback for the reproductive health chatbot</p>
+        <div class="header d-flex justify-content-between align-items-center">
+            <div>
+                <h1>Feedback Dashboard</h1>
+                <p class="lead">Monitor and analyze user feedback for the reproductive health chatbot</p>
+            </div>
+            <div>
+                <a href="{{ url_for('view_metrics') }}" class="btn btn-primary">
+                    <i class="bi bi-graph-up"></i> Performance Metrics
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="bi bi-chat"></i> Chat Interface
+                </a>
+            </div>
         </div>
 
         <!-- Stats Overview -->

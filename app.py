@@ -131,6 +131,49 @@ def view_feedback():
     except Exception as e:
         logger.error(f"Error retrieving feedback data: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred retrieving feedback data'}), 500
+        
+@app.route('/admin/metrics', methods=['GET'])
+def view_metrics():
+    """
+    Admin dashboard for viewing chatbot performance metrics
+    """
+    try:
+        from utils.metrics_analyzer import MetricsAnalyzer
+        import datetime
+        
+        # Get date range parameters
+        end_date = request.args.get('end_date')
+        start_date = request.args.get('start_date')
+        
+        # Parse dates
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+            # Set to end of day
+            end_date = end_date.replace(hour=23, minute=59, second=59)
+        else:
+            end_date = datetime.datetime.now()
+            
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+        else:
+            # Default to 30 days ago
+            start_date = end_date - datetime.timedelta(days=30)
+        
+        # Format dates for form display
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        end_date_str = end_date.strftime('%Y-%m-%d')
+        
+        # Get metrics
+        metrics_analyzer = MetricsAnalyzer()
+        metrics = metrics_analyzer.get_metrics(start_date, end_date)
+        
+        return render_template('admin/metrics.html', 
+                              metrics=metrics, 
+                              start_date=start_date_str,
+                              end_date=end_date_str)
+    except Exception as e:
+        logger.error(f"Error retrieving metrics data: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred retrieving metrics data'}), 500
 
 @app.route('/health')
 def health_check():
