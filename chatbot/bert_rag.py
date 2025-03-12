@@ -214,7 +214,7 @@ class BertRAGModel:
 
     def _combine_top_answers(self, question, distances, indices, max_answers=3):
         """
-        Combine the top answers for better response
+        Combine the top answers for better response with natural language flow
 
         Args:
             question (str): The original question
@@ -223,7 +223,7 @@ class BertRAGModel:
             max_answers (int): Maximum number of answers to combine
 
         Returns:
-            str: Combined answer
+            str: Combined answer with improved natural language flow
         """
         relevant_answers = []
 
@@ -246,39 +246,142 @@ class BertRAGModel:
         from chatbot.citation_manager import CitationManager
         citation_mgr = CitationManager()
         
-        # If only one good match, just return it with citation
+        # If only one good match, format it for better readability
         if len(relevant_answers) == 1:
-            answer = relevant_answers[0]['answer']
+            answer = self._format_single_answer(question, relevant_answers[0]['answer'])
             return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
-        # Combine answers into a comprehensive response
-        combined = "Based on your question, here's what I know:\n\n"
-
-        # Group by category if available
+        # Combine multiple answers into a comprehensive, naturally flowing response
+        return self._format_multiple_answers(question, relevant_answers)
+        
+    def _format_single_answer(self, question, answer):
+        """
+        Format a single answer to improve readability and natural flow
+        
+        Args:
+            question (str): Original question
+            answer (str): Answer to format
+            
+        Returns:
+            str: Formatted answer
+        """
+        # Make sure sentences end with proper punctuation
+        if not answer.endswith(('.', '?', '!')):
+            answer = answer + '.'
+            
+        # Break into paragraphs for longer answers
+        if len(answer) > 200:
+            sentences = answer.split('. ')
+            paragraphs = []
+            current_paragraph = []
+            
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+                    
+                current_paragraph.append(sentence)
+                
+                # Start a new paragraph every 2-3 sentences
+                if len(current_paragraph) >= 3:
+                    paragraphs.append('. '.join(current_paragraph) + '.')
+                    current_paragraph = []
+                    
+            # Add any remaining sentences
+            if current_paragraph:
+                paragraphs.append('. '.join(current_paragraph) + '.')
+                
+            # Join paragraphs with double new lines
+            answer = '\n\n'.join(paragraphs)
+        
+        return answer
+        
+    def _format_multiple_answers(self, question, relevant_answers):
+        """
+        Format multiple answers into a cohesive, naturally flowing response
+        
+        Args:
+            question (str): Original question
+            relevant_answers (list): List of relevant answer dictionaries
+            
+        Returns:
+            str: Formatted and combined answer
+        """
+        from chatbot.citation_manager import CitationManager
+        citation_mgr = CitationManager()
+        
+        # Educational introductions for different topics
+        intros = {
+            "General": "Based on your question, here's what I know:",
+            "Birth Control": "Regarding birth control methods:",
+            "Pregnancy": "About pregnancy and related topics:",
+            "STIs": "Regarding sexually transmitted infections:",
+            "Abortion": "About abortion and reproductive options:",
+            "Reproductive Health": "On reproductive health matters:"
+        }
+        
+        # Sort answers by relevance (distance)
+        sorted_answers = sorted(relevant_answers, key=lambda x: x['distance'])
+        
+        # Group by category
         by_category = {}
-        for item in relevant_answers:
+        for item in sorted_answers:
             cat = item['category']
             if cat not in by_category:
                 by_category[cat] = []
             by_category[cat].append(item)
-
-        # Add information by category
+        
+        # Start building the combined response
+        combined_parts = []
+        
+        # Process each category
         for category, items in by_category.items():
-            if category != 'General':
-                combined += f"## {category}\n"
-
+            # Add appropriate introduction for this category
+            intro = intros.get(category, intros["General"])
+            category_text = f"{intro}\n\n"
+            
+            # Combine answers in this category into coherent paragraphs
+            answer_texts = []
             for item in items:
-                # Extract the most important part of the answer
+                # Clean up the answer text
                 answer_text = item['answer']
-                if len(answer_text) > 300:
-                    sentences = answer_text.split('. ')
-                    if len(sentences) > 3:
-                        answer_text = '. '.join(sentences[:3]) + '.'
-
-                combined += f"{answer_text}\n\n"
-
+                if not answer_text.endswith(('.', '?', '!')):
+                    answer_text = answer_text + '.'
+                answer_texts.append(answer_text)
+            
+            # Join the answers with smooth transitions when possible
+            if len(answer_texts) > 1:
+                transitions = [
+                    "Additionally, ", 
+                    "Furthermore, ", 
+                    "Also important to note, ",
+                    "Related to this, ",
+                    "On a similar note, "
+                ]
+                
+                formatted_text = answer_texts[0]
+                for i in range(1, len(answer_texts)):
+                    # Add transition words between paragraphs
+                    import random
+                    transition = random.choice(transitions)
+                    next_text = answer_texts[i]
+                    
+                    # Make first letter lowercase if adding a transition
+                    if next_text and next_text[0].isupper():
+                        next_text = next_text[0].lower() + next_text[1:]
+                        
+                    formatted_text += f"\n\n{transition}{next_text}"
+                
+                category_text += formatted_text
+            else:
+                category_text += answer_texts[0]
+            
+            combined_parts.append(category_text)
+        
+        # Join all categories with clear separation
+        combined_response = "\n\n".join(combined_parts)
+        
         # Add citation to the combined answer
-        cited_combined = citation_mgr.add_citation_to_text(combined, "planned_parenthood")
+        cited_combined = citation_mgr.add_citation_to_text(combined_response, "planned_parenthood")
         return cited_combined
 
     def is_confident(self, question, response, threshold=6.0):
