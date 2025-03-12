@@ -150,11 +150,23 @@ class BertRAGModel:
             
             # First check for exact matches (case-insensitive) to prioritize them
             normalized_question = question.lower().strip('?. ')
-            for qa_pair in self.qa_pairs:
+            
+            # Check for exact match
+            for idx, qa_pair in enumerate(self.qa_pairs):
                 qa_normalized = qa_pair['Question'].lower().strip('?. ')
                 # Check if this is an exact match
                 if normalized_question == qa_normalized:
                     logger.debug(f"Found exact match for question: '{question}'")
+                    logger.debug(f"Exact match index: {idx}")
+                    return qa_pair['Answer']
+                    
+            # Also check for questions that contain the exact query
+            # This helps with cases like "what is the menstrual cycle" matching "what is the menstrual cycle?"
+            for idx, qa_pair in enumerate(self.qa_pairs):
+                qa_normalized = qa_pair['Question'].lower().strip('?. ')
+                if qa_normalized.startswith(normalized_question) or normalized_question.startswith(qa_normalized):
+                    logger.debug(f"Found partial match for question: '{question}'")
+                    logger.debug(f"Partial match index: {idx}")
                     return qa_pair['Answer']
                 
             # If no exact match, proceed with embedding-based retrieval

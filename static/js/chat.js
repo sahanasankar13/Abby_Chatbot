@@ -111,20 +111,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to format response with markdown-like syntax
     function formatResponseWithMarkdown(text) {
+        // First, ensure all numbered lists have consistent formatting
+        text = text.replace(/^\s*(\d+)\.\s+(.+)$/gm, '$1. $2');
+        
         // Handle headings
         text = text.replace(/^(#+)\s+(.+)$/gm, function(match, hashes, content) {
-            const level = hashes.length;
+            const level = Math.min(hashes.length + 2, 6); // h3-h6 to avoid huge headings
             return `<h${level}>${content}</h${level}>`;
         });
 
-        // Handle lists
+        // Special treatment for numbered lists to preserve numbers
+        text = text.replace(/^\s*(\d+)\.\s+(.+)$/gm, '<li value="$1">$2</li>');
+        
+        // Handle bullet lists
         text = text.replace(/^\*\s+(.+)$/gm, '<li>$1</li>');
 
-        // Safely wrap list items in a ul tag
-        const hasListItems = text.indexOf('<li>') !== -1;
-        if (hasListItems) {
-            // Find all sequences of adjacent list items
-            text = text.replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/g, '<ul>$1</ul>');
+        // Safely wrap list items in appropriate list tags
+        const hasNumberedListItems = text.indexOf('<li value') !== -1;
+        const hasBulletListItems = text.match(/<li>(?!value)/);
+        
+        if (hasNumberedListItems) {
+            // Find sequences of numbered list items and wrap them in ol tags
+            text = text.replace(/(<li value="[^"]+">.*?<\/li>(\s*<li value="[^"]+">.*?<\/li>)*)/g, '<ol>$1</ol>');
+        }
+        
+        if (hasBulletListItems) {
+            // Find sequences of bullet list items and wrap them in ul tags
+            text = text.replace(/(<li>(?!value).*?<\/li>(\s*<li>(?!value).*?<\/li>)*)/g, '<ul>$1</ul>');
         }
 
         // Handle bold text
@@ -133,18 +146,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle italic text
         text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-        // Handle line breaks
-        text = text.replace(/\n\n/g, '<br>');
-
-        // Handle paragraphs - ensure this is applied after other formatters
-        text = text.replace(/^(.+)$/gm, function(match, content) {
-            if (content.startsWith('<h') || content.startsWith('<ul') || 
-                content.startsWith('<li') || !content.trim()) {
-                return content;
+        // Better paragraph handling for improved readability
+        // First split into paragraphs by double newlines
+        const paragraphs = text.split(/\n\n+/);
+        
+        // Process each paragraph individually
+        text = paragraphs.map(para => {
+            // Skip if the paragraph is already formatted as a list or header
+            if (para.includes('<ol>') || para.includes('<ul>') || 
+                para.includes('<h3>') || para.includes('<h4>') || !para.trim()) {
+                return para;
             }
-            return '<p>' + content + '</p>';
-        });
-
+            
+            // Replace single newlines with <br> within paragraphs
+            para = para.replace(/\n/g, '<br>');
+            
+            // Wrap text in paragraph tag if not already a tag
+            if (!para.startsWith('<') || 
+                !(para.startsWith('<p>') || para.startsWith('<h') || 
+                  para.startsWith('<ul') || para.startsWith('<ol'))) {
+                para = '<p>' + para + '</p>';
+            }
+            
+            return para;
+        }).join('\n\n');
+        
         return text;
     }
 

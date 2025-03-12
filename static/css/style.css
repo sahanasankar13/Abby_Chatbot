@@ -223,31 +223,68 @@ a:hover {
 
 /* Markdown formatting */
 .bot-message p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.bot-message p:last-child {
+  margin-bottom: 0;
 }
 
 .bot-message ul, .bot-message ol {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  padding-left: 2rem;
 }
 
-.bot-message h1, .bot-message h2, .bot-message h3 {
-  margin-top: 1rem;
+.bot-message li {
   margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.bot-message ol {
+  counter-reset: item;
+}
+
+.bot-message ol li {
+  display: block;
+}
+
+.bot-message ol li:before {
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.bot-message h1, .bot-message h2, .bot-message h3, .bot-message h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .bot-message h1 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
+  margin-top: 2rem;
 }
 
 .bot-message h2 {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
 }
 
 .bot-message h3 {
+  font-size: 1.2rem;
+}
+
+.bot-message h4 {
   font-size: 1.1rem;
+}
+
+/* Add spacing between sections */
+.bot-message h1 + p,
+.bot-message h2 + p,
+.bot-message h3 + p,
+.bot-message h4 + p {
+  margin-top: 0.5rem;
 }
 
 .bot-message code {
