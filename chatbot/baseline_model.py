@@ -97,16 +97,23 @@ class BaselineModel:
             # If question mentions abortion and a state, categorize as policy
             state_mentioned = any(f" {state} " in f" {question_lower} " or
                                  question_lower.endswith(f" {state}") or
-                                 question_lower.startswith(f"{state} ") 
+                                 question_lower.startswith(f"{state} ") or
+                                 question_lower == state
                                  for state in states)
 
             abbr_mentioned = any(f" {abbr} " in f" {question_lower} " or
                                 question_lower.endswith(f" {abbr}") or
-                                question_lower.startswith(f"{abbr} ") 
+                                question_lower.startswith(f"{abbr} ") or
+                                question_lower == abbr
                                 for abbr in state_abbrevs)
+                                
+            # Check if this is a follow-up state message after abortion question
+            is_state_only = question_lower in states or question_lower in state_abbrevs
+            has_abortion_context = any('abortion' in msg.lower() for msg in self.message_history[-3:] if msg)
 
-            if 'abortion' in question_lower and (state_mentioned or abbr_mentioned):
-                logger.debug(f"Question mentions abortion and a state: {question}")
+            if ('abortion' in question_lower and (state_mentioned or abbr_mentioned)) or \
+               (is_state_only and has_abortion_context):
+                logger.debug(f"Question mentions abortion and a state or is a state name after abortion context: {question}")
                 return 'policy'
 
             # Check for policy-related keywords

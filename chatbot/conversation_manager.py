@@ -270,7 +270,7 @@ class ConversationManager:
                     # First check if this is a non-US country to avoid incorrect citations
                     is_non_us_country = location_context.lower() in ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
                                          'china', 'japan', 'brazil', 'spain', 'italy', 'russia', 'north korea']
-                    
+
                     if is_non_us_country or "I'm sorry, I'm having trouble providing policy information" in response:
                         # For non-US countries or error responses, cite Planned Parenthood
                         response = self.citation_manager.add_citation_to_text(
@@ -329,7 +329,7 @@ class ConversationManager:
                         self.add_to_history('bot', formatted['text'])
                         return formatted
                         break
-                        
+
             # Check if this is a simple greeting that should have a brief response
             simple_greeting_indicators = ["hi", "hello", "hey", "good morning", "good afternoon", 
                                         "good evening", "how are you", "what's up", "greetings"]
@@ -687,7 +687,7 @@ class ConversationManager:
             "united states", "usa", "us", "america", "the us", "the states",
             "the united states"
         }
-        
+
         # Non-US countries to specifically identify international requests
         non_us_countries = {
             'india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
@@ -695,12 +695,12 @@ class ConversationManager:
         }
 
         location_lower = location.lower().strip()
-        
+
         # First check if this is a known non-US country
         if location_lower in non_us_countries:
             logger.debug(f"Identified non-US country in location check: {location_lower}")
             return False
-            
+
         # Otherwise check if it's a US state or general US reference
         return (location_lower in us_states or location_lower in state_abbrevs
                 or location_lower in us_general_terms)
@@ -758,14 +758,14 @@ class ConversationManager:
             list: List of conversation messages
         """
         return self.conversation_history
-        
+
     def clear_history(self):
         """
         Clear the conversation history
-        
+
         This method is called when the user ends their session
         to ensure privacy and start fresh for the next session.
-        
+
         Returns:
             bool: True if history was cleared successfully
         """
@@ -790,11 +790,11 @@ class ConversationManager:
                           or None if no location is found
         """
         message_lower = message.lower()
-        
+
         # First check for international countries
         non_us_countries = ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
                            'china', 'japan', 'brazil', 'spain', 'italy', 'russia']
-                           
+
         for country in non_us_countries:
             if country in message_lower:
                 logger.info(f"Found international location mention in message: {country}")
@@ -805,3 +805,51 @@ class ConversationManager:
             if state.lower() in message_lower or code.lower() in message_lower:
                 logger.info(f"Found direct state mention in message: {state.lower()}")
                 return state.lower()
+
+    def clean_message(self, content):
+        """Clean and normalize message content"""
+        if not content:
+            return ""
+
+        # Strip extra whitespace and lowercase
+        content = content.strip().lower()
+
+        return content
+
+    def is_state_only_message(self, content):
+        """Check if the message is just a state name or abbreviation"""
+        from chatbot.baseline_model import states, state_abbrevs
+
+        content = content.strip().lower()
+        # Check if content is exactly a state name or abbreviation
+        if content in states or content in state_abbrevs:
+            return True
+
+        return False
+
+    def handle_message(self, content):
+        """Process user message and generate appropriate response"""
+        start_time = time.time()
+
+        # Record original query for metrics
+        original_query = content
+
+        # Clean and preprocess the message
+        content = self.clean_message(content)
+
+        # Check if PII should be detected before abort policy questions
+        if not self.is_state_only_message(content):
+            # Check if message contains PII and sanitize if needed
+            pii_detected, sanitized_content = self.pii_detector.detect_and_sanitize(content)
+            if pii_detected:
+                logger.info("PII detected and sanitized in message")
+                content = sanitized_content
+
+        # Process the message
+        response = self.process_message(content)
+
+        end_time = time.time()
+        processing_time = end_time - start_time
+        logger.info(f"Total message processing time: {processing_time:.2f} seconds")
+
+        return response
