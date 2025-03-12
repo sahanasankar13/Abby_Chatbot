@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottom();
     }
 
-    // Function to add bot message to chat with citations and graphics
+    // Function to add bot message to chat with citations
     function addBotMessage(message, citations = [], graphics = []) {
         try {
             const messageContainer = document.createElement('div');
@@ -70,32 +70,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 citationsContainer.appendChild(citationsList);
-            messageContainer.appendChild(citationsContainer);
+                messageContainer.appendChild(citationsContainer);
+            }
+            
+            // Add to chat
+            chatMessages.appendChild(messageContainer);
+            scrollToBottom();
+            
+        } catch (error) {
+            console.error('Error adding bot message:', error);
+            // Fallback display method
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message bot-message';
+            messageElement.textContent = message;
+            chatMessages.appendChild(messageElement);
+            hideTypingIndicator();
         }
-        
-        // Graphics functionality disabled
-        // We're keeping the structure but not rendering any graphics
-        
-        chatMessages.appendChild(messageContainer);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Hide typing indicator
-        const typingIndicator = document.getElementById('typingIndicator');
-        if (typingIndicator) {
-            typingIndicator.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error adding bot message:', error);
-        // Fallback display method
-        const messageElement = document.createElement('div');
-        messageElement.className = 'message bot-message';
-        messageElement.textContent = message;
-        chatMessages.appendChild(messageElement);
-        hideTypingIndicator();
-        }
-
-        chatMessages.appendChild(messageContainer);
-        scrollToBottom();
     }
 
     // Function to format response with markdown-like syntax
