@@ -724,3 +724,11 @@ OpenAI safety check found issues: ["Misleading pregnancy or abortion information
 Safety check failed: ["Misleading pregnancy or abortion information: The statement 'There is no specific gestational limit, meaning abortions can be performed at any point, based on health and life exceptions' could be misleading. While California law allows for abortions after viability if the pregnancy poses a risk to the woman's life or health, it is not accurate to say there is no gestational limit. The law generally restricts abortions after fetal viability unless necessary for health or life reasons.", 'Inaccurate medical facts: The response does not clarify that while minors can consent to an abortion without parental permission, there may be other legal considerations or requirements that could apply, such as judicial bypass procedures.']
 Using improved response due to safety concerns
 Using improved response based on evaluation
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
