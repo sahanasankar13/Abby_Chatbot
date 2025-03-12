@@ -123,6 +123,8 @@ Set these environment variables for your deployment:
 - Set up CloudWatch alarms for monitoring CPU and memory usage.
 - Configure auto-scaling if using ECS, EKS, or EC2 Auto Scaling Groups.
 - Set up Application Load Balancer for high availability.
+- Enable CloudWatch Logs for tracking Ragas metrics and evaluation results.
+- Consider setting up a CloudWatch Dashboard for visualizing Ragas metrics over time.
 
 ## Security Considerations
 

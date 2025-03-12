@@ -30,6 +30,8 @@ Optional application configuration variables:
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | No | `INFO` |
 | `MAX_TOKENS` | Maximum tokens for GPT responses | No | `300` |
 | `MODEL_NAME` | GPT model to use | No | `gpt-4o` |
+| `RAGAS_SAMPLE_SIZE` | Default sample size for Ragas evaluations | No | `50` |
+| `EVALUATION_MODEL` | Model for response evaluation (`openai`, `local`, or `both`) | No | `both` |
 
 ## AWS-Specific Configuration
 

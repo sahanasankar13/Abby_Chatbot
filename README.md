@@ -14,7 +14,7 @@ This system provides accurate, context-aware information for reproductive health
 - **AWS Cloud Deployment**: Enables scalable, reliable hosting
 - **Responsive Web Interface**: Works across devices with privacy-focused design
 - **Enhanced Markdown Text Processing**: Improves readability of responses
-- **Advanced Metrics Dashboard**: Tracks performance and feedback
+- **Advanced Metrics Dashboard**: Tracks performance, Ragas evaluation metrics, and user feedback
 
 ## Project Structure
 
@@ -177,10 +177,11 @@ This application supports sending metrics to AWS CloudWatch when deployed. To en
 
 ### Admin Dashboard
 
-- Comprehensive metrics visualization
+- Comprehensive metrics visualization with multiple tabs
+- Ragas metrics evaluation with configurable sample size
 - Filtering by date range, session ID, and question type
-- User feedback analysis
-- Performance metrics tracking
+- User feedback analysis and performance metrics tracking
+- Advanced metrics visualization (BLEU, ROUGE, BERTScore, faithfulness)
 
 ## Performance Metrics
 
@@ -190,7 +191,7 @@ The system tracks the following metrics:
 - **Safety**: Content safety and guideline adherence
 - **User Feedback**: Thumbs up/down rates and comments
 - **System Performance**: Inference time, token counts, memory usage
-- **Advanced NLP Metrics**: BLEU, ROUGE, BERTScore, and more
+- **Advanced NLP Metrics**: BLEU, ROUGE, BERTScore, and Ragas (faithfulness, context precision, context recall)
 
 ## License
 
