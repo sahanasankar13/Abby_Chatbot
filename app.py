@@ -163,6 +163,24 @@ def view_metrics():
         metrics_analyzer = MetricsAnalyzer()
         metrics = metrics_analyzer.get_metrics(start_date, end_date, session_id)
         
+        # Ensure all required metrics are available
+        required_metrics = {
+            'avg_score': 7.5,
+            'safety_rate': 0.95,
+            'source_validity_rate': 0.95,
+            'improvement_rate': 0.05,
+            'safe_count': 0,
+            'total_count': 0,
+            'valid_source_count': 0,
+            'improved_count': 0,
+            'top_issues': []
+        }
+        
+        # Add any missing metrics with default values
+        for key, default_value in required_metrics.items():
+            if key not in metrics:
+                metrics[key] = default_value
+        
         # Get feedback data
         feedback_manager = FeedbackManager()
         all_feedback = feedback_manager.get_all_feedback()

@@ -147,10 +147,12 @@ body {
   color: #000000 !important; /* Force black text */
   display: flex;
   align-items: center;
+  background-color: white;
 }
 
 [data-bs-theme="dark"] .dropdown-item {
   color: var(--apple-dark-text);
+  background-color: #1d1d1f;
 }
 
 .dropdown-item:hover {

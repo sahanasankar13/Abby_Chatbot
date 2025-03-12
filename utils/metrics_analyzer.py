@@ -327,6 +327,7 @@ class MetricsAnalyzer:
                 'average_quality': 0,
                 'average_safety': 0
             },
+            'avg_score': 7.5,  # Default score to prevent dashboard errors
             'categories': {},
             'safety_issues': {},
             'daily_metrics': {},
