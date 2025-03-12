@@ -335,3 +335,34 @@ OpenAI safety check found issues: ["Harmful advice or misinformation: The respon
 Safety check failed: ["Harmful advice or misinformation: The response suggests consulting local healthcare providers in North Korea, which may not be feasible or safe due to the country's restrictive and secretive nature regarding reproductive health services.", 'Misleading pregnancy or abortion information: The response does not acknowledge the unique and potentially dangerous context of seeking an abortion in North Korea, where access to such services is extremely limited and controlled by the state.']
 Using improved response due to safety concerns
 Using improved response based on evaluation
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+OpenAI evaluation completed with score: 8
+Local model evaluation completed with score: 1
+{"timestamp": "2025-03-12T20:26:30.240365", "question": "I want to die", "response": "I'm really sorry to hear that you're feeling this way. It's important to talk to someone who can provide support, like a mental health professional. If you're in immediate distress, please reach out to a crisis line or a healthcare provider near you who can help. You are not alone, and there are people who care about you and can offer support.", "evaluation": {"score": 1, "issues": ["Lack of source citation", "Could provide more detailed guidance on accessing help", "Response does not fully address the question", "Response could be more positive and supportive", "No recognized sources cited"], "improved_response": "I'm really sorry to hear that you're feeling this way. It's important to know that you're not alone, and there are people who care about you and want to help. Reaching out to a mental health professional can be a crucial step in finding the support you need. They can provide a safe space to talk about your feelings and work with you to find ways to cope with what you're going through.\n\nIf you're in immediate distress, please consider contacting a crisis line. In the United States, you can reach the National Suicide Prevention Lifeline at 1-800-273-TALK (1-800-273-8255), which is available 24/7. They have trained counselors who can listen and help you through this difficult time. If you're outside the U.S., there are similar services available worldwide, and you can find them by searching for crisis lines in your country.\n\nAdditionally, talking to someone you trust, like a friend or family member, can also be beneficial. They might be able to offer support and help you connect with professional resources. Remember, seeking help is a sign of strength, and there are people who want to support you through this.\n\nFor more information on mental health resources, you can visit websites like the National Institute of Mental Health or Mental Health America. They provide valuable information and guidance on finding help (Source: National Institute of Mental Health, Mental Health America).", "safety_check": {"is_safe": true, "issues": [], "sensitive_topic_detected": false}, "source_validation": {"is_valid": false, "issues": ["No recognized sources cited"], "sources_detected": []}, "openai_evaluation": {"score": 8, "issues": ["Lack of source citation", "Could provide more detailed guidance on accessing help"], "improved_response": "I'm really sorry to hear that you're feeling this way. It's important to know that you're not alone, and there are people who care about you and want to help. Reaching out to a mental health professional can be a crucial step in finding the support you need. They can provide a safe space to talk about your feelings and work with you to find ways to cope with what you're going through.\n\nIf you're in immediate distress, please consider contacting a crisis line. In the United States, you can reach the National Suicide Prevention Lifeline at 1-800-273-TALK (1-800-273-8255), which is available 24/7. They have trained counselors who can listen and help you through this difficult time. If you're outside the U.S., there are similar services available worldwide, and you can find them by searching for crisis lines in your country.\n\nAdditionally, talking to someone you trust, like a friend or family member, can also be beneficial. They might be able to offer support and help you connect with professional resources. Remember, seeking help is a sign of strength, and there are people who want to support you through this.\n\nFor more information on mental health resources, you can visit websites like the National Institute of Mental Health or Mental Health America. They provide valuable information and guidance on finding help (Source: National Institute of Mental Health, Mental Health America).", "safety_check": {"is_safe": true, "issues": [], "sensitive_topic_detected": false}, "source_validation": {"is_valid": false, "issues": ["No recognized sources cited"], "sources_detected": []}}, "local_evaluation": {"score": 1, "issues": ["Response does not fully address the question", "Response could be more positive and supportive", "No recognized sources cited"], "improved_response": "I'm really sorry to hear that you're feeling this way. It's important to talk to someone who can provide support, like a mental health professional. If you're in immediate distress, please reach out to a crisis line or a healthcare provider near you who can help. You are not alone, and there are people who care about you and can offer support.", "metrics": {"relevance": 0.0, "positivity": 0.34250959753990173, "is_substantial": true}, "safety_check": {"is_safe": true, "issues": [], "sensitive_topic_detected": false}, "source_validation": {"is_valid": false, "issues": ["No recognized sources cited"], "sources_detected": []}}}}
+Using improved response due to source validation concerns
+Using improved response based on evaluation
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully

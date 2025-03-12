@@ -218,7 +218,7 @@ class PolicyAPI:
             
             # Check if the question mentions a specific non-US country
             non_us_countries = ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
-                               'china', 'japan', 'brazil', 'spain', 'italy', 'russia']
+                               'china', 'japan', 'brazil', 'spain', 'italy', 'russia', 'north korea']
             
             mentioned_country = None
             for country in non_us_countries:
@@ -367,14 +367,16 @@ class PolicyAPI:
         try:
             # Check if this is a non-US country
             if location_context.lower() in ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
-                                         'china', 'japan', 'brazil', 'spain', 'italy', 'russia']:
+                                         'china', 'japan', 'brazil', 'spain', 'italy', 'russia', 'north korea']:
                 logger.debug(f"Non-US country detected: {location_context}")
+                # Return response WITHOUT Abortion Policy API citation marker
+                # This ensures the citation manager won't add the wrong source
                 return (
-                    f"I understand you're asking about abortion access in {location_context.title()}. "
-                    f"While I have detailed policy information only for U.S. states, I recommend consulting "
-                    f"local healthcare providers or reproductive health organizations in {location_context.title()} "
-                    f"for accurate, up-to-date information. International organizations like the World Health "
-                    f"Organization (WHO) may also provide relevant resources.")
+                    f"I'm sorry, but I don't have specific information about abortion access in {location_context.title()}. "
+                    f"It's important to note that different countries have different regulations regarding reproductive healthcare. "
+                    f"For accurate, up-to-date information, I recommend consulting local healthcare providers or international "
+                    f"organizations like the World Health Organization (WHO) or the United Nations Population Fund that specialize in "
+                    f"reproductive rights. Remember, prioritizing your safety and well-being is crucial.")
 
             # Convert to state code for API call
             state_code = self.get_state_code(location_context)

@@ -24,4 +24,6 @@ for package in nltk_packages:
 from app import app
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # Try alternative port if 5000 is in use
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, debug=True)

@@ -267,11 +267,16 @@ class ConversationManager:
                         force_category='policy')
 
                     # Format with citations based on whether we got real policy data
-                    if "I'm sorry, I'm having trouble providing policy information" in response:
-                        # Only use Planned Parenthood as source if we didn't get policy data
+                    # First check if this is a non-US country to avoid incorrect citations
+                    is_non_us_country = location_context.lower() in ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
+                                         'china', 'japan', 'brazil', 'spain', 'italy', 'russia', 'north korea']
+                    
+                    if is_non_us_country or "I'm sorry, I'm having trouble providing policy information" in response:
+                        # For non-US countries or error responses, cite Planned Parenthood
                         response = self.citation_manager.add_citation_to_text(
                             response, 'planned_parenthood')
                     else:
+                        # Only cite Abortion Policy API for actual US state data
                         response = self.citation_manager.add_citation_to_text(
                             response, 'abortion_policy_api')
 
