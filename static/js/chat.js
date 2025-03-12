@@ -246,6 +246,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Add initial welcome message
+    addBotMessage("Hi I'm Abby 👋 How can I help you with reproductive health information today?");
+    
     // Focus input on page load
     userInput.focus();
 
