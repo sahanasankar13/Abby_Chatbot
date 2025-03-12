@@ -192,14 +192,36 @@ class PolicyAPI:
         """
         # First try to extract state from the current question
         state_code = self._extract_state_from_question(question)
+        logger.info(f"Checking for state in question: '{question}' - Result: {state_code}")
         
         # If no state in current question, try to find it in conversation history
         if not state_code and conversation_history:
-            logger.debug("No state found in current question, checking conversation history")
+            logger.info("No state found in current question, checking conversation history")
+            
+            # Directly check for iowa or other state names in simple form
+            simple_states = {
+                "iowa": "IA", "california": "CA", "texas": "TX", "new york": "NY", 
+                "florida": "FL", "illinois": "IL", "ohio": "OH"
+            }
             
             # Iterate through conversation history from newest to oldest
             for message in reversed(conversation_history):
                 if message['sender'] == 'user':
+                    msg = message['message'].lower()
+                    logger.info(f"Checking history message: '{msg}'")
+                    
+                    # First try simple direct match
+                    for state_name, code in simple_states.items():
+                        if state_name in msg:
+                            logger.info(f"Direct match! Found state {state_name} in message")
+                            state_code = code
+                            break
+                    
+                    # If we found a state, break out of the messages loop
+                    if state_code:
+                        break
+                        
+                    # Otherwise try the full extraction
                     potential_state = self._extract_state_from_question(message['message'])
                     if potential_state:
                         logger.info(f"Found state {potential_state} in conversation history")

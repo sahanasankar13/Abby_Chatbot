@@ -72,24 +72,52 @@ class BaselineModel:
         # Check for policy-related keywords
         if any(keyword in question_lower for keyword in policy_keywords):
             return 'policy'
+            
+        # Special case for abortion-related questions with action verbs
+        if 'abortion' in question_lower:
+            action_indicators = ['can i', 'get an', 'have an', 'available', 'access']
+            if any(indicator in question_lower for indicator in action_indicators):
+                logger.info(f"Abortion question with action indicator detected: {question}")
+                return 'policy'
         
         # Special case: Check if current question is about abortion availability or legality
         # and we have state information in conversation history
-        if 'abortion' in question_lower and conversation_history:
-            access_indicators = ['get', 'have', 'legal', 'available', 'there']
+        if ('abortion' in question_lower or 'pregnant' in question_lower) and conversation_history:
+            logger.info(f"Special case check: Question about abortion with history: {question_lower}")
+            access_indicators = ['get', 'have', 'legal', 'available', 'there', 'allowed', 'can i']
             
             # If question contains "abortion" and any access indicators, check for state info in history
             if any(indicator in question_lower for indicator in access_indicators):
+                logger.info(f"Found access indicator in question: {[ind for ind in access_indicators if ind in question_lower]}")
+                
                 # Check if there's state information in the conversation history
                 for message in reversed(conversation_history):
                     if message['sender'] == 'user':
                         msg_lower = message['message'].lower()
+                        logger.info(f"Checking history message: {msg_lower}")
+                        
+                        # Check for direct state mentions
+                        state_found = False
+                        for state in states:
+                            if state in msg_lower:
+                                logger.info(f"Found state in history: {state}")
+                                state_found = True
+                                return 'policy'
+                            
+                        # Check for "I live in" patterns
                         if any(f"i live in {state}" in msg_lower for state in states) or \
                            any(f"i'm in {state}" in msg_lower for state in states) or \
-                           any(f"i am in {state}" in msg_lower for state in states) or \
-                           any(state in msg_lower for state in states):
-                            logger.debug("Found state information in conversation history")
+                           any(f"i am in {state}" in msg_lower for state in states):
+                            logger.info(f"Found 'I live in state' pattern in history")
                             return 'policy'
+                        
+                        # More general check for state mentions
+                        for state in states:
+                            if state in msg_lower:
+                                logger.info(f"Found state name {state} in message: {msg_lower}")
+                                return 'policy'
+            
+            logger.info("No state information found in history for abortion question")
         
         # For questions that seem to be seeking specific information
         information_indicators = ['what', 'how', 'when', 'where', 'why', 'who', 'which']
