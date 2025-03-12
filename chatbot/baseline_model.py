@@ -3,21 +3,30 @@ import logging
 from chatbot.bert_rag import BertRAGModel
 from chatbot.gpt_integration import GPTModel
 from chatbot.policy_api import PolicyAPI
+from chatbot.response_evaluator import ResponseEvaluator
 
 logger = logging.getLogger(__name__)
 
 class BaselineModel:
     """
-    Baseline model that combines BERT-based RAG, GPT-4 integration, and policy API calls
+    Baseline model that combines BERT-based RAG, GPT-4 integration, policy API calls,
+    and response evaluation for safety and quality
     """
-    def __init__(self):
+    def __init__(self, evaluation_model="both"):
         """
         Initialize the baseline model components
+        
+        Args:
+            evaluation_model (str): Model to use for response evaluation
+                "openai": Use OpenAI's models only
+                "local": Use local transformer models only
+                "both": Use both (default)
         """
-        logger.info("Initializing Baseline Model")
+        logger.info(f"Initializing Baseline Model with evaluation_model={evaluation_model}")
         self.bert_rag = BertRAGModel()
         self.gpt_model = GPTModel()
         self.policy_api = PolicyAPI()
+        self.response_evaluator = ResponseEvaluator(evaluation_model=evaluation_model)
 
     def categorize_question(self, question, conversation_history=None):
         """
@@ -242,10 +251,32 @@ class BaselineModel:
 
             Please combine these responses into a single, coherent answer that addresses all parts of the user's question.
             Organize the information clearly with appropriate headings for each part.
+            Make sure to preserve all source attributions and citations from the original responses.
             """
 
             logger.debug("Combining multi-query responses with GPT")
-            return self.gpt_model.get_response(combined_prompt)
+            combined_response = self.gpt_model.get_response(combined_prompt)
+            
+            # Apply safety checks and quality evaluation to the combined response
+            logger.info("Evaluating combined multi-query response")
+            
+            # Create combined sources info
+            combined_sources = {
+                "source": "mixed",
+                "citations": [
+                    {"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"},
+                    {"source": "Abortion Policy API", "url": "https://www.abortionpolicyapi.com/"}
+                ]
+            }
+            
+            # Evaluate and potentially improve the response
+            final_response = self.response_evaluator.get_improved_response(
+                compound_question, 
+                combined_response, 
+                combined_sources
+            )
+            
+            return final_response
 
         except Exception as e:
             logger.error(f"Error handling multi-query: {str(e)}", exc_info=True)
@@ -253,7 +284,8 @@ class BaselineModel:
 
     def _process_single_query(self, question, category, conversation_history=None, location_context=None):
         """
-        Process a single query based on its category
+        Process a single query based on its category, applying response evaluation
+        for safety checks and quality improvements
 
         Args:
             question (str): The user's question
@@ -262,27 +294,65 @@ class BaselineModel:
             location_context (str): User's location if detected
 
         Returns:
-            str: The model's response
+            str: The model's response after safety and quality evaluation
         """
         try:
+            # Get initial response based on category
+            initial_response = ""
+            source_info = {}
+            
             if category == 'policy':
                 logger.debug(f"Using Policy API for response to: {question}")
                 # Pass conversation history to the policy API for context
-                return self.policy_api.get_policy_response(question, conversation_history, location_context)
-
+                initial_response = self.policy_api.get_policy_response(question, conversation_history, location_context)
+                # Add source information for the evaluator
+                source_info = {
+                    "source": "abortion_policy_api",
+                    "citations": [{"source": "Abortion Policy API", "url": "https://www.abortionpolicyapi.com/"}]
+                }
+                
             elif category == 'knowledge':
                 logger.debug(f"Using BERT RAG for response to: {question}")
                 rag_response = self.bert_rag.get_response(question)
+                
+                # Add source information for the evaluator
+                source_info = {
+                    "source": "planned_parenthood",
+                    "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
+                }
 
                 if self.bert_rag.is_confident(question, rag_response):
-                    return rag_response
-
-                logger.debug("RAG not confident, enhancing with GPT")
-                return self.gpt_model.enhance_response(question, rag_response)
+                    initial_response = rag_response
+                else:
+                    logger.debug("RAG not confident, enhancing with GPT")
+                    initial_response = self.gpt_model.enhance_response(question, rag_response)
 
             else:  # conversational
                 logger.debug(f"Using GPT for conversational response to: {question}")
-                return self.gpt_model.get_response(question)
+                initial_response = self.gpt_model.get_response(question)
+                # No specific sources for conversational responses
+                source_info = {"source": "conversational"}
+            
+            # Apply safety checks and quality evaluation to the response
+            logger.info(f"Evaluating response quality and safety for question: {question}")
+            
+            # Skip evaluation for very short responses (likely greetings)
+            if len(initial_response.split()) < 20:
+                logger.debug("Response too short, skipping evaluation")
+                return initial_response
+                
+            # Evaluate and potentially improve the response
+            final_response = self.response_evaluator.get_improved_response(
+                question, 
+                initial_response, 
+                source_info
+            )
+            
+            # Log if the response was improved
+            if final_response != initial_response:
+                logger.info("Response was improved by the evaluator")
+            
+            return final_response
 
         except Exception as e:
             logger.error(f"Error processing single query: {str(e)}", exc_info=True)

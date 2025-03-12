@@ -13,8 +13,11 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 app.config['JSON_AS_ASCII'] = False  # Ensure proper UTF-8 response
 
-# Initialize conversation manager
-conversation_manager = ConversationManager()
+# Initialize conversation manager with response evaluation
+# Options for evaluation_model: "openai", "local", "both"
+evaluation_model = os.environ.get("EVALUATION_MODEL", "both")
+logger.info(f"Initializing conversation manager with evaluation_model={evaluation_model}")
+conversation_manager = ConversationManager(evaluation_model=evaluation_model)
 
 @app.route('/')
 def index():

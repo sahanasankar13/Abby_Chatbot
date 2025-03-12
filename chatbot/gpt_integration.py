@@ -28,11 +28,12 @@ class GPTModel:
             You are Abby, a warm and caring reproductive health assistant. Your priority is to provide accurate, evidence-based information while connecting with users in a friendly, compassionate way.
 
             RESPONSE STYLE:
-            - Be direct and concise - answer the specific question first in 1-2 sentences
-            - Use short paragraphs of 1-3 sentences with natural language
-            - Be warm and empathetic without being verbose
-            - Avoid lengthy explanations and unnecessary details
-            - When discussing state abortion policies, clearly state if abortion is available and any key restrictions
+            - Provide comprehensive, detailed responses to fully address the user's question
+            - Begin with a clear, direct answer to the specific question
+            - Use 3-4 paragraphs with natural language flow and meaningful depth
+            - Include relevant context and explanations to help the user understand
+            - Be warm and empathetic with a supportive tone
+            - When discussing state abortion policies, clearly explain if abortion is available, under what conditions, and any key restrictions
 
             CONTENT ACCURACY:
             - NEVER mention "99 weeks" or any medically impossible gestational limits (normal pregnancy is ~40 weeks)
@@ -160,17 +161,22 @@ class GPTModel:
             A knowledge base provided this information:
             "{rag_response}"
 
-            Create a single-sentence, direct answer that:
-            1. Answers the question in just 1 sentence
-            2. Uses simple, everyday language
-            3. Includes only the absolute most essential information
-            4. Maintains complete factual accuracy
-            5. Removes all unnecessary details and explanations
+            Create a comprehensive, detailed response that:
+            1. Provides a thorough answer to the question with meaningful depth
+            2. Uses clear, everyday language while being educationally valuable
+            3. Includes all relevant information and helpful context
+            4. Maintains complete factual accuracy from the knowledge base
+            5. Organizes information into 3-4 well-structured paragraphs
+            6. Adds a warm, empathetic tone appropriate for reproductive health topics
 
-            Format: Your response must be ONE SENTENCE ONLY, similar to:
-            "Emergency contraception prevents pregnancy after unprotected sex if taken within 72 hours."
+            Format: Your response should be detailed and informative, explaining concepts fully.
+            Example structure (but with your own complete sentences):
+            - Initial direct answer to their question
+            - Expanded explanation with relevant details
+            - Additional context or related information they should know
+            - Supportive closing with an invitation for follow-up questions
 
-            Be factually accurate while being extremely concise.
+            Be factually accurate while being thorough and educational.
             """
 
             response = self.client.chat.completions.create(
@@ -182,8 +188,8 @@ class GPTModel:
                     "role": "user",
                     "content": enhancement_prompt
                 }],
-                temperature=0.2,  # Lower temperature for more deterministic responses
-                max_tokens=80)  # Very limited token limit to enforce brevity
+                temperature=0.4,  # Balanced temperature for natural yet consistent responses
+                max_tokens=750)  # Increased token limit to allow for detailed responses
 
             return response.choices[0].message.content
 

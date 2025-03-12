@@ -12,11 +12,20 @@ class ConversationManager:
     Manages the conversation flow, integrating the baseline model with friendly elements
     """
 
-    def __init__(self):
-        """Initialize the conversation manager"""
-        logger.info("Initializing Conversation Manager")
+    def __init__(self, evaluation_model="both"):
+        """
+        Initialize the conversation manager
+        
+        Args:
+            evaluation_model (str): Model to use for response evaluation
+                "openai": Use OpenAI's models only
+                "local": Use local transformer models only
+                "both": Use both (default)
+        """
+        logger.info(f"Initializing Conversation Manager with evaluation_model={evaluation_model}")
         try:
-            self.baseline_model = BaselineModel()
+            # Initialize the baseline model with response evaluation capabilities
+            self.baseline_model = BaselineModel(evaluation_model=evaluation_model)
             self.friendly_bot = FriendlyBot()
             self.citation_manager = CitationManager()
             self.conversation_history = []
