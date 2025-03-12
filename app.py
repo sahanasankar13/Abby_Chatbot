@@ -232,6 +232,34 @@ def view_metrics():
             if 'bert_score' not in metrics['improved_text_similarity'] or not isinstance(metrics['improved_text_similarity']['bert_score'], dict):
                 metrics['improved_text_similarity']['bert_score'] = {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
         
+        # Add chart data required by the dashboard
+        # Generate dates for the past 30 days for charts
+        metrics['dates'] = []
+        metrics['daily_scores'] = []
+        metrics['daily_safety'] = []
+        metrics['daily_volume'] = []
+        
+        # Check if daily_metrics is available
+        if 'daily_metrics' in metrics and metrics['daily_metrics']:
+            # Extract dates and values from daily_metrics
+            for date_str, daily_data in sorted(metrics['daily_metrics'].items()):
+                metrics['dates'].append(date_str)
+                metrics['daily_scores'].append(daily_data.get('avg_relevance', 0))
+                metrics['daily_safety'].append(daily_data.get('avg_safety', 0))
+                metrics['daily_volume'].append(daily_data.get('queries', 0))
+        else:
+            # Generate sample data for visualizations
+            # This is only for displaying the structure of the dashboard
+            # and will be replaced with real data as it's collected
+            today = datetime.datetime.now()
+            for i in range(30):
+                date = today - datetime.timedelta(days=i)
+                date_str = date.strftime('%Y-%m-%d')
+                metrics['dates'].insert(0, date_str)
+                metrics['daily_scores'].insert(0, 0)
+                metrics['daily_safety'].insert(0, 0)
+                metrics['daily_volume'].insert(0, 0)
+        
         # Get feedback data
         feedback_manager = FeedbackManager()
         all_feedback = feedback_manager.get_all_feedback()
