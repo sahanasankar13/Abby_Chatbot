@@ -108,21 +108,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         const citationElement = document.createElement('div');
                         citationElement.className = 'citation';
 
-                        if (citation.url) {
-                            const link = document.createElement('a');
-                            link.href = citation.url;
-                            link.target = '_blank';
-                            link.textContent = citation.title || citation.text || citation.url;
-                            citationElement.appendChild(link);
-                        } else {
-                            citationElement.textContent = citation.text || '';
-                        }
+                        // Handle HTML citations from backend
+                        if (typeof citation === 'string' && citation.startsWith('<div class="citation">')) {
+                            citationElement.innerHTML = citation;
+                        } 
+                        // Handle object-based citations
+                        else if (typeof citation === 'object') {
+                            if (citation.url) {
+                                const link = document.createElement('a');
+                                link.href = citation.url;
+                                link.target = '_blank';
+                                link.textContent = citation.title || citation.text || citation.url;
+                                citationElement.appendChild(link);
+                            } else {
+                                citationElement.textContent = citation.text || '';
+                            }
 
-                        if (citation.source) {
-                            const sourceElement = document.createElement('div');
-                            sourceElement.className = 'citation-source';
-                            sourceElement.textContent = citation.source;
-                            citationElement.appendChild(sourceElement);
+                            if (citation.source) {
+                                const sourceElement = document.createElement('div');
+                                sourceElement.className = 'citation-source';
+                                sourceElement.textContent = citation.source;
+                                citationElement.appendChild(sourceElement);
+                            }
+                        }
+                        // Handle plain text citations as fallback
+                        else {
+                            citationElement.innerHTML = citation;
                         }
 
                         citationsList.appendChild(citationElement);

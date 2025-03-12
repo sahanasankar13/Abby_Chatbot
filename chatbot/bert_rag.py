@@ -122,17 +122,27 @@ class BertRAGModel:
             str: The answer to the question
         """
         try:
+            # Import citation manager
+            from chatbot.citation_manager import CitationManager
+            citation_mgr = CitationManager()
+            
             # Check if this is a conversational query instead of a health question
             conversational_type = self._is_conversational_query(question)
             if conversational_type == "greeting":
                 logger.debug(f"Detected conversational query: '{question}'")
-                return "I'm doing well, thanks for asking! How can I help you today?"
+                greeting_response = "I'm doing well, thanks for asking! How can I help you today?"
+                return citation_mgr.add_citation_to_text(greeting_response, "planned_parenthood")
             elif conversational_type == "goodbye":
-                return "Goodbye!  Redirecting to Google..." #Added redirect logic here (placeholder for actual redirect)
+                goodbye_response = "Goodbye! Take care and stay healthy."
+                return citation_mgr.add_citation_to_text(goodbye_response, "planned_parenthood")
 
             # First check for exact matches (case-insensitive) to prioritize them
             normalized_question = question.lower().strip('?. ')
 
+            # Import citation manager
+            from chatbot.citation_manager import CitationManager
+            citation_mgr = CitationManager()
+            
             # Check for exact match
             for idx, qa_pair in enumerate(self.qa_pairs):
                 qa_normalized = qa_pair['Question'].lower().strip('?. ')
@@ -140,7 +150,8 @@ class BertRAGModel:
                 if normalized_question == qa_normalized:
                     logger.debug(f"Found exact match for question: '{question}'")
                     logger.debug(f"Exact match index: {idx}")
-                    return qa_pair['Answer']
+                    answer = qa_pair['Answer']
+                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
             # Also check for questions that contain the exact query
             # This helps with cases like "what is the menstrual cycle" matching "what is the menstrual cycle?"
@@ -149,7 +160,8 @@ class BertRAGModel:
                 if qa_normalized.startswith(normalized_question) or normalized_question.startswith(qa_normalized):
                     logger.debug(f"Found partial match for question: '{question}'")
                     logger.debug(f"Partial match index: {idx}")
-                    return qa_pair['Answer']
+                    answer = qa_pair['Answer']
+                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
             # If no exact match, proceed with embedding-based retrieval
             # Generate embedding for the question
@@ -161,7 +173,9 @@ class BertRAGModel:
             # Perform a confidence check - don't answer if distance is too high
             if distances[0][0] > 15.0:
                 logger.debug(f"Low confidence (distance: {distances[0][0]}) for query: '{question}'")
-                return "I'm not sure I understand your question about reproductive health. Could you please rephrase it or ask something more specific about contraception, pregnancy, or reproductive health?"
+                response = "I'm not sure I understand your question about reproductive health. Could you please rephrase it or ask something more specific about contraception, pregnancy, or reproductive health?"
+                # Add Planned Parenthood citation by default even for uncertainty responses
+                return citation_mgr.add_citation_to_text(response, "planned_parenthood")
 
             # If multiple good matches, combine answers
             if len(indices[0]) > 1 and distances[0][1] < 12.0:
@@ -187,8 +201,16 @@ class BertRAGModel:
 
         except Exception as e:
             logger.error(f"Error getting RAG response: {str(e)}", exc_info=True)
-            return "I apologize, but I encountered an error processing your question. Please try asking again or rephrase your question."
-            return "I'm sorry, I couldn't find a good answer to your question."
+            error_response = "I apologize, but I encountered an error processing your question. Please try asking again or rephrase your question."
+            
+            # Add citation even for error responses
+            try:
+                from chatbot.citation_manager import CitationManager
+                citation_mgr = CitationManager()
+                return citation_mgr.add_citation_to_text(error_response, "planned_parenthood")
+            except:
+                # If citation fails, return plain error message
+                return error_response
 
     def _combine_top_answers(self, question, distances, indices, max_answers=3):
         """
@@ -220,9 +242,14 @@ class BertRAGModel:
                     'category': category
                 })
 
-        # If only one good match, just return it
+        # Import citation manager
+        from chatbot.citation_manager import CitationManager
+        citation_mgr = CitationManager()
+        
+        # If only one good match, just return it with citation
         if len(relevant_answers) == 1:
-            return relevant_answers[0]['answer']
+            answer = relevant_answers[0]['answer']
+            return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
         # Combine answers into a comprehensive response
         combined = "Based on your question, here's what I know:\n\n"
@@ -250,7 +277,9 @@ class BertRAGModel:
 
                 combined += f"{answer_text}\n\n"
 
-        return combined
+        # Add citation to the combined answer
+        cited_combined = citation_mgr.add_citation_to_text(combined, "planned_parenthood")
+        return cited_combined
 
     def is_confident(self, question, response, threshold=8.0):
         """
