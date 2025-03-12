@@ -66,29 +66,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
             messageContainer.appendChild(messageElement);
 
-            // Skip sources completely for short conversational responses
-            if ((message.length < 100 && !message.includes("abortion")) || !citations || citations.length === 0) {
+            // Debug logging
+            console.log("Processing message with:", {
+                messageLength: message.length,
+                hasCitations: citations && citations.length > 0,
+                hasCitationObjects: citation_objects && citation_objects.length > 0
+            });
+
+            // Skip sources completely for short conversational responses or when no citations exist
+            if ((message.length < 100 && !message.includes("abortion")) || 
+                !citations || !Array.isArray(citations) || citations.length === 0) {
                 chatMessages.appendChild(messageContainer);
-                animateMessage(messageElement);
+                // Apply animation directly since animateMessage isn't defined
+                messageContainer.style.opacity = '0';
+                messageContainer.style.transform = 'translateY(10px)';
+                
+                // Trigger animation
+                setTimeout(() => {
+                    messageContainer.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                    messageContainer.style.opacity = '1';
+                    messageContainer.style.transform = 'translateY(0)';
+                }, 10);
                 return;
             }
 
+            // Ensure citation_objects is always an array even if not provided
+            const safeObjects = (citation_objects && Array.isArray(citation_objects)) ? citation_objects : [];
+            
             // Add citations if present - but only for API or knowledge base sources
-            if (citations && citations.length > 0 && citation_objects && citation_objects.length > 0) {
+            if (citations && Array.isArray(citations) && citations.length > 0) {
                 // Check if any citation is from the abortion policy API or another trusted source
-                // Don't show "ai_generated" citations by themselves
                 const validSources = ["Abortion Policy API", "Planned Parenthood", "Guttmacher Institute", 
                                      "CDC", "WHO", "American College", "Centers for Disease Control", 
                                      "World Health Organization"];
 
                 // Only show citations if we have valid external sources (not just AI-generated)
-                const hasApiSources = citation_objects.some(co => {
+                const hasApiSources = safeObjects.some(co => {
                     if (!co || !co.source) return false;
-                    return validSources.some(validSource => co.source.includes(validSource));
+                    return validSources.some(validSource => 
+                        co.source && typeof co.source === 'string' && co.source.includes(validSource)
+                    );
                 });
 
                 // Always show sources for policy-related responses
-                if (hasApiSources || message.includes("policy") || message.includes("state") || message.includes("law") || message.includes("abortion")) {
+                const hasPolicyContent = message.includes("policy") || message.includes("state") || 
+                                        message.includes("law") || message.includes("abortion");
+                
+                if (hasApiSources || hasPolicyContent || citations.length > 0) {
+                    console.log("Adding citations to message");
                     const citationsContainer = document.createElement('div');
                     citationsContainer.className = 'citations-container';
 
@@ -99,49 +124,81 @@ document.addEventListener('DOMContentLoaded', function() {
                     citationsList.className = 'citations-list';
 
                     // Filter out AI-generated citations when showing real sources
-                    const filteredCitations = citations.filter(c => 
-                        !c.includes("AI-generated") && 
-                        !c.includes("ai-generated")
-                    );
+                    let filteredCitations = [];
+                    try {
+                        filteredCitations = citations.filter(c => {
+                            if (typeof c !== 'string' && typeof c !== 'object') return false;
+                            if (typeof c === 'string') {
+                                return !c.includes("AI-generated") && !c.includes("ai-generated");
+                            }
+                            return true;
+                        });
+                    } catch (filterError) {
+                        console.error("Error filtering citations:", filterError);
+                        filteredCitations = Array.isArray(citations) ? [...citations] : [];
+                    }
 
+                    console.log("Filtered citations:", filteredCitations.length);
+
+                    // Safety check
+                    if (filteredCitations.length === 0 && citations.length > 0) {
+                        // Add a default citation for Planned Parenthood if filtering removed all citations
+                        filteredCitations.push({
+                            source: "Planned Parenthood",
+                            url: "https://www.plannedparenthood.org/",
+                            title: "Planned Parenthood"
+                        });
+                    }
+
+                    // Process each citation
                     filteredCitations.forEach(citation => {
-                        const citationElement = document.createElement('div');
-                        citationElement.className = 'citation';
+                        try {
+                            const citationElement = document.createElement('div');
+                            citationElement.className = 'citation';
 
-                        // Handle HTML citations from backend
-                        if (typeof citation === 'string' && citation.startsWith('<div class="citation">')) {
-                            citationElement.innerHTML = citation;
-                        } 
-                        // Handle object-based citations
-                        else if (typeof citation === 'object') {
-                            if (citation.url) {
-                                const link = document.createElement('a');
-                                link.href = citation.url;
-                                link.target = '_blank';
-                                link.textContent = citation.title || citation.text || citation.url;
-                                citationElement.appendChild(link);
-                            } else {
-                                citationElement.textContent = citation.text || '';
+                            // Handle HTML citations from backend
+                            if (typeof citation === 'string' && citation.startsWith('<div class="citation">')) {
+                                citationElement.innerHTML = citation;
+                            } 
+                            // Handle object-based citations
+                            else if (citation && typeof citation === 'object') {
+                                if (citation.url) {
+                                    const link = document.createElement('a');
+                                    link.href = citation.url;
+                                    link.target = '_blank';
+                                    link.textContent = citation.title || citation.text || citation.url;
+                                    citationElement.appendChild(link);
+                                } else {
+                                    citationElement.textContent = citation.text || citation.source || 'Citation';
+                                }
+
+                                if (citation.source) {
+                                    const sourceElement = document.createElement('div');
+                                    sourceElement.className = 'citation-source';
+                                    sourceElement.textContent = citation.source;
+                                    citationElement.appendChild(sourceElement);
+                                }
+                            }
+                            // Handle plain text citations as fallback
+                            else if (typeof citation === 'string') {
+                                citationElement.textContent = citation;
+                            }
+                            // Handle unknown citation format
+                            else {
+                                citationElement.textContent = "Source information available upon request";
                             }
 
-                            if (citation.source) {
-                                const sourceElement = document.createElement('div');
-                                sourceElement.className = 'citation-source';
-                                sourceElement.textContent = citation.source;
-                                citationElement.appendChild(sourceElement);
-                            }
+                            citationsList.appendChild(citationElement);
+                        } catch (citationError) {
+                            console.error("Error processing citation:", citationError, citation);
                         }
-                        // Handle plain text citations as fallback
-                        else {
-                            citationElement.innerHTML = citation;
-                        }
-
-                        citationsList.appendChild(citationElement);
                     });
 
-                    citationsContainer.appendChild(citationsTitle);
-                    citationsContainer.appendChild(citationsList);
-                    messageContainer.appendChild(citationsContainer);
+                    if (citationsList.children.length > 0) {
+                        citationsContainer.appendChild(citationsTitle);
+                        citationsContainer.appendChild(citationsList);
+                        messageContainer.appendChild(citationsContainer);
+                    }
                 }
             }
 

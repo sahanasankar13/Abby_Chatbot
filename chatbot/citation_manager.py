@@ -128,16 +128,23 @@ class CitationManager:
         if len(text.split()) < 15 or "take care" in text.lower():
             return []
 
-        # Check if text has explicitly marked citations
+        # Check for explicit [SOURCE:source_id] pattern (our primary citation method)
+        source_pattern = r'\[SOURCE:([\w_]+)\]'
+        source_matches = re.findall(source_pattern, text)
+        
+        for source_id in source_matches:
+            if source_id in self.SOURCES:
+                citations.append(self.SOURCES[source_id])
+        
+        # Also check for older [cite:] pattern for backwards compatibility
         if "[cite:" in text:
             pattern = r'\[cite:(.*?)\]'
             citation_matches = re.findall(pattern, text)
 
             for citation in citation_matches:
                 citation_parts = citation.split('|')
-                if len(citation_parts) >= 2:
+                if len(citation_parts) >= 1:
                     source_id = citation_parts[0].strip()
-                    quote = citation_parts[1].strip()
                     
                     if source_id in self.SOURCES:
                         citations.append(self.SOURCES[source_id])
@@ -150,7 +157,22 @@ class CitationManager:
             if "abortion_policy_api" in self.SOURCES:
                 citations.append(self.SOURCES["abortion_policy_api"])
 
-        # If no explicit citations, add default sources
+        # If no explicit citations found but text contains certain keywords,
+        # add appropriate citation sources
+        if len(citations) == 0:
+            text_lower = text.lower()
+            
+            # For abortion policy related information
+            if any(term in text_lower for term in ["abortion", "policy", "legal", "law", "state", "legislation"]):
+                if "abortion_policy_api" in self.SOURCES:
+                    citations.append(self.SOURCES["abortion_policy_api"])
+            
+            # For general reproductive health information
+            if any(term in text_lower for term in ["health", "pregnancy", "birth control", "contraception", "menstrual"]):
+                if "planned_parenthood" in self.SOURCES:
+                    citations.append(self.SOURCES["planned_parenthood"])
+            
+        # If still no citations, add default sources as fallback
         if len(citations) == 0 and hasattr(self, 'default_sources'):
             for source_id in self.default_sources:
                 if source_id in self.SOURCES:

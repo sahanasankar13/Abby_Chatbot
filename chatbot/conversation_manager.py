@@ -60,7 +60,6 @@ class ConversationManager:
                 friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
             elif category == 'policy':
                 friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'abortion_policy_api')
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'guttmacher')
             
             # Format response with citations
             formatted_response = self.citation_manager.format_response_with_citations(friendly_response)
