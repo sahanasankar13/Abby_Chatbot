@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add initial welcome message
-    addBotMessage("Hi I'm Abby 👋 How can I help you with reproductive health information today?");
+    addBotMessage("Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?");
     
     // Focus input on page load
     userInput.focus();
