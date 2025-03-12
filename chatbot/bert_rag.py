@@ -171,13 +171,19 @@ class BertRAGModel:
             best_idx = indices[0][0]
             best_answer = self.qa_pairs[best_idx]['Answer']
             best_question = self.qa_pairs[best_idx]['Question']
-
+            
+            # Add citation from Planned Parenthood
+            from chatbot.citation_manager import CitationManager
+            citation_mgr = CitationManager()
+            
             logger.debug(f"Primary confidence (distance): {distances[0][0]}")
             if len(indices[0]) > 1:
                 logger.debug(f"Secondary confidence (gap): {distances[0][1] - distances[0][0]}")
             logger.debug(f"Matched question: {best_question}")
-
-            return best_answer
+            
+            # Add citation to the response
+            cited_answer = citation_mgr.add_citation_to_text(best_answer, "planned_parenthood")
+            return cited_answer
 
         except Exception as e:
             logger.error(f"Error getting RAG response: {str(e)}", exc_info=True)

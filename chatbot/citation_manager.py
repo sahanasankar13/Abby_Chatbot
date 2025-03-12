@@ -109,7 +109,7 @@ class CitationManager:
         """Initialize the citation manager"""
         logger.info("Initializing Citation Manager")
         self.sources = self.SOURCES
-        self.default_sources = ["ai_generated"]
+        self.default_sources = ["planned_parenthood"]
 
 
     def extract_citations_from_text(self, text: str) -> List[Citation]:
