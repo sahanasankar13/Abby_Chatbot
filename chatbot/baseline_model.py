@@ -19,13 +19,14 @@ class BaselineModel:
         self.gpt_model = GPTModel()
         self.policy_api = PolicyAPI()
     
-    def categorize_question(self, question):
+    def categorize_question(self, question, conversation_history=None):
         """
         Categorize the question to determine which model to use
         
         Args:
             question (str): The user's question
-        
+            conversation_history (list, optional): Previous conversation messages
+            
         Returns:
             str: Category of the question ('policy', 'knowledge', or 'conversational')
         """
@@ -53,11 +54,11 @@ class BaselineModel:
                          "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc"]
         
         # Direct abortion policy questions - always categorize as policy
-        if question_lower.startswith("can i get an abortion in"):
+        if question_lower.startswith("can i get an abortion in") or "can i get an abortion" in question_lower:
             logger.debug("Direct abortion policy question detected")
             return 'policy'
             
-        # Questions about abortion laws in a state
+        # Questions about abortion laws/legality in a state
         if "abortion laws" in question_lower or "abortion law" in question_lower:
             logger.debug("Abortion law question detected")
             return 'policy'
@@ -72,8 +73,26 @@ class BaselineModel:
         if any(keyword in question_lower for keyword in policy_keywords):
             return 'policy'
         
+        # Special case: Check if current question is about abortion availability or legality
+        # and we have state information in conversation history
+        if 'abortion' in question_lower and conversation_history:
+            access_indicators = ['get', 'have', 'legal', 'available', 'there']
+            
+            # If question contains "abortion" and any access indicators, check for state info in history
+            if any(indicator in question_lower for indicator in access_indicators):
+                # Check if there's state information in the conversation history
+                for message in reversed(conversation_history):
+                    if message['sender'] == 'user':
+                        msg_lower = message['message'].lower()
+                        if any(f"i live in {state}" in msg_lower for state in states) or \
+                           any(f"i'm in {state}" in msg_lower for state in states) or \
+                           any(f"i am in {state}" in msg_lower for state in states) or \
+                           any(state in msg_lower for state in states):
+                            logger.debug("Found state information in conversation history")
+                            return 'policy'
+        
         # For questions that seem to be seeking specific information
-        information_indicators = ['what', 'how', 'when', 'where', 'why', 'who', 'which', 'can i']
+        information_indicators = ['what', 'how', 'when', 'where', 'why', 'who', 'which']
         if any(indicator in question_lower for indicator in information_indicators):
             return 'knowledge'
         
@@ -98,8 +117,8 @@ class BaselineModel:
                 return self._handle_multi_query(question, conversation_history)
             
             # Single query flow
-            # Categorize the question
-            category = self.categorize_question(question)
+            # Categorize the question (passing conversation history for context awareness)
+            category = self.categorize_question(question, conversation_history)
             logger.debug(f"Question category: {category}")
             
             # Process according to category
@@ -134,13 +153,13 @@ class BaselineModel:
             
             if len(parts) <= 1:
                 # Not actually a multi-query, process normally
-                category = self.categorize_question(compound_question)
+                category = self.categorize_question(compound_question, conversation_history)
                 return self._process_single_query(compound_question, category, conversation_history)
                 
             # Process each part separately
             responses = []
             for part in parts:
-                category = self.categorize_question(part)
+                category = self.categorize_question(part, conversation_history)
                 logger.debug(f"Part: '{part}', Category: {category}")
                 response = self._process_single_query(part, category, conversation_history)
                 responses.append(response)
