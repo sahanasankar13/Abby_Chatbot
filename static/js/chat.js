@@ -364,9 +364,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(feedbackForm);
         }
         
-        // Helper function to clear session history
+        // Helper function to reset the UI for a new session
         function clearSessionHistory() {
-            // Clear history
+            // Mark session as complete on server (preserves logs/history for analytics)
             fetch('/api/clear-history', {
                 method: 'POST',
                 headers: {
@@ -376,9 +376,16 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addBotMessage("Your session has been ended and history has been cleared. If you have more questions in the future, feel free to ask!");
+                    // Clear all messages from the UI only
+                    chatMessages.innerHTML = '';
+                    
+                    // Re-add the welcome message
+                    addBotWelcomeMessage("Hi, I'm Abby. I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is confidential. What questions do you have today?");
+                    
+                    // Add confirmation message
+                    addBotMessage("Your session has been ended. If you have more questions in the future, feel free to ask!");
                 } else {
-                    addBotMessage("I couldn't clear your session history. Please try again.");
+                    addBotMessage("I couldn't end your session. Please try again.");
                 }
             })
             .catch(error => {

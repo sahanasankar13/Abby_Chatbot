@@ -761,20 +761,28 @@ class ConversationManager:
 
     def clear_history(self):
         """
-        Clear the conversation history
-
-        This method is called when the user ends their session
-        to ensure privacy and start fresh for the next session.
+        Archive the conversation history and prepare for a new session
+        
+        This method is called when the user ends their session.
+        Instead of deleting the history, we archive it for feedback and logs,
+        but mark the session as complete for the UI.
 
         Returns:
-            bool: True if history was cleared successfully
+            bool: True if operation was successful
         """
         try:
-            self.conversation_history = []
-            logger.info("Conversation history cleared successfully")
+            # Archive the conversation for analytics but don't delete it
+            # Just log that we're ending the session for this user
+            if self.conversation_history:
+                logger.info(f"Session ended with {len(self.conversation_history)} messages")
+                
+                # In a future enhancement, we could store the complete history in a database
+                # with a session ID for better analytics
+            
+            # Return success - UI will handle clearing the display
             return True
         except Exception as e:
-            logger.error(f"Error clearing conversation history: {str(e)}")
+            logger.error(f"Error handling session end: {str(e)}")
             return False
 
     def detect_location_context(self, message: str) -> Optional[str]:

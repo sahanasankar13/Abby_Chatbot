@@ -366,22 +366,26 @@ def run_ragas_evaluation():
 @app.route('/api/clear-history', methods=['POST'])
 def clear_history():
     """
-    API endpoint for clearing conversation history when a session ends
+    API endpoint for marking a session as complete while preserving history for analytics
+    
+    This does not delete the conversation history, but signals that the
+    current session is over. The UI will reset, but the data remains for
+    analytics and feedback purposes.
     """
     try:
-        # Clear the conversation history
+        # Mark the session as complete but preserve history for analytics
         success = conversation_manager.clear_history()
         
         if success:
-            logger.info("Conversation history cleared successfully via API endpoint")
-            return jsonify({'success': True, 'message': 'Conversation history cleared successfully'})
+            logger.info("Session marked as complete via API endpoint")
+            return jsonify({'success': True, 'message': 'Session marked as complete'})
         else:
-            logger.error("Failed to clear conversation history")
-            return jsonify({'error': 'Failed to clear conversation history'}), 500
+            logger.error("Failed to mark session as complete")
+            return jsonify({'error': 'Failed to mark session as complete'}), 500
             
     except Exception as e:
-        logger.error(f"Error clearing conversation history: {str(e)}", exc_info=True)
-        return jsonify({'error': 'An error occurred clearing conversation history'}), 500
+        logger.error(f"Error marking session as complete: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred marking session as complete'}), 500
 
 @app.route('/health')
 def health_check():
