@@ -4,20 +4,82 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
     
-    // Add end session button to the header
+    // Add header buttons menu
     const chatHeader = document.querySelector('.chat-header');
-    const endSessionBtn = document.createElement('button');
-    endSessionBtn.className = 'end-session-btn';
-    endSessionBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> End Session';
-    endSessionBtn.addEventListener('click', endSession);
-    chatHeader.appendChild(endSessionBtn);
     
-    // Add optional feedback button
-    const feedbackBtn = document.createElement('button');
-    feedbackBtn.className = 'feedback-btn-header';
-    feedbackBtn.innerHTML = '<i class="fas fa-comment-alt"></i> Give Feedback';
-    feedbackBtn.addEventListener('click', openFeedbackModal);
-    chatHeader.appendChild(feedbackBtn);
+    // Create a header menu container (right side)
+    const headerMenu = document.createElement('div');
+    headerMenu.className = 'header-menu';
+    
+    // Add quick exit button with emergency exit styling
+    const quickExitBtn = document.createElement('button');
+    quickExitBtn.className = 'quick-exit-btn';
+    quickExitBtn.innerHTML = '<i class="fas fa-times-circle"></i> Quick Exit';
+    quickExitBtn.title = 'Immediately clear this page';
+    quickExitBtn.addEventListener('click', () => {
+        // Redirect to a neutral site immediately
+        window.location.href = 'https://www.google.com';
+    });
+    
+    // Add feedback button in dropdown menu
+    const menuButton = document.createElement('button');
+    menuButton.className = 'header-menu-button';
+    menuButton.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+    menuButton.title = 'Menu';
+    
+    // Create the dropdown content
+    const dropdownContent = document.createElement('div');
+    dropdownContent.className = 'dropdown-content';
+    
+    // Add feedback option to dropdown
+    const feedbackOption = document.createElement('a');
+    feedbackOption.href = '#';
+    feedbackOption.innerHTML = '<i class="fas fa-comment-alt"></i> Give Feedback';
+    feedbackOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        openFeedbackModal();
+    });
+    
+    // Add end session option to dropdown
+    const endSessionOption = document.createElement('a');
+    endSessionOption.href = '#';
+    endSessionOption.innerHTML = '<i class="fas fa-sign-out-alt"></i> End Session';
+    endSessionOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        endSession();
+    });
+    
+    // Add options to dropdown
+    dropdownContent.appendChild(feedbackOption);
+    dropdownContent.appendChild(endSessionOption);
+    
+    // Create dropdown container
+    const dropdownContainer = document.createElement('div');
+    dropdownContainer.className = 'dropdown';
+    dropdownContainer.appendChild(menuButton);
+    dropdownContainer.appendChild(dropdownContent);
+    
+    // Toggle dropdown visibility when clicking the menu button
+    menuButton.addEventListener('click', () => {
+        dropdownContent.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.matches('.header-menu-button') && 
+            !e.target.closest('.header-menu-button')) {
+            if (dropdownContent.classList.contains('show')) {
+                dropdownContent.classList.remove('show');
+            }
+        }
+    });
+    
+    // Add quick exit to the left side of header
+    chatHeader.appendChild(quickExitBtn);
+    
+    // Add dropdown menu to the right side
+    headerMenu.appendChild(dropdownContainer);
+    chatHeader.appendChild(headerMenu);
 
     // Enable/disable send button based on input
     userInput.addEventListener('input', function() {
@@ -451,6 +513,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeBtn = modalContainer.querySelector('.close-modal');
         closeBtn.addEventListener('click', () => {
             document.body.removeChild(modalOverlay);
+        });
+        
+        // Handle skip button
+        const skipBtn = modalContainer.querySelector('.skip-feedback-btn');
+        skipBtn.addEventListener('click', () => {
+            document.body.removeChild(modalOverlay);
+            resetChat();
         });
         
         // Handle rating selection
