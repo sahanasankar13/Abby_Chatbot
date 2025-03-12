@@ -256,7 +256,7 @@ class BertRAGModel:
         
     def _format_single_answer(self, question, answer):
         """
-        Format a single answer to improve readability and natural flow
+        Format a single answer to be concise and direct
         
         Args:
             question (str): Original question
@@ -265,39 +265,28 @@ class BertRAGModel:
         Returns:
             str: Formatted answer
         """
-        # Make sure sentences end with proper punctuation
+        # Make sure the answer ends with proper punctuation
         if not answer.endswith(('.', '?', '!')):
             answer = answer + '.'
+        
+        # For long answers, extract the most important parts (first 3-4 sentences)
+        sentences = self._extract_sentences(answer)
+        
+        if len(sentences) > 4:
+            # Use first 3 sentences for concise response
+            concise_answer = ' '.join(sentences[:3])
             
-        # Break into paragraphs for longer answers
-        if len(answer) > 200:
-            sentences = answer.split('. ')
-            paragraphs = []
-            current_paragraph = []
-            
-            for sentence in sentences:
-                if not sentence.strip():
-                    continue
-                    
-                current_paragraph.append(sentence)
+            # Look for a conclusion sentence (often last sentence has important info)
+            if len(sentences) > 4 and len(sentences[-1]) > 20:  # Only use if substantive
+                concise_answer += ' ' + sentences[-1]
                 
-                # Start a new paragraph every 2-3 sentences
-                if len(current_paragraph) >= 3:
-                    paragraphs.append('. '.join(current_paragraph) + '.')
-                    current_paragraph = []
-                    
-            # Add any remaining sentences
-            if current_paragraph:
-                paragraphs.append('. '.join(current_paragraph) + '.')
-                
-            # Join paragraphs with double new lines
-            answer = '\n\n'.join(paragraphs)
+            return concise_answer
         
         return answer
         
     def _format_multiple_answers(self, question, relevant_answers):
         """
-        Format multiple answers into a cohesive, naturally flowing response
+        Format multiple answers into a cohesive, concise response
         
         Args:
             question (str): Original question
@@ -309,80 +298,70 @@ class BertRAGModel:
         from chatbot.citation_manager import CitationManager
         citation_mgr = CitationManager()
         
-        # Educational introductions for different topics
-        intros = {
-            "General": "Based on your question, here's what I know:",
-            "Birth Control": "Regarding birth control methods:",
-            "Pregnancy": "About pregnancy and related topics:",
-            "STIs": "Regarding sexually transmitted infections:",
-            "Abortion": "About abortion and reproductive options:",
-            "Reproductive Health": "On reproductive health matters:"
-        }
-        
         # Sort answers by relevance (distance)
         sorted_answers = sorted(relevant_answers, key=lambda x: x['distance'])
         
-        # Group by category
-        by_category = {}
-        for item in sorted_answers:
-            cat = item['category']
-            if cat not in by_category:
-                by_category[cat] = []
-            by_category[cat].append(item)
+        # Extract the most relevant answer as our primary response
+        primary_answer = sorted_answers[0]['answer']
         
-        # Start building the combined response
-        combined_parts = []
+        # Find the most important sentences from other answers
+        important_points = []
+        seen_content = set(self._get_key_phrases(primary_answer))
         
-        # Process each category
-        for category, items in by_category.items():
-            # Add appropriate introduction for this category
-            intro = intros.get(category, intros["General"])
-            category_text = f"{intro}\n\n"
-            
-            # Combine answers in this category into coherent paragraphs
-            answer_texts = []
-            for item in items:
-                # Clean up the answer text
-                answer_text = item['answer']
-                if not answer_text.endswith(('.', '?', '!')):
-                    answer_text = answer_text + '.'
-                answer_texts.append(answer_text)
-            
-            # Join the answers with smooth transitions when possible
-            if len(answer_texts) > 1:
-                transitions = [
-                    "Additionally, ", 
-                    "Furthermore, ", 
-                    "Also important to note, ",
-                    "Related to this, ",
-                    "On a similar note, "
-                ]
+        for item in sorted_answers[1:]:
+            # Don't process more than 2 additional answers
+            if len(important_points) >= 2:
+                break
                 
-                formatted_text = answer_texts[0]
-                for i in range(1, len(answer_texts)):
-                    # Add transition words between paragraphs
-                    import random
-                    transition = random.choice(transitions)
-                    next_text = answer_texts[i]
-                    
-                    # Make first letter lowercase if adding a transition
-                    if next_text and next_text[0].isupper():
-                        next_text = next_text[0].lower() + next_text[1:]
-                        
-                    formatted_text += f"\n\n{transition}{next_text}"
+            sentences = self._extract_sentences(item['answer'])
+            if not sentences:
+                continue
                 
-                category_text += formatted_text
-            else:
-                category_text += answer_texts[0]
-            
-            combined_parts.append(category_text)
+            # Get the most important sentence that adds new information
+            for sentence in sentences[:2]:  # Look at first two sentences only
+                key_phrases = self._get_key_phrases(sentence)
+                # Check if this adds new information
+                if not any(phrase in seen_content for phrase in key_phrases):
+                    important_points.append(sentence)
+                    seen_content.update(key_phrases)
+                    break
         
-        # Join all categories with clear separation
-        combined_response = "\n\n".join(combined_parts)
+        # Start with a direct answer
+        direct_answer = self._get_first_sentences(primary_answer, 2)
         
-        # Add citation to the combined answer
-        cited_combined = citation_mgr.add_citation_to_text(combined_response, "planned_parenthood")
-        return cited_combined
+        # Build the response: direct answer + important additional points
+        response_parts = [direct_answer]
+        
+        # Add important points if they exist
+        if important_points:
+            for point in important_points:
+                if not point.strip().endswith(('.', '?', '!')):
+                    point = point + '.'
+                response_parts.append(point)
+        
+        # Join all parts into a concise response
+        concise_response = ' '.join(response_parts)
+        
+        # Add citation
+        cited_response = citation_mgr.add_citation_to_text(concise_response, "planned_parenthood")
+        return cited_response
+        
+    def _get_first_sentences(self, text, num_sentences=2):
+        """Extract the first N sentences from a text"""
+        import re
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        return ' '.join(sentences[:num_sentences])
+        
+    def _extract_sentences(self, text):
+        """Split text into sentences"""
+        import re
+        return re.split(r'(?<=[.!?])\s+', text)
+        
+    def _get_key_phrases(self, text):
+        """Extract key phrases/words from text to identify content"""
+        # Simple implementation: just use words of 4+ chars
+        words = [w.lower() for w in text.split() if len(w) >= 4]
+        return set(words)
 
     def is_confident(self, question, response, threshold=6.0):
         """

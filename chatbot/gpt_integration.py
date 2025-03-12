@@ -143,7 +143,8 @@ class GPTModel:
 
     def enhance_response(self, question, rag_response):
         """
-        Enhance a RAG response using GPT for better quality and empathy
+        Enhance a RAG response using GPT for better quality and empathy,
+        while keeping it concise like policy responses
 
         Args:
             question (str): User's question
@@ -159,18 +160,19 @@ class GPTModel:
             A knowledge base provided this information:
             "{rag_response}"
 
-            Please transform this information into a warm, supportive conversation with a friend. Your response should:
+            Please create a concise, friendly response that:
 
-            1. Start with an acknowledgment of feelings or validation (e.g., "I understand you're wondering about..." or "It's completely normal to have questions about...")
-            2. Use simple, everyday language that feels like a supportive friend talking
-            3. Include gentle reassurances throughout your response
-            4. Break down complex medical concepts into easy-to-understand explanations
-            5. Add transitional phrases between sections to maintain a natural conversational flow
-            6. End with an invitation to keep the conversation going
+            1. Starts with a direct answer to the question in 1-2 sentences
+            2. Uses simple, everyday language (like a supportive friend talking)
+            3. Keeps the entire response to 3-5 sentences total
+            4. Is warm and supportive without being verbose
+            5. Maintains complete factual accuracy while being concise
+            6. Avoids unnecessary details and lengthy explanations
 
-            Remember to maintain complete factual accuracy while making the tone deeply human and empathetic.
-            Respond directly to the user's question without mentioning that you're enhancing a previous response.
-            Use a warm, supportive tone throughout as if comforting a friend.
+            Format: Your response should be similar in length and style to this example:
+            "Yes, emergency contraception (also called the morning-after pill) can prevent pregnancy after unprotected sex. It works best when taken within 72 hours, though some brands work up to 5 days after. It works by delaying ovulation so no egg is released to meet sperm. Plan B is available over-the-counter without a prescription."
+
+            Remember to remain factually accurate, warm, and exceptionally concise.
             """
 
             response = self.client.chat.completions.create(
@@ -182,8 +184,8 @@ class GPTModel:
                     "role": "user",
                     "content": enhancement_prompt
                 }],
-                temperature=0.5,
-                max_tokens=600)
+                temperature=0.4,  # Lower temperature for more concise responses
+                max_tokens=300)  # Reduced token limit to encourage brevity
 
             return response.choices[0].message.content
 
