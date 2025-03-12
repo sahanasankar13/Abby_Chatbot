@@ -75,22 +75,35 @@ def generate_model_responses(questions: List[str], model: BaselineModel) -> Tupl
     """
     logger.info("Generating model responses")
     answers = []
-    contexts = []
+    all_contexts = []
+    
+    # Clear the model's context tracking to start fresh
+    model.recent_responses = []
+    model.recent_contexts = []
     
     for i, question in enumerate(questions):
         logger.info(f"Processing question {i+1}/{len(questions)}")
         
-        # Use the model to get a response
-        response = model.process_question(question)
+        # Use the model to get a response - this will automatically store context in model.recent_contexts
+        # Force category to be 'knowledge' to ensure we use the BERT RAG model which provides contexts
+        response = model.process_question(question, force_category='knowledge')
         answers.append(response)
         
-        # Get the contexts used for this response (if available)
-        # In a real implementation, you would extract these from the model's internal state
-        # For now, we'll just use empty lists as placeholders
-        context = []
-        contexts.append(context)
+        # Extract context for this question if available
+        if i < len(model.recent_contexts):
+            # Convert the context dictionaries to strings for Ragas
+            context_texts = []
+            for ctx in model.recent_contexts[i]:
+                # Format context as a string containing the question and answer
+                context_str = f"Question: {ctx.get('question', '')}\nAnswer: {ctx.get('answer', '')}"
+                context_texts.append(context_str)
+            all_contexts.append(context_texts)
+        else:
+            # Fallback to empty context if not found
+            logger.warning(f"No context found for question {i+1}")
+            all_contexts.append([])
     
-    return answers, contexts
+    return answers, all_contexts
 
 def calculate_ragas_metrics(questions: List[str], contexts: List[List[str]], 
                            generated_answers: List[str], ground_truth: List[str]) -> Dict[str, Any]:

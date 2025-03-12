@@ -243,7 +243,36 @@ class AdvancedMetricsCalculator:
         metrics = {}
         
         try:
+            # Ensure we have at least some valid data to work with
+            if not questions or not generated_answers:
+                logger.warning("No questions or answers provided for Ragas evaluation")
+                metrics['ragas_error'] = "No questions or answers provided"
+                return metrics
+                
+            # Make sure all lists have the same length
+            min_length = min(len(questions), len(generated_answers))
+            if len(retrieved_contexts) != min_length:
+                logger.warning(f"Context list length ({len(retrieved_contexts)}) doesn't match questions length ({min_length})")
+                # Adjust to the smallest length
+                questions = questions[:min_length]
+                generated_answers = generated_answers[:min_length]
+                if len(retrieved_contexts) > min_length:
+                    retrieved_contexts = retrieved_contexts[:min_length]
+                else:
+                    # Pad with empty contexts if needed
+                    retrieved_contexts.extend([[] for _ in range(min_length - len(retrieved_contexts))])
+            
+            # Ensure each question has at least one context (even if empty)
+            for i in range(len(retrieved_contexts)):
+                if not retrieved_contexts[i]:
+                    retrieved_contexts[i] = ["No context available"]
+            
             # Set up the data for Ragas
+            logger.info(f"Preparing Ragas evaluation for {len(questions)} questions")
+            logger.info(f"Sample question: {questions[0][:50]}...")
+            logger.info(f"Sample answer: {generated_answers[0][:50]}...")
+            logger.info(f"Sample context count: {len(retrieved_contexts[0])}")
+            
             data = {
                 "question": questions,
                 "contexts": retrieved_contexts,
@@ -251,18 +280,23 @@ class AdvancedMetricsCalculator:
             }
             
             # Calculate faithfulness score
+            logger.info("Calculating faithfulness score...")
             faithfulness_result = self.faithfulness_metric.score(data)
             metrics['faithfulness'] = faithfulness_result['faithfulness']
             
             # Calculate context precision and recall
+            logger.info("Calculating context precision...")
             precision_result = self.context_precision_metric.score(data)
-            recall_result = self.context_recall_metric.score(data)
-            
             metrics['context_precision'] = precision_result['context_precision']
+            
+            logger.info("Calculating context recall...")
+            recall_result = self.context_recall_metric.score(data)
             metrics['context_recall'] = recall_result['context_recall']
             
+            logger.info("Ragas metrics calculation complete")
+            
         except Exception as e:
-            logger.error(f"Error calculating Ragas metrics: {str(e)}")
+            logger.error(f"Error calculating Ragas metrics: {str(e)}", exc_info=True)
             metrics['ragas_error'] = str(e)
         
         return metrics
