@@ -479,7 +479,7 @@
                     {% if feedback|length == 0 %}
                         <div class="alert alert-info">No feedback has been submitted yet.</div>
                     {% else %}
-                        {% for item in feedback|sort(attribute='timestamp', reverse=true)[:5] %}
+                        {% for item in feedback|sort(attribute='timestamp', reverse=true) %}
                             <div class="card mb-3 {% if item.rating > 0 %}border-success{% else %}border-danger{% endif %}">
                                 <div class="card-body">
                                     <h5 class="card-title">

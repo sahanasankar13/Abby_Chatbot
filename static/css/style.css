@@ -82,9 +82,9 @@ body {
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
-  background-color: #dc3545; /* Bootstrap danger color */
-  border-color: #dc3545;
-  color: white;
+  background-color: #FF0000 !important; /* Pure red color */
+  border-color: #FF0000 !important;
+  color: white !important;
   font-size: 0.95rem;
 }
 
@@ -130,6 +130,9 @@ body {
   border: 1px solid var(--apple-border);
   padding: 0.5rem 0;
   min-width: 180px;
+  background-color: white;
+  z-index: 100;
+  display: block;
 }
 
 [data-bs-theme="dark"] .dropdown-menu {
@@ -141,7 +144,7 @@ body {
 .dropdown-item {
   padding: 0.5rem 1rem;
   font-size: 0.95rem;
-  color: var(--apple-text);
+  color: #000000 !important; /* Force black text */
   display: flex;
   align-items: center;
 }
