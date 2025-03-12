@@ -66,13 +66,13 @@ class ConversationManager:
             
             # Get response from baseline model, passing conversation history for context
             start_time = time.time()
-            # Pass the conversation history and location context to enable better awareness
-            response = self.baseline_model.process_question(message, self.conversation_history, location_context)
+            # Pass the conversation history for context awareness
+            response = self.baseline_model.process_question(message, self.conversation_history)
             processing_time = time.time() - start_time
             logger.debug(f"Baseline model processing time: {processing_time:.2f} seconds")
             
             # Get the category of the question from baseline model
-            category = self.baseline_model.categorize_question(message)
+            category = self.baseline_model.categorize_question(message, self.conversation_history)
             
             # Check confidence for knowledge questions
             if category == 'knowledge' and not self.baseline_model.bert_rag.is_confident(message, response):
@@ -103,6 +103,15 @@ class ConversationManager:
             
             return formatted_response
             
+        except Exception as e:
+            logger.error(f"Error processing message: {str(e)}", exc_info=True)
+            error_response = "I'm sorry, I encountered a problem processing your message. Please try again or ask a different question."
+            return {
+                "text": error_response,
+                "citations": [],
+                "citation_objects": []
+            }
+    
     def _extract_location(self, message, history):
         """
         Extract location information from the current message or conversation history
@@ -158,15 +167,6 @@ class ConversationManager:
                                 return potential_location
         
         return None
-        
-        except Exception as e:
-            logger.error(f"Error processing message: {str(e)}", exc_info=True)
-            error_response = "I'm sorry, I encountered a problem processing your message. Please try again or ask a different question."
-            return {
-                "text": error_response,
-                "citations": [],
-                "citation_objects": []
-            }
     
     def add_to_history(self, sender, message):
         """
