@@ -75,10 +75,45 @@ class ConversationManager:
                 "where to get an abortion"
             ]
 
+            # Emotional indicators for personal support rather than just policy information
+            emotional_indicators = [
+                "stressed", "worried", "scared", "afraid", "nervous", "anxious",
+                "confused", "uncertain", "unsure", "help me", "don't know what to do",
+                "not sure what to do", "difficult", "hard decision", "tough decision",
+                "feeling", "feel", "scared of", "worried about", "regret", "guilt"
+            ]
+
             is_abortion_question = any(indicator in message_lower
                                        for indicator in abortion_indicators)
+            
+            has_emotional_content = any(indicator in message_lower
+                                     for indicator in emotional_indicators)
 
-            if is_abortion_question:
+            # Handle emotional abortion-related questions differently
+            if is_abortion_question and has_emotional_content:
+                logger.info("Detected emotional abortion question, providing supportive response")
+                
+                supportive_response = (
+                    "I understand this is a stressful and emotional decision. It's completely normal to feel uncertain "
+                    "or worried when making choices about your reproductive health. I'm here to provide support and "
+                    "accurate information without judgment. Many people experience similar feelings when considering "
+                    "their options. Would you like information about abortion access in your area, or would you prefer "
+                    "to talk about the emotional aspects of your decision? If you'd like location-specific information, "
+                    "could you let me know which state you're in?"
+                )
+                
+                # Add citation for this supportive response
+                cited_response = self.citation_manager.add_citation_to_text(
+                    supportive_response, 'planned_parenthood')
+                
+                formatted_response = self.citation_manager.format_response_with_citations(
+                    cited_response)
+                message_id = self.add_to_history('bot', formatted_response['text'])
+                formatted_response['message_id'] = message_id
+                return formatted_response
+            
+            # Handle standard abortion policy questions
+            elif is_abortion_question:
                 logger.info(
                     "Detected abortion request, treating as policy question with state context"
                 )
