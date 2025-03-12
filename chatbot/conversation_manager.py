@@ -42,9 +42,10 @@ class ConversationManager:
             question_type = self.friendly_bot.detect_question_type(message)
             logger.debug(f"Detected question type: {question_type}")
             
-            # Get response from baseline model
+            # Get response from baseline model, passing conversation history for context
             start_time = time.time()
-            response = self.baseline_model.process_question(message)
+            # Pass the conversation history to enable context awareness
+            response = self.baseline_model.process_question(message, self.conversation_history)
             processing_time = time.time() - start_time
             logger.debug(f"Baseline model processing time: {processing_time:.2f} seconds")
             

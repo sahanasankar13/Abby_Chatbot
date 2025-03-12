@@ -2,7 +2,7 @@ import os
 import logging
 import requests
 import json
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +179,7 @@ class PolicyAPI:
             logger.error(f"Error fetching policy data: {str(e)}", exc_info=True)
             return {"error": str(e)}
     
-    def get_policy_response(self, question: str, conversation_history: list = None) -> str:
+    def get_policy_response(self, question: str, conversation_history: Optional[List[Dict[str, Any]]] = None) -> str:
         """
         Process a policy-related question and return a response
         

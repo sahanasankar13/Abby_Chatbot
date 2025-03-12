@@ -109,12 +109,13 @@ class BaselineModel:
             logger.error(f"Error processing question: {str(e)}", exc_info=True)
             return "I'm sorry, I encountered an error processing your question. Please try again or rephrase your question."
                 
-    def _handle_multi_query(self, compound_question):
+    def _handle_multi_query(self, compound_question, conversation_history=None):
         """
         Handle multi-part questions by splitting them and processing each part
         
         Args:
             compound_question (str): The compound question with multiple parts
+            conversation_history (list, optional): List of previous messages in the conversation
             
         Returns:
             str: Combined response to all parts of the question
@@ -134,14 +135,14 @@ class BaselineModel:
             if len(parts) <= 1:
                 # Not actually a multi-query, process normally
                 category = self.categorize_question(compound_question)
-                return self._process_single_query(compound_question, category)
+                return self._process_single_query(compound_question, category, conversation_history)
                 
             # Process each part separately
             responses = []
             for part in parts:
                 category = self.categorize_question(part)
                 logger.debug(f"Part: '{part}', Category: {category}")
-                response = self._process_single_query(part, category)
+                response = self._process_single_query(part, category, conversation_history)
                 responses.append(response)
                 
             # Combine responses with GPT for a coherent answer
@@ -163,12 +164,23 @@ class BaselineModel:
             logger.error(f"Error handling multi-query: {str(e)}", exc_info=True)
             return "I'm sorry, I had trouble processing your multi-part question. Could you try asking one question at a time?"
         
-    def _process_single_query(self, question, category):
-        """Process a single query based on its category"""
+    def _process_single_query(self, question, category, conversation_history=None):
+        """
+        Process a single query based on its category
+        
+        Args:
+            question (str): The user's question
+            category (str): The question category ('policy', 'knowledge', or 'conversational')
+            conversation_history (list, optional): List of previous messages in the conversation
+            
+        Returns:
+            str: The model's response
+        """
         try:
             if category == 'policy':
                 logger.debug(f"Using Policy API for response to: {question}")
-                return self.policy_api.get_policy_response(question)
+                # Pass conversation history to the policy API for context
+                return self.policy_api.get_policy_response(question, conversation_history)
             
             elif category == 'knowledge':
                 logger.debug(f"Using BERT RAG for response to: {question}")
