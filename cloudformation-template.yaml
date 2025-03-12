@@ -1,0 +1,346 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation Template for Reproductive Health Chatbot'
+
+Parameters:
+  EnvironmentName:
+    Description: Environment name (e.g., dev, staging, prod)
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t3.small
+      - t3.medium
+      - t3.large
+    ConstraintDescription: Must be a valid EC2 instance type
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair for SSH access
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+
+  OpenAIApiKey:
+    Description: OpenAI API Key (will be stored securely in Parameter Store)
+    Type: String
+    NoEcho: true
+
+  AbortionPolicyApiKey:
+    Description: Abortion Policy API Key (will be stored securely in Parameter Store)
+    Type: String
+    NoEcho: true
+
+Resources:
+  # VPC and Networking Resources
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-vpc'
+
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-public-subnet-1'
+
+  PublicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-public-subnet-2'
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-igw'
+
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-public-route-table'
+
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  # Security Groups
+  WebServerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Enable HTTP and SSH access'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-web-sg'
+
+  # IAM Role and Instance Profile
+  EC2Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+      Policies:
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                  - 'ssm:GetParameter'
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/reproductive-health-chatbot/*'
+
+  EC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+  # SSM Parameters for API Keys
+  OpenAIApiKeyParameter:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: '/reproductive-health-chatbot/OPENAI_API_KEY'
+      Type: 'SecureString'
+      Value: !Ref OpenAIApiKey
+      Description: 'OpenAI API Key for the Reproductive Health Chatbot'
+
+  AbortionPolicyApiKeyParameter:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: '/reproductive-health-chatbot/ABORTION_POLICY_API_KEY'
+      Type: 'SecureString'
+      Value: !Ref AbortionPolicyApiKey
+      Description: 'Abortion Policy API Key for the Reproductive Health Chatbot'
+
+  # Load Balancer Resources
+  ApplicationLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref WebServerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-alb'
+
+  ALBListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ALBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckPath: '/api/health'
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      Port: 5000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: instance
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-target-group'
+
+  # Auto Scaling Resources
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: !Sub '${EnvironmentName}-launch-template'
+      VersionDescription: 'Initial version'
+      LaunchTemplateData:
+        ImageId: 'ami-0c7217cdde317cfec'  # Amazon Linux 2023 (update this as needed)
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref WebServerSecurityGroup
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y git python311 python311-pip python311-devel gcc
+            
+            # Install AWS CLI
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            ./aws/install
+            
+            # Create app directory
+            mkdir -p /var/www/html
+            cd /var/www/html
+            
+            # Clone repository
+            git clone [YOUR_REPOSITORY_URL] .
+            
+            # Set up virtual environment
+            python3.11 -m venv venv
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements-aws.txt
+            
+            # Get API keys from Parameter Store
+            OPENAI_API_KEY=$(aws ssm get-parameter --name "/reproductive-health-chatbot/OPENAI_API_KEY" --with-decryption --region ${AWS::Region} --query "Parameter.Value" --output text)
+            ABORTION_POLICY_API_KEY=$(aws ssm get-parameter --name "/reproductive-health-chatbot/ABORTION_POLICY_API_KEY" --with-decryption --region ${AWS::Region} --query "Parameter.Value" --output text)
+            
+            # Create .env file
+            cat > /var/www/html/.env << EOF
+            OPENAI_API_KEY=$OPENAI_API_KEY
+            ABORTION_POLICY_API_KEY=$ABORTION_POLICY_API_KEY
+            FLASK_ENV=production
+            EOF
+            
+            # Set up systemd service
+            cat > /etc/systemd/system/reproductive-health-chatbot.service << EOF
+            [Unit]
+            Description=Reproductive Health Chatbot
+            After=network.target
+            
+            [Service]
+            User=ec2-user
+            Group=ec2-user
+            WorkingDirectory=/var/www/html
+            Environment="PATH=/var/www/html/venv/bin"
+            ExecStart=/var/www/html/venv/bin/gunicorn --config=/var/www/html/gunicorn.conf.py app:app
+            Restart=always
+            RestartSec=10
+            StandardOutput=journal
+            StandardError=journal
+            SyslogIdentifier=reproductive-health-chatbot
+            
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+            
+            # Set permissions
+            chown -R ec2-user:ec2-user /var/www/html
+            chmod +x /var/www/html/scripts/*.sh
+            
+            # Start the service
+            systemctl daemon-reload
+            systemctl enable reproductive-health-chatbot
+            systemctl start reproductive-health-chatbot
+
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      AutoScalingGroupName: !Sub '${EnvironmentName}-asg'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-chatbot-instance'
+          PropagateAtLaunch: true
+
+  ScaleUpPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 70.0
+
+Outputs:
+  ApplicationURL:
+    Description: URL of the load balancer
+    Value: !Sub 'http://${ApplicationLoadBalancer.DNSName}'
+
+  PublicSubnets:
+    Description: Public subnets created for VPC
+    Value: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2 ] ]
+
+  SecurityGroup:
+    Description: Security group for web servers
+    Value: !Ref WebServerSecurityGroup
