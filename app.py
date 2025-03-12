@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from chatbot.conversation_manager import ConversationManager
 from utils.text_processing import PIIDetector # Added import for PII detection
 
@@ -122,28 +122,18 @@ def submit_feedback():
 @app.route('/admin/feedback', methods=['GET'])
 def view_feedback():
     """
-    Admin dashboard for viewing feedback statistics
+    Redirect to the combined admin dashboard
     """
-    try:
-        from utils.feedback_manager import FeedbackManager
-        feedback_manager = FeedbackManager()
-        
-        # Get all feedback data
-        all_feedback = feedback_manager.get_all_feedback()
-        stats = feedback_manager.get_feedback_stats()
-        
-        return render_template('admin/feedback.html', feedback=all_feedback, stats=stats)
-    except Exception as e:
-        logger.error(f"Error retrieving feedback data: {str(e)}", exc_info=True)
-        return jsonify({'error': 'An error occurred retrieving feedback data'}), 500
+    return redirect(url_for('view_metrics'))
         
 @app.route('/admin/metrics', methods=['GET'])
 def view_metrics():
     """
-    Admin dashboard for viewing chatbot performance metrics
+    Admin dashboard for viewing chatbot performance metrics and feedback
     """
     try:
         from utils.metrics_analyzer import MetricsAnalyzer
+        from utils.feedback_manager import FeedbackManager
         import datetime
         
         # Get filter parameters
@@ -173,14 +163,21 @@ def view_metrics():
         metrics_analyzer = MetricsAnalyzer()
         metrics = metrics_analyzer.get_metrics(start_date, end_date, session_id)
         
-        return render_template('admin/metrics.html', 
+        # Get feedback data
+        feedback_manager = FeedbackManager()
+        all_feedback = feedback_manager.get_all_feedback()
+        feedback_stats = feedback_manager.get_feedback_stats()
+        
+        return render_template('admin/dashboard.html', 
                               metrics=metrics, 
+                              feedback=all_feedback,
+                              feedback_stats=feedback_stats,
                               start_date=start_date_str,
                               end_date=end_date_str,
                               session_id=session_id)
     except Exception as e:
-        logger.error(f"Error retrieving metrics data: {str(e)}", exc_info=True)
-        return jsonify({'error': 'An error occurred retrieving metrics data'}), 500
+        logger.error(f"Error retrieving dashboard data: {str(e)}", exc_info=True)
+        return jsonify({'error': 'An error occurred retrieving dashboard data'}), 500
 
 @app.route('/api/clear-history', methods=['POST'])
 def clear_history():
