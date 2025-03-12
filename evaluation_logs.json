@@ -250,3 +250,13 @@ Using improved response due to source validation concerns
 Using improved response based on evaluation
 OpenAI safety check found issues: [{'category': 'Harmful advice or misinformation', 'concern': 'The response implies that birth control pills are universally safe and effective without mentioning potential side effects or the need for medical consultation. This could lead to physical harm if users with contraindications take them without professional guidance.'}, {'category': 'Inappropriate medical recommendations', 'concern': "The response does not emphasize the importance of consulting a healthcare provider before starting birth control pills, which is crucial for ensuring they are appropriate for the individual's health condition."}]
 Safety check failed: [{'category': 'Harmful advice or misinformation', 'concern': 'The response implies that birth control pills are universally safe and effective without mentioning potential side effects or the need for medical consultation. This could lead to physical harm if users with contraindications take them without professional guidance.'}, {'category': 'Inappropriate medical recommendations', 'concern': "The response does not emphasize the importance of consulting a healthcare provider before starting birth control pills, which is crucial for ensuring they are appropriate for the individual's health condition."}]
+Using improved response due to safety concerns
+Using improved response based on evaluation
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully
+Initializing Response Evaluator with model type: both
+OpenAI evaluation model initialized
+Local evaluation models initialized
+Response Evaluator initialized successfully

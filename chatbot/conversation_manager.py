@@ -2,9 +2,11 @@ import logging
 import time
 import random
 import uuid
+from typing import Optional, List, Dict, Any
 from chatbot.baseline_model import BaselineModel
 from chatbot.friendly_bot import FriendlyBot
 from chatbot.citation_manager import CitationManager
+from chatbot.policy_api import PolicyAPI
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,7 @@ class ConversationManager:
             self.baseline_model = BaselineModel(evaluation_model=evaluation_model)
             self.friendly_bot = FriendlyBot()
             self.citation_manager = CitationManager()
+            self.policy_api = PolicyAPI()
             self.conversation_history = []
 
             logger.info("Conversation Manager initialized successfully")
@@ -754,7 +757,7 @@ class ConversationManager:
                 return country
 
         # Check for direct mentions of US states
-        for state, code in self.policy_api.STATE_CODES.items():
+        for code, state in self.policy_api.STATE_NAMES.items():
             if state.lower() in message_lower or code.lower() in message_lower:
                 logger.info(f"Found direct state mention in message: {state.lower()}")
                 return state.lower()
