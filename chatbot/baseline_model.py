@@ -80,13 +80,14 @@ class BaselineModel:
         # Default to conversational
         return 'conversational'
     
-    def process_question(self, question):
+    def process_question(self, question, conversation_history=None):
         """
         Process a question using the appropriate model based on its category
         Handles multi-query questions by combining responses
         
         Args:
             question (str): The user's question
+            conversation_history (list, optional): List of previous messages in the conversation
         
         Returns:
             str: The model's response
@@ -94,7 +95,7 @@ class BaselineModel:
         try:
             # Check if this is a multi-query question
             if " and " in question.lower() or ";" in question:
-                return self._handle_multi_query(question)
+                return self._handle_multi_query(question, conversation_history)
             
             # Single query flow
             # Categorize the question
@@ -102,7 +103,7 @@ class BaselineModel:
             logger.debug(f"Question category: {category}")
             
             # Process according to category
-            return self._process_single_query(question, category)
+            return self._process_single_query(question, category, conversation_history)
             
         except Exception as e:
             logger.error(f"Error processing question: {str(e)}", exc_info=True)

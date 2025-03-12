@@ -179,22 +179,38 @@ class PolicyAPI:
             logger.error(f"Error fetching policy data: {str(e)}", exc_info=True)
             return {"error": str(e)}
     
-    def get_policy_response(self, question: str) -> str:
+    def get_policy_response(self, question: str, conversation_history: list = None) -> str:
         """
         Process a policy-related question and return a response
         
         Args:
             question (str): User's question about abortion policy
+            conversation_history (list, optional): List of previous messages in the conversation
             
         Returns:
             str: Formatted response with policy information
         """
-        # Extract state from question
+        # First try to extract state from the current question
         state_code = self._extract_state_from_question(question)
         
+        # If no state in current question, try to find it in conversation history
+        if not state_code and conversation_history:
+            logger.debug("No state found in current question, checking conversation history")
+            
+            # Iterate through conversation history from newest to oldest
+            for message in reversed(conversation_history):
+                if message['sender'] == 'user':
+                    potential_state = self._extract_state_from_question(message['message'])
+                    if potential_state:
+                        logger.info(f"Found state {potential_state} in conversation history")
+                        state_code = potential_state
+                        break
+        
         if not state_code:
+            logger.debug("No state found in question or conversation history")
             return self._get_general_policy_information(question)
         
+        logger.info(f"Getting policy data for state: {state_code}")
         # Get policy data for the state
         policy_data = self.get_policy_data(state_code)
         
