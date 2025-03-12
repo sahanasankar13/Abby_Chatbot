@@ -221,8 +221,10 @@ class PolicyAPI:
         if not state_code and conversation_history:
             logger.info("No state found in current question, checking conversation history")
             
-            # Use the full state dictionary instead of a limited set
-            all_states = state_patterns.copy()
+            # Get state patterns from the extraction method
+            state_patterns = {}
+            for state_name, code in self.STATE_NAMES.items():
+                state_patterns[state_name.lower()] = code
             
             # Iterate through conversation history from newest to oldest
             for message in reversed(conversation_history):
@@ -231,7 +233,7 @@ class PolicyAPI:
                     logger.info(f"Checking history message: '{msg}'")
                     
                     # First try direct match with all states
-                    for state_name, code in all_states.items():
+                    for state_name, code in state_patterns.items():
                         if state_name in msg:
                             logger.info(f"Direct match! Found state {state_name} in message")
                             state_code = code
@@ -259,7 +261,7 @@ class PolicyAPI:
         if "error" in policy_data:
             logger.warning(f"Error in policy data: {policy_data['error']}")
             if "state_attempted" in policy_data:
-                state_name = state_names.get(policy_data["state_attempted"].upper(), policy_data["state_attempted"])
+                state_name = self.STATE_NAMES.get(policy_data["state_attempted"].upper(), policy_data["state_attempted"])
                 logger.info(f"Failed to get data for {state_name}, returning state-specific general information")
                 # Return a tailored response for the state that doesn't cite the API
                 return f"I'm sorry, I'm having trouble accessing specific policy information for {state_name} at the moment. Abortion policies vary by state and may change. For the most accurate and up-to-date information about abortion access in {state_name}, I recommend contacting Planned Parenthood directly or visiting their website. They can provide current information about options available to you in {state_name}."
@@ -316,23 +318,8 @@ class PolicyAPI:
         if not self.gpt_model:
             self.gpt_model = GPTModel()
         
-        # Get state name for better readability
-        state_names = {
-            "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", 
-            "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", 
-            "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho", 
-            "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", 
-            "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland", 
-            "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", 
-            "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", 
-            "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York", 
-            "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", 
-            "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina", 
-            "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", 
-            "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", 
-            "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
-        }
-        state_name = state_names.get(state_code.upper(), state_code)
+        # Get state name for better readability using the class constant
+        state_name = self.STATE_NAMES.get(state_code.upper(), state_code)
         
         # Convert policy data to readable format with special parsing for our new structure
         formatted_data = {
