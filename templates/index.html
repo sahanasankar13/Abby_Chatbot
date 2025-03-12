@@ -13,12 +13,6 @@
             <a href="{{ url_for('view_metrics') }}" class="btn btn-outline-secondary admin-link" title="Admin Dashboard">
                 <i class="fas fa-chart-bar me-2"></i> Admin
             </a>
-            
-            <!-- Accessibility Toggle -->
-            <button id="accessibilityToggle" class="btn btn-outline-secondary accessibility-btn" title="Toggle Voice Narration">
-                <i class="fas fa-volume-up me-2"></i> 
-                <span class="accessibility-label">Voice Off</span>
-            </button>
         </div>
         <h1>Abby</h1>
         <p>This chatbot provides general information about reproductive and mental health but is not a substitute for professional medical advice. Always consult with a qualified healthcare provider for personal medical decisions.</p>
@@ -49,62 +43,6 @@
                 </button>
             </div>
         </form>
-    </div>
-    
-    <!-- Onboarding Tutorial Overlay -->
-    <div id="onboardingOverlay" class="onboarding-overlay">
-        <div class="onboarding-content">
-            <button id="skipTutorial" class="skip-tutorial-btn">Skip Tutorial</button>
-            <div class="tutorial-slides">
-                <div class="tutorial-slide active" data-slide="1">
-                    <div class="slide-icon">
-                        <i class="fas fa-comment-medical"></i>
-                    </div>
-                    <h2>Welcome to Abby</h2>
-                    <p>Your trusted companion for accurate reproductive health information.</p>
-                </div>
-                <div class="tutorial-slide" data-slide="2">
-                    <div class="slide-icon">
-                        <i class="fas fa-question-circle"></i>
-                    </div>
-                    <h2>Ask Anything</h2>
-                    <p>Get accurate information about reproductive health topics, including contraception, pregnancy, and abortion access.</p>
-                </div>
-                <div class="tutorial-slide" data-slide="3">
-                    <div class="slide-icon">
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <h2>Privacy First</h2>
-                    <p>Your conversations are kept private. Type "end" at any time to clear your session history.</p>
-                </div>
-                <div class="tutorial-slide" data-slide="4">
-                    <div class="slide-icon">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-                    <h2>Location-Aware</h2>
-                    <p>For policy questions, mentioning your state helps provide more accurate information specific to your location.</p>
-                </div>
-                <div class="tutorial-slide" data-slide="5">
-                    <div class="slide-icon">
-                        <i class="fas fa-volume-up"></i>
-                    </div>
-                    <h2>Voice Narration</h2>
-                    <p>Toggle voice narration for an accessible experience using the voice button in the top menu.</p>
-                </div>
-            </div>
-            <div class="tutorial-controls">
-                <button id="prevSlide" class="tutorial-nav-btn" disabled><i class="fas fa-chevron-left"></i></button>
-                <div class="slide-indicators">
-                    <span class="slide-indicator active" data-slide="1"></span>
-                    <span class="slide-indicator" data-slide="2"></span>
-                    <span class="slide-indicator" data-slide="3"></span>
-                    <span class="slide-indicator" data-slide="4"></span>
-                    <span class="slide-indicator" data-slide="5"></span>
-                </div>
-                <button id="nextSlide" class="tutorial-nav-btn"><i class="fas fa-chevron-right"></i></button>
-            </div>
-            <button id="startChatting" class="start-chatting-btn">Start Chatting</button>
-        </div>
     </div>
 </div>
 {% endblock %}
