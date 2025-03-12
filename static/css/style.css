@@ -1,9 +1,9 @@
 
 /* Main styling */
 :root {
-  --primary-color: #9c4668;
-  --secondary-color: #f08eb9;
-  --accent-color: #773355;
+  --primary-color: #3e6990;
+  --secondary-color: #5c99d6;
+  --accent-color: #2d4b6a;
   --text-color: #333;
   --background-color: #f8f9fa;
   --card-bg: #fff;
@@ -12,9 +12,9 @@
 }
 
 [data-bs-theme="dark"] {
-  --primary-color: #d46a9f;
-  --secondary-color: #9c4668;
-  --accent-color: #e396bb;
+  --primary-color: #5c99d6;
+  --secondary-color: #3e6990;
+  --accent-color: #7eb2eb;
   --text-color: #e9ecef;
   --background-color: #212529;
   --card-bg: #343a40;
@@ -50,7 +50,7 @@ body {
 
 /* Chat header */
 .chat-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: var(--primary-color);
   color: white;
   padding: 1.5rem;
   border-radius: 0 0 15px 15px;

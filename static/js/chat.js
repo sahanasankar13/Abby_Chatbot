@@ -4,6 +4,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const sendButton = document.getElementById('sendButton');
 
+    // Function to format response with markdown
+    function formatResponseWithMarkdown(text) {
+        // Handle headers
+        text = text.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+        text = text.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+        text = text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+
+        // Handle lists
+        text = text.replace(/^\*\s+(.+)$/gm, '<li>$1</li>');
+        text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+        // Handle paragraphs
+        text = text.replace(/^(.+)$/gm, function(match, content) {
+            if (content.startsWith('<h') || content.startsWith('<ul') || content.startsWith('<li') || !content.trim()) {
+                return content;
+            }
+            return '<p>' + content + '</p>';
+        });
+
+        // Handle line breaks
+        text = text.replace(/\n\n+/g, '<br>');
+
+        return text;
+    }
+
+    // Function to add bot message to chat
+    function addBotMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message bot-message';
+        messageElement.innerHTML = message;
+        
+        chatMessages.appendChild(messageElement);
+        scrollToBottom();
+    }
+    
     // Add initial bot message
     addBotMessage('Hi there! I\'m your reproductive health assistant. How can I help you today?');
 
@@ -62,9 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
             addBotMessage("I'm sorry, I couldn't connect to the server. Please try again later.");
             console.error('Error:', error);
         });
-
-        // Send message to server
-        fetch('/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
