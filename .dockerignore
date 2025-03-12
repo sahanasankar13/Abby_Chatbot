@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Replit specific
+.replit
+replit.nix
+.cache/
+.config/
+.local/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment variables
+.env
+
+# Docker
+Dockerfile
+.dockerignore
+
+# AWS specific
+aws-deployment/
+
+# Logs and databases
+*.log
+*.sqlite
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
