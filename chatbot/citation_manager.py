@@ -228,18 +228,24 @@ class CitationManager:
             "citation_objects": [c.to_dict() for c in citations]
         }
 
-    def add_citation_to_text(self, text: str, source_id: Optional[str] = None) -> str:
+    def add_citation_to_text(self, text: str, source_id: Optional[str] = None, include_citations: bool = True) -> str:
         """
         Add citation to text if needed, but only for Planned Parenthood or Abortion Policy API.
 
         Args:
             text (str): Text to add citation to
             source_id (str, optional): Explicit source ID to use
+            include_citations (bool): Whether to include citations in the output
 
         Returns:
-            str: Text with citation added
+            str: Text with or without citations
         """
         try:
+            # If citations are disabled, just return the clean text
+            if not include_citations:
+                text = self._remove_citation_markers(text)
+                return text
+                
             # If text already has citation markers, don't add more
             if "[SOURCE:" in text or "[cite:" in text or "[API:" in text:
                 logger.debug(f"Text already has citation markers, extracting citations")
@@ -248,13 +254,13 @@ class CitationManager:
                 # Remove any citation markers from the text for clean display
                 text = self._remove_citation_markers(text)
 
-                return self._format_text_with_citations(text, citations)
+                return self._format_text_with_citations(text, citations, include_citations)
 
             # If explicit source ID provided, only use it if it's one of our approved sources
             if source_id and source_id in self.SOURCES:
                 if source_id in ["planned_parenthood", "abortion_policy_api"]:
                     logger.debug(f"Using explicit source ID: {source_id}")
-                    return self._format_text_with_citations(text, [self.SOURCES[source_id]])
+                    return self._format_text_with_citations(text, [self.SOURCES[source_id]], include_citations)
                 else:
                     # Don't add citation for non-approved sources
                     return text
@@ -264,7 +270,7 @@ class CitationManager:
             citations = self.extract_citations_from_text(text)
 
             logger.debug(f"Formatting response with {len(citations)} citations")
-            return self._format_text_with_citations(text, citations)
+            return self._format_text_with_citations(text, citations, include_citations)
         except Exception as e:
             logger.error(f"Error adding citation to text: {str(e)}", exc_info=True)
             return text
@@ -276,8 +282,21 @@ class CitationManager:
         clean_text = re.sub(r'\[API:.*?\]', '', clean_text)
         return clean_text
 
-    def _format_text_with_citations(self, text: str, citations: List[Citation]) -> str:
-        """Helper function to format text with citations."""
+    def _format_text_with_citations(self, text: str, citations: List[Citation], include_citations: bool = True) -> str:
+        """
+        Helper function to format text with citations.
+        
+        Args:
+            text (str): The text content
+            citations (List[Citation]): List of citations
+            include_citations (bool): Whether to include citations in the output
+            
+        Returns:
+            str: Formatted text with or without citations
+        """
+        if not include_citations:
+            return text
+            
         # Make sure we don't have duplicate sources
         unique_citations = []
         seen_sources = set()

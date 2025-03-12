@@ -36,7 +36,7 @@ class BaselineModel:
                           'parental consent', 'waiting period', 'insurance', 'medicaid', 'coverage', 'laws']
 
         question_lower = question.lower()
-        
+
         # Direct policy pattern detection (what is the abortion policy in [state])
         if "abortion policy in" in question_lower or "abortion policies in" in question_lower:
             logger.debug("Direct abortion policy question with state detected")
@@ -73,12 +73,12 @@ class BaselineModel:
                              question_lower.endswith(f" {state}") or
                              question_lower.startswith(f"{state} ") 
                              for state in states)
-                             
+
         abbr_mentioned = any(f" {abbr} " in f" {question_lower} " or
                             question_lower.endswith(f" {abbr}") or
                             question_lower.startswith(f"{abbr} ") 
                             for abbr in state_abbrevs)
-                         
+
         if 'abortion' in question_lower and (state_mentioned or abbr_mentioned):
             logger.debug(f"Question mentions abortion and a state: {question}")
             return 'policy'
@@ -134,7 +134,7 @@ class BaselineModel:
                                     if state in location_part:
                                         logger.info(f"Found location context with phrase '{phrase}': {state}")
                                         return 'policy'
-                                        
+
                         # More general check for state mentions
                         for state in states:
                             if state in msg_lower:
@@ -156,11 +156,11 @@ class BaselineModel:
                     return 'policy'
         except Exception as e:
             logger.error(f"Error using GPT for policy detection: {str(e)}")
-            
+
         # Default to conversational
         return 'conversational'
 
-    def process_question(self, question, conversation_history=[], location_context=None, force_category=None):
+    def process_question(self, question, conversation_history=[], location_context=None, force_category=None, include_citations=True):
         """
         Process a question using the appropriate model based on its category
         Handles multi-query questions by combining responses
@@ -170,6 +170,7 @@ class BaselineModel:
             conversation_history (list, optional): List of previous messages in the conversation
             location_context (str): User's location if detected
             force_category (str, optional): Force a specific category ('policy', 'knowledge', 'conversational')
+            include_citations (bool): Whether to include citations in the response
 
         Returns:
             str: The model's response
@@ -177,7 +178,7 @@ class BaselineModel:
         try:
             # Check if this is a multi-query question
             if " and " in question.lower() or ";" in question:
-                return self._handle_multi_query(question, conversation_history)
+                return self._handle_multi_query(question, conversation_history, include_citations)
 
             # Single query flow
             # Use forced category if provided, otherwise categorize normally
@@ -190,19 +191,20 @@ class BaselineModel:
                 logger.debug(f"Question category: {category}")
 
             # Process according to category
-            return self._process_single_query(question, category, conversation_history, location_context)
+            return self._process_single_query(question, category, conversation_history, location_context, include_citations)
 
         except Exception as e:
             logger.error(f"Error processing question: {str(e)}", exc_info=True)
             return "I'm sorry, I encountered an error processing your question. Please try again or rephrase your question."
 
-    def _handle_multi_query(self, compound_question, conversation_history=None):
+    def _handle_multi_query(self, compound_question, conversation_history=None, include_citations=True):
         """
         Handle multi-part questions by splitting them and processing each part
 
         Args:
             compound_question (str): The compound question with multiple parts
             conversation_history (list, optional): List of previous messages in the conversation
+            include_citations (bool): Whether to include citations in the response
 
         Returns:
             str: Combined response to all parts of the question
@@ -222,14 +224,14 @@ class BaselineModel:
             if len(parts) <= 1:
                 # Not actually a multi-query, process normally
                 category = self.categorize_question(compound_question, conversation_history)
-                return self._process_single_query(compound_question, category, conversation_history)
+                return self._process_single_query(compound_question, category, conversation_history, include_citations=include_citations)
 
             # Process each part separately
             responses = []
             for part in parts:
                 category = self.categorize_question(part, conversation_history)
                 logger.debug(f"Part: '{part}', Category: {category}")
-                response = self._process_single_query(part, category, conversation_history)
+                response = self._process_single_query(part, category, conversation_history, include_citations=include_citations)
                 responses.append(response)
 
             # Combine responses with GPT for a coherent answer
@@ -251,7 +253,7 @@ class BaselineModel:
             logger.error(f"Error handling multi-query: {str(e)}", exc_info=True)
             return "I'm sorry, I had trouble processing your multi-part question. Could you try asking one question at a time?"
 
-    def _process_single_query(self, question, category, conversation_history=None, location_context=None):
+    def _process_single_query(self, question, category, conversation_history=None, location_context=None, include_citations=True):
         """
         Process a single query based on its category
 
@@ -260,6 +262,7 @@ class BaselineModel:
             category (str): The question category ('policy', 'knowledge', or 'conversational')
             conversation_history (list, optional): List of previous messages in the conversation
             location_context (str): User's location if detected
+            include_citations (bool): Whether to include citations in the response
 
         Returns:
             str: The model's response
