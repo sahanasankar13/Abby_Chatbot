@@ -9,25 +9,10 @@
                 <i class="fas fa-times-circle me-2"></i> Quick Exit
             </a>
             
-            <!-- Menu dropdown (just dots) on the right -->
-            <div class="dropdown">
-                <div class="menu-dots" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v"></i>
-                </div>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
-                    <li>
-                        <a class="dropdown-item" href="{{ url_for('view_metrics') }}">
-                            <i class="bi bi-graph-up me-2"></i> Admin Dashboard
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item" href="#" id="endSessionBtn">
-                            <i class="fas fa-sign-out-alt me-2"></i> End Session
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <!-- Direct Admin Dashboard Link -->
+            <a href="{{ url_for('view_metrics') }}" class="btn btn-outline-secondary admin-link" title="Admin Dashboard">
+                <i class="fas fa-chart-bar me-2"></i> Admin
+            </a>
         </div>
         <h1>Abby</h1>
         <p>This chatbot provides general information about reproductive and mental health but is not a substitute for professional medical advice. Always consult with a qualified healthcare provider for personal medical decisions.</p>

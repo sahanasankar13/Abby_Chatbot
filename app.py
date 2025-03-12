@@ -140,6 +140,7 @@ def view_metrics():
         end_date = request.args.get('end_date')
         start_date = request.args.get('start_date')
         session_id = request.args.get('session_id')
+        question_type = request.args.get('question_type', 'all')
         
         # Parse dates
         if end_date:
@@ -163,6 +164,12 @@ def view_metrics():
         metrics_analyzer = MetricsAnalyzer()
         metrics = metrics_analyzer.get_metrics(start_date, end_date, session_id)
         
+        # Filter by question type if specified
+        if question_type != 'all' and question_type in ['policy', 'knowledge', 'conversational']:
+            logger.info(f"Filtering metrics by question type: {question_type}")
+            # This is a placeholder - actual filtering would require enhancing the metrics_analyzer
+            # to support question_type filtering
+        
         # Ensure all required metrics are available
         required_metrics = {
             'avg_score': 7.5,
@@ -181,6 +188,50 @@ def view_metrics():
             if key not in metrics:
                 metrics[key] = default_value
         
+        # Ensure text_similarity metrics structure exists and has expected properties
+        if 'text_similarity' not in metrics or not isinstance(metrics['text_similarity'], dict):
+            metrics['text_similarity'] = {
+                'bleu': {'score': 0.0},
+                'rouge': {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0},
+                'bert_score': {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+            }
+        else:
+            # Ensure BLEU score exists
+            if 'bleu' not in metrics['text_similarity'] or not isinstance(metrics['text_similarity']['bleu'], dict):
+                metrics['text_similarity']['bleu'] = {'score': 0.0}
+            elif 'score' not in metrics['text_similarity']['bleu']:
+                metrics['text_similarity']['bleu']['score'] = 0.0
+                
+            # Ensure ROUGE metrics exist
+            if 'rouge' not in metrics['text_similarity'] or not isinstance(metrics['text_similarity']['rouge'], dict):
+                metrics['text_similarity']['rouge'] = {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0}
+                
+            # Ensure BERT score metrics exist
+            if 'bert_score' not in metrics['text_similarity'] or not isinstance(metrics['text_similarity']['bert_score'], dict):
+                metrics['text_similarity']['bert_score'] = {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+        
+        # Ensure improved_text_similarity metrics structure exists
+        if 'improved_text_similarity' not in metrics or not isinstance(metrics['improved_text_similarity'], dict):
+            metrics['improved_text_similarity'] = {
+                'bleu': {'score': 0.0},
+                'rouge': {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0},
+                'bert_score': {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+            }
+        else:
+            # Ensure BLEU score exists
+            if 'bleu' not in metrics['improved_text_similarity'] or not isinstance(metrics['improved_text_similarity']['bleu'], dict):
+                metrics['improved_text_similarity']['bleu'] = {'score': 0.0}
+            elif 'score' not in metrics['improved_text_similarity']['bleu']:
+                metrics['improved_text_similarity']['bleu']['score'] = 0.0
+                
+            # Ensure ROUGE metrics exist
+            if 'rouge' not in metrics['improved_text_similarity'] or not isinstance(metrics['improved_text_similarity']['rouge'], dict):
+                metrics['improved_text_similarity']['rouge'] = {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0}
+                
+            # Ensure BERT score metrics exist
+            if 'bert_score' not in metrics['improved_text_similarity'] or not isinstance(metrics['improved_text_similarity']['bert_score'], dict):
+                metrics['improved_text_similarity']['bert_score'] = {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
+        
         # Get feedback data
         feedback_manager = FeedbackManager()
         all_feedback = feedback_manager.get_all_feedback()
@@ -192,10 +243,13 @@ def view_metrics():
                               feedback_stats=feedback_stats,
                               start_date=start_date_str,
                               end_date=end_date_str,
-                              session_id=session_id)
+                              session_id=session_id,
+                              question_type=question_type)
     except Exception as e:
         logger.error(f"Error retrieving dashboard data: {str(e)}", exc_info=True)
-        return jsonify({'error': 'An error occurred retrieving dashboard data'}), 500
+        return render_template('error.html', 
+                             error_message="An error occurred retrieving dashboard data.",
+                             error_details=str(e))
 
 @app.route('/api/clear-history', methods=['POST'])
 def clear_history():
