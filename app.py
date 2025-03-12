@@ -320,7 +320,7 @@ def view_metrics():
                              error_message="An error occurred retrieving dashboard data.",
                              error_details=str(e))
 
-@app.route('/admin/run-ragas-evaluation', methods=['POST'])
+@app.route('/run-ragas-evaluation', methods=['POST'])
 def run_ragas_evaluation():
     """
     Run Ragas metrics evaluation on sample data

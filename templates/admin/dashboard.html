@@ -193,6 +193,9 @@
                             <button class="nav-link" id="retrieval-tab" data-bs-toggle="tab" data-bs-target="#retrieval" type="button" role="tab" aria-controls="retrieval" aria-selected="false">Retrieval Accuracy</button>
                         </li>
                         <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ragas-tab" data-bs-toggle="tab" data-bs-target="#ragas" type="button" role="tab" aria-controls="ragas" aria-selected="false">Ragas Metrics</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
                             <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab" aria-controls="system" aria-selected="false">System Performance</button>
                         </li>
                     </ul>
@@ -393,6 +396,107 @@
                             {% endif %}
                         </div>
                         
+                        <!-- Ragas Metrics Tab -->
+                        <div class="tab-pane fade" id="ragas" role="tabpanel" aria-labelledby="ragas-tab">
+                            <div class="row">
+                                <!-- Faithfulness Score -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Faithfulness</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="display-4">{{ metrics.ragas.faithfulness|default(0)|round(2) }}</div>
+                                            <div class="progress mt-3" style="height: 10px;">
+                                                <div class="progress-bar {{ 'bg-success' if metrics.ragas.faithfulness >= 0.75 else 'bg-warning' if metrics.ragas.faithfulness >= 0.5 else 'bg-danger' }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ (metrics.ragas.faithfulness|default(0) * 100)|round }}%;" 
+                                                     aria-valuenow="{{ (metrics.ragas.faithfulness|default(0) * 100)|round }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <p class="text-muted mt-3">Measures if the generated answers are grounded in the retrieved contexts</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Context Precision -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Context Precision</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="display-4">{{ metrics.ragas.context_precision|default(0)|round(2) }}</div>
+                                            <div class="progress mt-3" style="height: 10px;">
+                                                <div class="progress-bar {{ 'bg-success' if metrics.ragas.context_precision >= 0.75 else 'bg-warning' if metrics.ragas.context_precision >= 0.5 else 'bg-danger' }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ (metrics.ragas.context_precision|default(0) * 100)|round }}%;" 
+                                                     aria-valuenow="{{ (metrics.ragas.context_precision|default(0) * 100)|round }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <p class="text-muted mt-3">Measures how precisely the retrieved contexts align with user questions</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Context Recall -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Context Recall</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="display-4">{{ metrics.ragas.context_recall|default(0)|round(2) }}</div>
+                                            <div class="progress mt-3" style="height: 10px;">
+                                                <div class="progress-bar {{ 'bg-success' if metrics.ragas.context_recall >= 0.75 else 'bg-warning' if metrics.ragas.context_recall >= 0.5 else 'bg-danger' }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ (metrics.ragas.context_recall|default(0) * 100)|round }}%;" 
+                                                     aria-valuenow="{{ (metrics.ragas.context_recall|default(0) * 100)|round }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <p class="text-muted mt-3">Measures how completely the retrieved contexts cover information needed for the answer</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Run Ragas Evaluation -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Run Ragas Evaluation</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p>Run a new Ragas evaluation to assess the chatbot's performance against ground truth data.</p>
+                                            <form id="ragasEvaluationForm" class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="sampleSize" class="form-label">Sample Size</label>
+                                                    <input type="number" class="form-control" id="sampleSize" min="5" max="100" value="20">
+                                                    <div class="form-text">Number of questions to evaluate (5-100)</div>
+                                                </div>
+                                                <div class="col-md-6 d-flex align-items-end">
+                                                    <button type="submit" class="btn btn-primary" id="runRagasBtn">
+                                                        <i class="fas fa-play me-2"></i> Run Evaluation
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <div class="alert alert-info mt-3 d-none" id="evaluationStatus">
+                                                <i class="fas fa-spinner fa-spin me-2"></i> 
+                                                Ragas evaluation is running in the background. This may take several minutes. Results will be available on your next dashboard refresh.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- System Performance Tab -->
                         <div class="tab-pane fade" id="system" role="tabpanel" aria-labelledby="system-tab">
                             <div class="row">
@@ -520,6 +624,65 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    // Ragas Evaluation Form Handler
+    document.addEventListener('DOMContentLoaded', function() {
+        const ragasForm = document.getElementById('ragasEvaluationForm');
+        const statusAlert = document.getElementById('evaluationStatus');
+        const runButton = document.getElementById('runRagasBtn');
+        
+        if (ragasForm) {
+            ragasForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get sample size value
+                const sampleSize = document.getElementById('sampleSize').value;
+                
+                // Disable button and show loading state
+                runButton.disabled = true;
+                runButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Running...';
+                statusAlert.classList.remove('d-none');
+                
+                // Make AJAX request to run evaluation
+                fetch('/run-ragas-evaluation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sample_size: parseInt(sampleSize)
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusAlert.innerHTML = '<i class="fas fa-check-circle me-2"></i> ' + 
+                            'Ragas evaluation started successfully. Results will be available on your next dashboard refresh.';
+                        statusAlert.classList.remove('alert-info');
+                        statusAlert.classList.add('alert-success');
+                    } else {
+                        statusAlert.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + 
+                            'Error: ' + (data.error || 'Failed to start evaluation');
+                        statusAlert.classList.remove('alert-info');
+                        statusAlert.classList.add('alert-danger');
+                    }
+                })
+                .catch(error => {
+                    statusAlert.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + 
+                        'Error: ' + error.message;
+                    statusAlert.classList.remove('alert-info');
+                    statusAlert.classList.add('alert-danger');
+                })
+                .finally(() => {
+                    // Re-enable button
+                    setTimeout(() => {
+                        runButton.disabled = false;
+                        runButton.innerHTML = '<i class="fas fa-play me-2"></i> Run Evaluation';
+                    }, 2000);
+                });
+            });
+        }
+    });
+
     // Quality Metrics Radar Chart
     const qualityCtx = document.getElementById('qualityChart').getContext('2d');
     const qualityChart = new Chart(qualityCtx, {
