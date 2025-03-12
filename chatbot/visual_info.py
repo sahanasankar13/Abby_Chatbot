@@ -118,10 +118,20 @@ class VisualInfoGraphics:
         Returns:
             Dict[str, Any]: Response with graphics added
         """
-        suggested_topics = self.suggest_graphics(message + ' ' + response['text'])
+        # Skip graphics for simple greetings or very short messages
+        combined_text = message + ' ' + response['text']
+        if len(message.strip().split()) <= 3:
+            # For short messages, be more restrictive with graphic suggestions
+            if not any(keyword in combined_text.lower() for keyword in 
+                      ['pregnancy', 'contraception', 'menstrual', 'anatomy', 'std', 'sti']):
+                response['graphics'] = []
+                return response
+        
+        suggested_topics = self.suggest_graphics(combined_text)
         graphics = []
         
-        for topic in suggested_topics:
+        # Limit to max 2 graphics per response to avoid overwhelming the user
+        for topic in suggested_topics[:2]:
             graphic = self.get_graphic(topic)
             if graphic:
                 graphics.append(graphic)

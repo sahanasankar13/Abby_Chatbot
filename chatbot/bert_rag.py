@@ -94,6 +94,43 @@ class BertRAGModel:
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
     
+    def _is_conversational_query(self, question):
+        """
+        Check if a query is conversational and not reproductive health related
+        
+        Args:
+            question (str): The query to check
+            
+        Returns:
+            bool: True if it's a conversational query, False otherwise
+        """
+        question_lower = question.lower()
+        
+        # Common greeting patterns
+        greetings = ['hi', 'hello', 'hey', 'how are you', 'good morning', 'good afternoon',
+                    'good evening', 'what\'s up', 'yo', 'sup', 'greetings', 'howdy']
+        
+        # Check for exact match with greetings
+        for greeting in greetings:
+            if question_lower.strip() == greeting or question_lower.strip() == greeting + '?':
+                return True
+        
+        # Check for greeting at the beginning of the message
+        for greeting in greetings:
+            if question_lower.startswith(greeting + ' '):
+                return True
+        
+        # Check if it's a very short message (less than 4 words) that doesn't contain reproductive health keywords
+        health_keywords = ['pregnancy', 'abortion', 'birth', 'sex', 'contraception', 'period', 
+                          'menstrual', 'std', 'sti', 'reproductive', 'condom', 'pill']
+                          
+        words = question_lower.split()
+        if len(words) < 4:
+            if not any(keyword in question_lower for keyword in health_keywords):
+                return True
+        
+        return False
+    
     def get_response(self, question, top_k=5):
         """
         Get response for a given question using RAG
@@ -106,11 +143,21 @@ class BertRAGModel:
             str: The answer to the question
         """
         try:
+            # Check if this is a conversational query instead of a health question
+            if self._is_conversational_query(question):
+                logger.debug(f"Detected conversational query: '{question}'")
+                return "I'm doing well, thanks for asking! I'm Abby, your reproductive health assistant. How can I help you today?"
+            
             # Generate embedding for the question
             question_embedding = self.generate_embeddings([question])
             
             # Search for similar questions
             distances, indices = self.index.search(question_embedding, top_k)
+            
+            # Perform a confidence check - don't answer if distance is too high
+            if distances[0][0] > 15.0:
+                logger.debug(f"Low confidence (distance: {distances[0][0]}) for query: '{question}'")
+                return "I'm not sure I understand your question about reproductive health. Could you please rephrase it or ask something more specific about contraception, pregnancy, or reproductive health?"
             
             # If multiple good matches, combine answers
             if len(indices[0]) > 1 and distances[0][1] < 12.0:
@@ -121,13 +168,16 @@ class BertRAGModel:
             best_answer = self.qa_pairs[best_idx]['Answer']
             best_question = self.qa_pairs[best_idx]['Question']
             
-            logger.debug(f"RAG found answer with distance: {distances[0][0]}")
-            logger.debug(f"Question match: '{best_question}' for query '{question}'")
+            logger.debug(f"Primary confidence (distance): {distances[0][0]}")
+            if len(indices[0]) > 1:
+                logger.debug(f"Secondary confidence (gap): {distances[0][1] - distances[0][0]}")
+            logger.debug(f"Matched question: {best_question}")
             
             return best_answer
         
         except Exception as e:
             logger.error(f"Error getting RAG response: {str(e)}", exc_info=True)
+            return "I apologize, but I encountered an error processing your question. Please try asking again or rephrase your question."
             return "I'm sorry, I couldn't find a good answer to your question."
     
     def _combine_top_answers(self, question, distances, indices, max_answers=3):
