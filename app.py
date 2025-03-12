@@ -33,6 +33,9 @@ def chat():
             return jsonify({'error': 'Missing message parameter'}), 400
 
         message = data['message']
+        
+        # Log the incoming question for debugging
+        logger.debug(f"Received chat message: {message}")
 
         # Check for PII in the message
         pii_detector = PIIDetector()

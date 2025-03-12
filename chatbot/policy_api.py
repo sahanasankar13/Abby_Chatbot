@@ -114,6 +114,7 @@ class PolicyAPI:
             Dict: Policy data for the state
         """
         if not self.api_key:
+            logger.error("API key not found when trying to fetch policy data")
             return {"error": "API key not configured"}
         
         try:
@@ -123,16 +124,39 @@ class PolicyAPI:
             }
             
             url = f"{self.base_url}/policy_by_state/{state_code.upper()}"
+            logger.debug(f"Making policy API request to: {url}")
+            
+            # Log the API key (first few characters only for security)
+            masked_key = self.api_key[:3] + "*" * (len(self.api_key) - 3) if self.api_key else "None"
+            logger.debug(f"Using API key: {masked_key}")
+            
             response = requests.get(url, headers=headers)
+            
+            # Log complete response for debugging
+            logger.debug(f"API Response status: {response.status_code}")
+            logger.debug(f"API Response headers: {response.headers}")
+            
+            try:
+                response_content = response.json() if response.content else {}
+                logger.debug(f"API Response content: {response_content}")
+            except Exception as json_err:
+                logger.error(f"Could not parse response as JSON: {str(json_err)}")
+                logger.debug(f"Raw response content: {response.text}")
             
             if response.status_code == 200:
                 return response.json()
             else:
                 logger.error(f"API error: {response.status_code} - {response.text}")
-                return {"error": f"API returned status code {response.status_code}"}
+                # Add more detailed error information for debugging
+                error_info = {
+                    "error": f"API returned status code {response.status_code}",
+                    "error_detail": response.text,
+                    "request_url": url
+                }
+                return error_info
                 
         except Exception as e:
-            logger.error(f"Error fetching policy data: {str(e)}")
+            logger.error(f"Error fetching policy data: {str(e)}", exc_info=True)
             return {"error": str(e)}
     
     def get_policy_response(self, question: str) -> str:

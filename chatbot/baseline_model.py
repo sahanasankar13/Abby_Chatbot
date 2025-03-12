@@ -32,7 +32,7 @@ class BaselineModel:
         # Simple keyword-based categorization
         policy_keywords = ['law', 'legal', 'state', 'policy', 'ban', 'illegal', 'allowed', 'permit', 'legislation', 
                           'restrict', 'abortion policy', 'abortion law', 'abortion access', 'gestational', 'limit',
-                          'parental consent', 'waiting period', 'insurance', 'medicaid', 'coverage']
+                          'parental consent', 'waiting period', 'insurance', 'medicaid', 'coverage', 'laws']
         
         question_lower = question.lower()
         
@@ -51,6 +51,16 @@ class BaselineModel:
                          "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", 
                          "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", 
                          "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc"]
+        
+        # Direct abortion policy questions - always categorize as policy
+        if question_lower.startswith("can i get an abortion in"):
+            logger.debug("Direct abortion policy question detected")
+            return 'policy'
+            
+        # Questions about abortion laws in a state
+        if "abortion laws" in question_lower or "abortion law" in question_lower:
+            logger.debug("Abortion law question detected")
+            return 'policy'
         
         # If question mentions abortion and a state, categorize as policy
         if ('abortion' in question_lower and 
