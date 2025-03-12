@@ -125,7 +125,7 @@ class BertRAGModel:
             # Import citation manager
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
-
+            
             # Check if this is a conversational query instead of a health question
             conversational_type = self._is_conversational_query(question)
             if conversational_type == "greeting":
@@ -142,7 +142,7 @@ class BertRAGModel:
             # Import citation manager
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
-
+            
             # Check for exact match
             for idx, qa_pair in enumerate(self.qa_pairs):
                 qa_normalized = qa_pair['Question'].lower().strip('?. ')
@@ -151,13 +151,7 @@ class BertRAGModel:
                     logger.debug(f"Found exact match for question: '{question}'")
                     logger.debug(f"Exact match index: {idx}")
                     answer = qa_pair['Answer']
-                    link = qa_pair.get('Link', '')
-                    # Only add citation if there's a valid link and this isn't a conversational response
-                    include_citations = not ("dont cite" in normalized_question or "don't cite" in normalized_question)
-                    if link:
-                        return citation_mgr.add_citation_to_text(answer, "planned_parenthood", include_citations, link=link)
-                    else:
-                        return answer
+                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
             # Also check for questions that contain the exact query
             # This helps with cases like "what is the menstrual cycle" matching "what is the menstrual cycle?"
@@ -167,13 +161,7 @@ class BertRAGModel:
                     logger.debug(f"Found partial match for question: '{question}'")
                     logger.debug(f"Partial match index: {idx}")
                     answer = qa_pair['Answer']
-                    link = qa_pair.get('Link', '')
-                    # Only add citation if there's a valid link and this isn't a conversational response
-                    include_citations = not ("dont cite" in normalized_question or "don't cite" in normalized_question)
-                    if link:
-                        return citation_mgr.add_citation_to_text(answer, "planned_parenthood", include_citations, link=link)
-                    else:
-                        return answer
+                    return citation_mgr.add_citation_to_text(answer, "planned_parenthood")
 
             # If no exact match, proceed with embedding-based retrieval
             # Generate embedding for the question
@@ -197,25 +185,24 @@ class BertRAGModel:
             best_idx = indices[0][0]
             best_answer = self.qa_pairs[best_idx]['Answer']
             best_question = self.qa_pairs[best_idx]['Question']
-
+            
             # Add citation from Planned Parenthood
             from chatbot.citation_manager import CitationManager
             citation_mgr = CitationManager()
-
+            
             logger.debug(f"Primary confidence (distance): {distances[0][0]}")
             if len(indices[0]) > 1:
                 logger.debug(f"Secondary confidence (gap): {distances[0][1] - distances[0][0]}")
             logger.debug(f"Matched question: {best_question}")
-
+            
             # Add citation to the response
-            include_citations = not ("dont cite" in normalized_question or "don't cite" in normalized_question)
-            cited_answer = citation_mgr.add_citation_to_text(best_answer, "planned_parenthood", include_citations)
+            cited_answer = citation_mgr.add_citation_to_text(best_answer, "planned_parenthood")
             return cited_answer
 
         except Exception as e:
             logger.error(f"Error getting RAG response: {str(e)}", exc_info=True)
             error_response = "I apologize, but I encountered an error processing your question. Please try asking again or rephrase your question."
-
+            
             # Add citation even for error responses
             try:
                 from chatbot.citation_manager import CitationManager
@@ -258,7 +245,7 @@ class BertRAGModel:
         # Import citation manager
         from chatbot.citation_manager import CitationManager
         citation_mgr = CitationManager()
-
+        
         # If only one good match, just return it with citation
         if len(relevant_answers) == 1:
             answer = relevant_answers[0]['answer']
@@ -291,9 +278,7 @@ class BertRAGModel:
                 combined += f"{answer_text}\n\n"
 
         # Add citation to the combined answer
-        normalized_question = question.lower().strip('?. ')
-        include_citations = not ("dont cite" in normalized_question or "don't cite" in normalized_question)
-        cited_combined = citation_mgr.add_citation_to_text(combined, "planned_parenthood", include_citations)
+        cited_combined = citation_mgr.add_citation_to_text(combined, "planned_parenthood")
         return cited_combined
 
     def is_confident(self, question, response, threshold=6.0):
@@ -332,9 +317,9 @@ class BertRAGModel:
             logger.debug(f"Primary confidence (distance): {primary_confidence}")
             logger.debug(f"Secondary confidence (gap): {secondary_confidence}")
             logger.debug(f"Matched question: {matched_question}")
-
+            
             # Strict confidence checks to avoid incorrect information
-
+            
             # 1. If primary confidence is very good, trust it
             if primary_confidence < threshold * 0.6:
                 logger.debug("High confidence based on primary score")
@@ -375,15 +360,15 @@ class BertRAGModel:
         similarity = self._get_semantic_similarity_score(q1, q2)
         logger.debug(f"Semantic similarity: {similarity}")
         return similarity > 0.4
-
+        
     def _get_semantic_similarity_score(self, q1, q2):
         """
         Calculate semantic similarity score between two questions
-
+        
         Args:
             q1 (str): First question
             q2 (str): Second question
-
+            
         Returns:
             float: Similarity score between 0 and 1
         """
@@ -391,7 +376,7 @@ class BertRAGModel:
         # Remove common stop words and punctuation
         stop_words = {'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 
                      'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'like', 'of', 'from'}
-
+        
         def preprocess(text):
             # Convert to lowercase and remove punctuation
             text = text.lower()
@@ -399,28 +384,28 @@ class BertRAGModel:
             # Split into words and remove stop words
             words = [w for w in text.split() if w not in stop_words]
             return set(words)
-
+            
         q1_words = preprocess(q1)
         q2_words = preprocess(q2)
-
+        
         # Calculate Jaccard similarity
         intersection = len(q1_words.intersection(q2_words))
         union = len(q1_words.union(q2_words))
-
+        
         if union == 0:
             return 0.0
-
+            
         # Basic Jaccard similarity
         basic_similarity = intersection / union
-
+        
         # Check for exact phrase matches (more weight for exact matches)
         q1_phrases = [' '.join(q1.lower().split()[i:i+3]) for i in range(len(q1.lower().split())-2)]
         q2_phrases = [' '.join(q2.lower().split()[i:i+3]) for i in range(len(q2.lower().split())-2)]
-
+        
         phrase_matches = sum(1 for p in q1_phrases if p in q2_phrases)
         phrase_similarity = phrase_matches / max(len(q1_phrases), len(q2_phrases), 1) if q1_phrases and q2_phrases else 0
-
+        
         # Combined similarity (weighted)
         similarity = (basic_similarity * 0.7) + (phrase_similarity * 0.3)
-
+        
         return similarity

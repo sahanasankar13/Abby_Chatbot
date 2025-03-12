@@ -13,8 +13,8 @@ handler.setFormatter(logging.Formatter(
 ))
 logger.addHandler(handler)
 
-# Bind to 0.0.0.0:8080
-bind = '0.0.0.0:8080'
+# Bind to 0.0.0.0:5000
+bind = '0.0.0.0:5000'
 
 # Number of worker processes
 workers = int(os.environ.get('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
