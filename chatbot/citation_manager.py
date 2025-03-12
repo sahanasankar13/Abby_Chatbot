@@ -136,20 +136,20 @@ class CitationManager:
     def __init__(self):
         """Initialize the citation manager"""
         logger.info("Initializing Citation Manager")
-        self.sources = {
-            "planned_parenthood": "Planned Parenthood",
-            "guttmacher": "Guttmacher Institute",
-            "abortion_policy_api": "Abortion Policy API",
-            "cdc": "Centers for Disease Control and Prevention",
-            "who": "World Health Organization",
-            "acog": "American College of Obstetricians and Gynecologists",
-            "ai_generated": "AI Generated"
-        }
+        self.sources = self.SOURCES
         self.default_sources = ["ai_generated"]
 
 
-    def extract_citations_from_text(self, text: str) -> List[Dict[str, Any]]:
-        """Extract citations from text and return structured citation data."""
+    def extract_citations_from_text(self, text: str) -> List[Citation]:
+        """
+        Extract citations from text and return structured citation data.
+        
+        Args:
+            text (str): Text with citation markers
+            
+        Returns:
+            List[Citation]: List of extracted citations
+        """
         citations = []
 
         # Skip citation extraction for short conversational responses
@@ -166,34 +166,23 @@ class CitationManager:
                 if len(citation_parts) >= 2:
                     source_id = citation_parts[0].strip()
                     quote = citation_parts[1].strip()
-                    page = citation_parts[2].strip() if len(citation_parts) > 2 else None
-
-                    citations.append({
-                        "source": self.sources.get(source_id, {"name": source_id})["name"],
-                        "quote": quote,
-                        "page": page
-                    })
+                    
+                    if source_id in self.SOURCES:
+                        citations.append(self.SOURCES[source_id])
 
         # Also check for API citations
         api_pattern = r'\[API:(.*?)\]'
         api_matches = re.findall(api_pattern, text)
 
         for api_citation in api_matches:
-            citations.append({
-                "source": "Abortion Policy API",
-                "quote": api_citation.strip(),
-                "page": None
-            })
+            if "abortion_policy_api" in self.SOURCES:
+                citations.append(self.SOURCES["abortion_policy_api"])
 
-        # If no explicit citations but we have sources attribute, add default sources
-        if hasattr(self, 'default_sources'):
+        # If no explicit citations, add default sources
+        if len(citations) == 0 and hasattr(self, 'default_sources'):
             for source_id in self.default_sources:
-                if source_id in self.sources:
-                    citations.append({
-                        "source": self.sources[source_id]["name"],
-                        "quote": None,
-                        "page": None
-                    })
+                if source_id in self.SOURCES:
+                    citations.append(self.SOURCES[source_id])
 
         return citations
 
