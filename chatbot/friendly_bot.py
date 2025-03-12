@@ -18,11 +18,11 @@ class FriendlyBot:
         ]
         
         self.empathetic_phrases = [
-            "I understand this can be a sensitive topic. ",
-            "It's okay to have questions about this. ",
-            "I'm here to help with any questions you might have. ",
-            "This is an important topic, and I'm glad you're asking. ",
-            "Thank you for sharing your question with me. "
+            "I understand this can be a sensitive topic, and I'm here to support you. ",
+            "It's completely okay to have questions about this. I'm here to provide information. ",
+            "I appreciate you reaching out with this question. ",
+            "This is an important topic, and I'm here to help with accurate information. ",
+            "Thank you for trusting me with your question. I'll do my best to provide helpful information. "
         ]
         
         self.reassurance_phrases = [

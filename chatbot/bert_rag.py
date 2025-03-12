@@ -281,7 +281,7 @@ class BertRAGModel:
         cited_combined = citation_mgr.add_citation_to_text(combined, "planned_parenthood")
         return cited_combined
 
-    def is_confident(self, question, response, threshold=8.0):
+    def is_confident(self, question, response, threshold=6.0):
         """
         Determine if the RAG model is confident in its response
         Uses multiple metrics for better confidence assessment
@@ -317,24 +317,29 @@ class BertRAGModel:
             logger.debug(f"Primary confidence (distance): {primary_confidence}")
             logger.debug(f"Secondary confidence (gap): {secondary_confidence}")
             logger.debug(f"Matched question: {matched_question}")
-
-            # Decision logic:
+            
+            # Strict confidence checks to avoid incorrect information
+            
             # 1. If primary confidence is very good, trust it
-            if primary_confidence < threshold * 0.7:
+            if primary_confidence < threshold * 0.6:
                 logger.debug("High confidence based on primary score")
                 return True
 
-            # 2. If primary is okay and secondary shows a clear winner, trust it
-            if primary_confidence < threshold and secondary_confidence > 2.0:
+            # 2. If primary is good and secondary shows a clear winner, trust it
+            if primary_confidence < threshold * 0.8 and secondary_confidence > 2.5:
                 logger.debug("Confidence based on primary score and distinct winner")
                 return True
 
             # 3. If primary is just above threshold but very close to original question semantically, trust it
-            if primary_confidence < threshold * 1.2 and self._is_semantically_similar(question, matched_question):
-                logger.debug("Confidence based on semantic similarity")
-                return True
+            if primary_confidence < threshold and self._is_semantically_similar(question, matched_question):
+                similarity_score = self._get_semantic_similarity_score(question, matched_question)
+                logger.debug(f"Semantic similarity score: {similarity_score}")
+                if similarity_score > 0.6:  # Require higher similarity
+                    logger.debug("Confidence based on high semantic similarity")
+                    return True
 
-            # Otherwise, not confident
+            # Otherwise, not confident - be conservative to avoid misinformation
+            logger.debug("Not confident enough to provide an answer")
             return False
 
         except Exception as e:
@@ -352,18 +357,55 @@ class BertRAGModel:
         Returns:
             bool: True if semantically similar
         """
-        # Simple keyword matching
-        q1_words = set(q1.lower().split())
-        q2_words = set(q2.lower().split())
-
+        similarity = self._get_semantic_similarity_score(q1, q2)
+        logger.debug(f"Semantic similarity: {similarity}")
+        return similarity > 0.4
+        
+    def _get_semantic_similarity_score(self, q1, q2):
+        """
+        Calculate semantic similarity score between two questions
+        
+        Args:
+            q1 (str): First question
+            q2 (str): Second question
+            
+        Returns:
+            float: Similarity score between 0 and 1
+        """
+        # Simple keyword matching with improved preprocessing
+        # Remove common stop words and punctuation
+        stop_words = {'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 
+                     'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'like', 'of', 'from'}
+        
+        def preprocess(text):
+            # Convert to lowercase and remove punctuation
+            text = text.lower()
+            text = ''.join([c for c in text if c.isalnum() or c.isspace()])
+            # Split into words and remove stop words
+            words = [w for w in text.split() if w not in stop_words]
+            return set(words)
+            
+        q1_words = preprocess(q1)
+        q2_words = preprocess(q2)
+        
         # Calculate Jaccard similarity
         intersection = len(q1_words.intersection(q2_words))
         union = len(q1_words.union(q2_words))
-
+        
         if union == 0:
-            return False
-
-        similarity = intersection / union
-        logger.debug(f"Semantic similarity: {similarity}")
-
-        return similarity > 0.4
+            return 0.0
+            
+        # Basic Jaccard similarity
+        basic_similarity = intersection / union
+        
+        # Check for exact phrase matches (more weight for exact matches)
+        q1_phrases = [' '.join(q1.lower().split()[i:i+3]) for i in range(len(q1.lower().split())-2)]
+        q2_phrases = [' '.join(q2.lower().split()[i:i+3]) for i in range(len(q2.lower().split())-2)]
+        
+        phrase_matches = sum(1 for p in q1_phrases if p in q2_phrases)
+        phrase_similarity = phrase_matches / max(len(q1_phrases), len(q2_phrases), 1) if q1_phrases and q2_phrases else 0
+        
+        # Combined similarity (weighted)
+        similarity = (basic_similarity * 0.7) + (phrase_similarity * 0.3)
+        
+        return similarity

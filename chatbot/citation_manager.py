@@ -198,13 +198,25 @@ class CitationManager:
         clean_text = re.sub(r'\[SOURCE:[\w_]+\]', '', text)
         clean_text = re.sub(r'\[cite:.*?\]', '', clean_text)
         clean_text = re.sub(r'\[API:.*?\]', '', clean_text)
+        
+        # Make sure we don't have duplicate sources
+        unique_citations = []
+        seen_sources = set()
+        for citation in citations:
+            if citation.source not in seen_sources:
+                unique_citations.append(citation)
+                seen_sources.add(citation.source)
+        
+        citations = unique_citations
 
-        # Format citations based on format type
+        # Format citations based on format type - don't include direct source text in answer
         if format_type == "html":
             formatted_citations = [c.to_html() for c in citations]
         else:  # markdown
             formatted_citations = [c.to_markdown() for c in citations]
 
+        logger.debug(f"Formatting response with {len(citations)} citations")
+        
         return {
             "text": clean_text.strip(),
             "citations": formatted_citations,

@@ -66,22 +66,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             messageContainer.appendChild(messageElement);
 
-            // Debug logging
-            console.log("Processing message with:", {
-                messageLength: message.length,
-                hasCitations: citations && citations.length > 0,
-                hasCitationObjects: citation_objects && citation_objects.length > 0
-            });
 
-            // Skip sources completely for short conversational responses or when no citations exist
-            if ((message.length < 100 && !message.includes("abortion")) || 
+            if ((message.length < 100 && !message.includes("abortion")) ||
                 !citations || !Array.isArray(citations) || citations.length === 0) {
                 chatMessages.appendChild(messageContainer);
-                // Apply animation directly since animateMessage isn't defined
                 messageContainer.style.opacity = '0';
                 messageContainer.style.transform = 'translateY(10px)';
-                
-                // Trigger animation
+
                 setTimeout(() => {
                     messageContainer.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
                     messageContainer.style.opacity = '1';
@@ -90,30 +81,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Ensure citation_objects is always an array even if not provided
             const safeObjects = (citation_objects && Array.isArray(citation_objects)) ? citation_objects : [];
-            
+
             // Add citations if present - but only for API or knowledge base sources
             if (citations && Array.isArray(citations) && citations.length > 0) {
-                // Check if any citation is from the abortion policy API or another trusted source
-                const validSources = ["Abortion Policy API", "Planned Parenthood", "Guttmacher Institute", 
-                                     "CDC", "WHO", "American College", "Centers for Disease Control", 
+                const validSources = ["Abortion Policy API", "Planned Parenthood", "Guttmacher Institute",
+                                     "CDC", "WHO", "American College", "Centers for Disease Control",
                                      "World Health Organization"];
 
-                // Only show citations if we have valid external sources (not just AI-generated)
                 const hasApiSources = safeObjects.some(co => {
                     if (!co || !co.source) return false;
-                    return validSources.some(validSource => 
+                    return validSources.some(validSource =>
                         co.source && typeof co.source === 'string' && co.source.includes(validSource)
                     );
                 });
 
-                // Always show sources for policy-related responses
-                const hasPolicyContent = message.includes("policy") || message.includes("state") || 
+                const hasPolicyContent = message.includes("policy") || message.includes("state") ||
                                         message.includes("law") || message.includes("abortion");
-                
+
                 if (hasApiSources || hasPolicyContent || citations.length > 0) {
-                    console.log("Adding citations to message");
                     const citationsContainer = document.createElement('div');
                     citationsContainer.className = 'citations-container';
 
@@ -123,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const citationsList = document.createElement('div');
                     citationsList.className = 'citations-list';
 
-                    // Filter out AI-generated citations when showing real sources
+
                     let filteredCitations = [];
                     try {
                         filteredCitations = citations.filter(c => {
@@ -138,11 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         filteredCitations = Array.isArray(citations) ? [...citations] : [];
                     }
 
-                    console.log("Filtered citations:", filteredCitations.length);
-
-                    // Safety check
                     if (filteredCitations.length === 0 && citations.length > 0) {
-                        // Add a default citation for Planned Parenthood if filtering removed all citations
                         filteredCitations.push({
                             source: "Planned Parenthood",
                             url: "https://www.plannedparenthood.org/",
@@ -150,17 +132,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
 
-                    // Process each citation
                     filteredCitations.forEach(citation => {
                         try {
                             const citationElement = document.createElement('div');
                             citationElement.className = 'citation';
 
-                            // Handle HTML citations from backend
                             if (typeof citation === 'string' && citation.startsWith('<div class="citation">')) {
                                 citationElement.innerHTML = citation;
-                            } 
-                            // Handle object-based citations
+                            }
                             else if (citation && typeof citation === 'object') {
                                 if (citation.url) {
                                     const link = document.createElement('a');
@@ -179,11 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                     citationElement.appendChild(sourceElement);
                                 }
                             }
-                            // Handle plain text citations as fallback
                             else if (typeof citation === 'string') {
                                 citationElement.textContent = citation;
                             }
-                            // Handle unknown citation format
                             else {
                                 citationElement.textContent = "Source information available upon request";
                             }
@@ -202,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Add graphics if present
+
             if (graphics && graphics.length > 0) {
                 const graphicsContainer = document.createElement('div');
                 graphicsContainer.className = 'graphics-container';
@@ -233,20 +210,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 messageContainer.appendChild(graphicsContainer);
             }
 
-            // Apply animation
             messageContainer.style.opacity = '0';
             messageContainer.style.transform = 'translateY(10px)';
 
             chatMessages.appendChild(messageContainer);
 
-            // Trigger animation
             setTimeout(() => {
                 messageContainer.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
                 messageContainer.style.opacity = '1';
                 messageContainer.style.transform = 'translateY(0)';
             }, 10);
 
-            // Scroll to bottom
             scrollToBottom();
         } catch (error) {
             console.log("Error adding bot message:", error);
@@ -263,12 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
             typingIndicator.appendChild(dot);
         }
 
-        // Apply animation
         typingIndicator.style.opacity = '0';
 
         chatMessages.appendChild(typingIndicator);
 
-        // Trigger animation
         setTimeout(() => {
             typingIndicator.style.transition = 'opacity 0.3s ease';
             typingIndicator.style.opacity = '1';
@@ -280,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeTypingIndicator() {
         const typingIndicator = document.getElementById('typingIndicator');
         if (typingIndicator) {
-            // Animate out
             typingIndicator.style.opacity = '0';
 
             setTimeout(() => {
@@ -309,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             addBotMessage(
-                data.response, 
+                data.response,
                 data.citations || [],
                 data.citation_objects || [],
                 data.graphics || []
@@ -325,10 +296,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add initial welcome message
     addBotMessage("Hi I'm Abby 👋 I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is private and confidential. Before we begin, please remember not to share any personal details like your name or address - I'm here to help while protecting your privacy. How can I help you today?");
 
-    // Focus input on page load
     userInput.focus();
 
-    // Add Apple-style keyboard handling for mobile
     userInput.addEventListener('focus', () => {
         setTimeout(() => {
             chatMessages.scrollTop = chatMessages.scrollHeight;
