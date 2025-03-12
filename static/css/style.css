@@ -85,6 +85,7 @@ body {
   background-color: #dc3545; /* Bootstrap danger color */
   border-color: #dc3545;
   color: white;
+  font-size: 0.95rem;
 }
 
 .quick-exit-btn:hover {
@@ -93,33 +94,33 @@ body {
   border-color: #bb2d3b;
 }
 
-/* Menu toggle button styling */
-.menu-toggle {
+/* Menu dots styling */
+.menu-dots {
   color: var(--apple-text);
   font-size: 1.2rem;
   padding: 6px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s;
-  border: none;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
-.menu-toggle:hover, 
-.menu-toggle:focus {
-  background-color: rgba(210, 210, 215, 0.3);
-  color: var(--apple-text);
+.menu-dots:hover {
+  background-color: rgba(210, 210, 215, 0.6);
 }
 
-[data-bs-theme="dark"] .menu-toggle {
+[data-bs-theme="dark"] .menu-dots {
   color: var(--apple-dark-text);
+  background-color: rgba(50, 50, 50, 0.5);
 }
 
-[data-bs-theme="dark"] .menu-toggle:hover,
-[data-bs-theme="dark"] .menu-toggle:focus {
-  background-color: rgba(70, 70, 75, 0.3);
-  color: var(--apple-dark-text);
+[data-bs-theme="dark"] .menu-dots:hover {
+  background-color: rgba(70, 70, 75, 0.7);
 }
 
 /* Dropdown menu styling */

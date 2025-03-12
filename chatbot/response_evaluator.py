@@ -2,12 +2,15 @@ import os
 import json
 import logging
 import time
+import psutil
+import tracemalloc
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from openai import OpenAI
 from utils.metrics import increment_counter, record_time, record_api_call
+from utils.advanced_metrics import AdvancedMetricsCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -639,11 +642,70 @@ class ResponseEvaluator:
             evaluation (Dict): The evaluation results
         """
         try:
+            # Start memory tracking
+            tracemalloc.start()
+            start_time = time.time()
+            
+            # Calculate system performance metrics
+            memory_usage_start = psutil.Process().memory_info().rss / (1024 * 1024)  # Convert to MB
+            
+            # Estimate tokens in the response (simple approximation)
+            tokens_count = len(response.split())
+            
+            # Process the evaluation and get the improved response
+            improved_response = evaluation.get("improved_response", response)
+            improved_tokens_count = len(improved_response.split())
+            
+            # Calculate performance metrics
+            end_time = time.time()
+            inference_time_ms = (end_time - start_time) * 1000
+            
+            # Get memory usage after processing
+            memory_usage_end = psutil.Process().memory_info().rss / (1024 * 1024)
+            memory_usage = memory_usage_end - memory_usage_start
+            
+            # Stop memory tracking
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            
+            # Metrics and advanced analytics
+            metrics_calculator = AdvancedMetricsCalculator()
+            
+            # Prepare for advanced metrics (if we have reference/ground truth)
+            # For now we'll just compare original to improved response
+            text_similarity_metrics = {}
+            try:
+                if improved_response != response:
+                    # Calculate text similarity metrics between original and improved responses
+                    text_similarity_metrics = metrics_calculator.calculate_text_similarity_metrics(
+                        references=[improved_response], 
+                        predictions=[response]
+                    )
+            except Exception as metrics_err:
+                logger.error(f"Error calculating similarity metrics: {str(metrics_err)}")
+                text_similarity_metrics = {}
+            
+            # Track performance metrics
+            metrics_calculator.track_performance_metrics(
+                inference_time=inference_time_ms,
+                tokens=tokens_count,
+                memory_mb=memory_usage
+            )
+            
+            # Create the log entry with all metrics
             log_entry = {
                 "timestamp": datetime.now().isoformat(),
                 "question": question,
                 "response": response,
                 "evaluation": evaluation,
+                "performance": {
+                    "inference_time_ms": inference_time_ms,
+                    "tokens_count": tokens_count,
+                    "improved_tokens_count": improved_tokens_count,
+                    "memory_usage_mb": memory_usage,
+                    "peak_memory_mb": peak / (1024 * 1024)
+                },
+                "text_similarity": text_similarity_metrics
             }
             
             # Write to the JSON log file

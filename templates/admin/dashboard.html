@@ -181,6 +181,295 @@
                 </div>
             </div>
             
+            <!-- Advanced Metrics -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Advanced Metrics</h5>
+                    <ul class="nav nav-tabs card-header-tabs" id="advancedMetricsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="quality-tab" data-bs-toggle="tab" data-bs-target="#quality" type="button" role="tab" aria-controls="quality" aria-selected="true">Response Quality</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="retrieval-tab" data-bs-toggle="tab" data-bs-target="#retrieval" type="button" role="tab" aria-controls="retrieval" aria-selected="false">Retrieval Accuracy</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab" aria-controls="system" aria-selected="false">System Performance</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="advancedMetricsContent">
+                        <!-- Response Quality Tab -->
+                        <div class="tab-pane fade show active" id="quality" role="tabpanel" aria-labelledby="quality-tab">
+                            <div class="row">
+                                <!-- BLEU Score -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">BLEU Score</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="text-start">
+                                                    <p class="h4 mb-0">{{ metrics.text_similarity.bleu.score|round(2) }}</p>
+                                                    <p class="text-muted small">Original Responses</p>
+                                                </div>
+                                                <div class="text-end">
+                                                    <p class="h4 mb-0">{{ metrics.improved_text_similarity.bleu.score|round(2) }}</p>
+                                                    <p class="text-muted small">Improved Responses</p>
+                                                </div>
+                                            </div>
+                                            <p class="small text-muted mt-2">Higher BLEU score indicates better translation quality compared to reference text</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- ROUGE Score -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">ROUGE Scores</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Metric</th>
+                                                        <th>Original</th>
+                                                        <th>Improved</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>ROUGE-1</td>
+                                                        <td>{{ metrics.text_similarity.rouge.rouge1|round(2) }}</td>
+                                                        <td>{{ metrics.improved_text_similarity.rouge.rouge1|round(2) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>ROUGE-2</td>
+                                                        <td>{{ metrics.text_similarity.rouge.rouge2|round(2) }}</td>
+                                                        <td>{{ metrics.improved_text_similarity.rouge.rouge2|round(2) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>ROUGE-L</td>
+                                                        <td>{{ metrics.text_similarity.rouge.rougeL|round(2) }}</td>
+                                                        <td>{{ metrics.improved_text_similarity.rouge.rougeL|round(2) }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <p class="small text-muted mt-2">ROUGE measures overlap of n-grams between model and reference</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- BERTScore -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">BERTScore</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Metric</th>
+                                                        <th>Original</th>
+                                                        <th>Improved</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>F1</td>
+                                                        <td>{{ metrics.text_similarity.bert_score.f1|round(2) }}</td>
+                                                        <td>{{ metrics.improved_text_similarity.bert_score.f1|round(2) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Precision</td>
+                                                        <td>{{ metrics.text_similarity.bert_score.precision|round(2) }}</td>
+                                                        <td>{{ metrics.improved_text_similarity.bert_score.precision|round(2) }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Recall</td>
+                                                        <td>{{ metrics.text_similarity.bert_score.recall|round(2) }}</td>
+                                                        <td>{{ metrics.improved_text_similarity.bert_score.recall|round(2) }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <p class="small text-muted mt-2">BERTScore computes contextual similarity using BERT embeddings</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Retrieval Accuracy Tab -->
+                        <div class="tab-pane fade" id="retrieval" role="tabpanel" aria-labelledby="retrieval-tab">
+                            <!-- If retrieval metrics are available -->
+                            {% if metrics.precision_at_k|default({}) or metrics.recall_at_k|default({}) or metrics.mrr|default(0) %}
+                            <div class="row">
+                                <!-- Precision@K -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Precision@K</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>K</th>
+                                                        <th>Value</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for k, value in metrics.precision_at_k.items() %}
+                                                    <tr>
+                                                        <td>{{ k }}</td>
+                                                        <td>{{ value|round(2) }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                            <p class="small text-muted mt-2">Ratio of relevant documents among top K results</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recall@K -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Recall@K</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>K</th>
+                                                        <th>Value</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for k, value in metrics.recall_at_k.items() %}
+                                                    <tr>
+                                                        <td>{{ k }}</td>
+                                                        <td>{{ value|round(2) }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                            <p class="small text-muted mt-2">Ratio of relevant documents retrieved in top K</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- MRR and Faithfulness -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Other Metrics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column">
+                                                <div class="mb-3">
+                                                    <h6>Mean Reciprocal Rank (MRR)</h6>
+                                                    <div class="h4">{{ metrics.mrr|default(0)|round(2) }}</div>
+                                                    <p class="small text-muted">Average of reciprocal ranks for first relevant result</p>
+                                                </div>
+                                                <div>
+                                                    <h6>Faithfulness Score</h6>
+                                                    <div class="h4">{{ metrics.faithfulness|default(0)|round(2) }}</div>
+                                                    <p class="small text-muted">Measures consistency with source material</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> Retrieval accuracy metrics will be available once the system has processed enough queries.
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- System Performance Tab -->
+                        <div class="tab-pane fade" id="system" role="tabpanel" aria-labelledby="system-tab">
+                            <div class="row">
+                                <!-- Inference Time -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Inference Time (ms)</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="display-4">{{ metrics.performance.average_inference_time_ms|round(1) }}</div>
+                                            <p class="text-muted">Average ms/query</p>
+                                            <div class="d-flex justify-content-between mt-3">
+                                                <div>
+                                                    <span class="d-block h5 mb-0">{{ metrics.performance.min_inference_time_ms|default(0)|round(1) }}</span>
+                                                    <small class="text-muted">Min</small>
+                                                </div>
+                                                <div>
+                                                    <span class="d-block h5 mb-0">{{ metrics.performance.max_inference_time_ms|default(0)|round(1) }}</span>
+                                                    <small class="text-muted">Max</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tokens per Response -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Tokens per Response</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="display-4">{{ metrics.performance.average_tokens_per_response|int }}</div>
+                                            <p class="text-muted">Average tokens</p>
+                                            <div class="d-flex justify-content-between mt-3">
+                                                <div>
+                                                    <span class="d-block h5 mb-0">{{ metrics.performance.min_tokens_per_response|default(0)|int }}</span>
+                                                    <small class="text-muted">Min</small>
+                                                </div>
+                                                <div>
+                                                    <span class="d-block h5 mb-0">{{ metrics.performance.max_tokens_per_response|default(0)|int }}</span>
+                                                    <small class="text-muted">Max</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Memory Usage -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Memory Usage (MB)</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="display-4">{{ metrics.performance.average_memory_usage_mb|round(1) }}</div>
+                                            <p class="text-muted">Average MB</p>
+                                            <div class="d-flex justify-content-between mt-3">
+                                                <div>
+                                                    <span class="d-block h5 mb-0">{{ metrics.performance.min_memory_usage_mb|default(0)|round(1) }}</span>
+                                                    <small class="text-muted">Min</small>
+                                                </div>
+                                                <div>
+                                                    <span class="d-block h5 mb-0">{{ metrics.performance.max_memory_usage_mb|default(0)|round(1) }}</span>
+                                                    <small class="text-muted">Max</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Feedback List -->
             <div class="card">
                 <div class="card-header">

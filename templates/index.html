@@ -9,11 +9,11 @@
                 <i class="fas fa-times-circle me-2"></i> Quick Exit
             </a>
             
-            <!-- Menu dropdown on the right -->
+            <!-- Menu dropdown (just dots) on the right -->
             <div class="dropdown">
-                <button class="btn btn-link menu-toggle" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="menu-dots" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-ellipsis-v"></i>
-                </button>
+                </div>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
                     <li>
                         <a class="dropdown-item" href="{{ url_for('view_metrics') }}">
