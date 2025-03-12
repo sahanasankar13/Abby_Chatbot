@@ -803,6 +803,48 @@ body {
   font-size: 0.9rem;
 }
 
+/* Fix for header layout and settings icon */
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  position: relative;
+}
+
+.chat-header h1 {
+  margin: 0;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.settings-btn {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.settings-btn:hover {
+  opacity: 0.8;
+}
+
+/* Quick exit button positioning */
+.quick-exit-btn {
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .message-container {

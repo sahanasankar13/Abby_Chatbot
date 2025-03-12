@@ -10,15 +10,18 @@
             <button class="theme-toggle" title="Toggle dark/light mode">
                 <i class="fas fa-moon"></i>
             </button>
+            <a href="{{ url_for('view_metrics') }}" class="text-muted small admin-link">
+                <i class="bi bi-gear"></i> Admin Dashboard
+            </a>
         </div>
         <h1>Abby</h1>
         <p>This chatbot provides general information about reproductive and mental health but is not a substitute for professional medical advice. Always consult with a qualified healthcare provider for personal medical decisions.</p>
     </div>
-    
+
     <div id="chatMessages" class="chat-messages">
         <!-- Messages will be added here dynamically -->
     </div>
-    
+
     <div class="chat-input">
         <form id="chatForm">
             <div class="input-group">
@@ -40,11 +43,6 @@
                 </button>
             </div>
         </form>
-        <div class="text-center mt-3">
-            <a href="{{ url_for('view_metrics') }}" class="text-muted small admin-link">
-                <i class="bi bi-gear"></i> Admin Dashboard
-            </a>
-        </div>
     </div>
 </div>
 {% endblock %}
