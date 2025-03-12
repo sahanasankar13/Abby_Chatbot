@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Handle lists
         text = text.replace(/^\*\s+(.+)$/gm, '<li>$1</li>');
-        
+
         // Safely wrap list items in a ul tag
         const hasListItems = text.indexOf('<li>') !== -1;
         if (hasListItems) {
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add initial bot message
-    addBotMessage('Hi there! I\'m your reproductive health assistant. How can I help you today?');
+    addBotMessage("Hi I'm Abby! I'm your reproductive health assistant. How can I help you today?");
 
     // Enable input when page loads
     userInput.disabled = false;
