@@ -39,36 +39,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to add bot message to chat with citations and graphics
     function addBotMessage(message, citations = [], graphics = []) {
-        const messageContainer = document.createElement('div');
-        messageContainer.className = 'message-container';
+        try {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'message-container';
+            
+            // Main message
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message bot-message';
+            messageElement.innerHTML = message;
+            messageContainer.appendChild(messageElement);
+            
+            // Add citations if available
+            if (citations && citations.length > 0) {
+                const citationsContainer = document.createElement('div');
+                citationsContainer.className = 'citations-container';
+                
+                const citationsTitle = document.createElement('div');
+                citationsTitle.className = 'citations-title';
+                citationsTitle.textContent = 'Sources:';
+                citationsContainer.appendChild(citationsTitle);
+                
+                const citationsList = document.createElement('div');
+                citationsList.className = 'citations-list';
+                
+                citations.forEach(citation => {
+                    const citationElement = document.createElement('div');
+                    citationElement.className = 'citation';
+                    citationElement.innerHTML = citation;
+                    citationsList.appendChild(citationElement);
+                });
+                
+                citationsContainer.appendChild(citationsList);
+            messageContainer.appendChild(citationsContainer);
+        }
         
-        // Main message
+        // Graphics functionality disabled
+        // We're keeping the structure but not rendering any graphics
+        
+        messagesContainer.appendChild(messageContainer);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Hide typing indicator
+        typingIndicator.style.display = 'none';
+    } catch (error) {
+        console.error('Error adding bot message:', error);
+        // Fallback display method
         const messageElement = document.createElement('div');
         messageElement.className = 'message bot-message';
-        messageElement.innerHTML = message;
-        messageContainer.appendChild(messageElement);
-        
-        // Add citations if available
-        if (citations && citations.length > 0) {
-            const citationsContainer = document.createElement('div');
-            citationsContainer.className = 'citations-container';
-            
-            const citationsTitle = document.createElement('div');
-            citationsTitle.className = 'citations-title';
-            citationsTitle.textContent = 'Sources:';
-            citationsContainer.appendChild(citationsTitle);
-            
-            const citationsList = document.createElement('div');
-            citationsList.className = 'citations-list';
-            
-            citations.forEach(citation => {
-                const citationElement = document.createElement('div');
-                citationElement.className = 'citation';
-                citationElement.innerHTML = citation;
-                citationsList.appendChild(citationElement);
-            });
-            
-            citationsContainer.appendChild(citationsList);
+        messageElement.textContent = message;
+        messagesContainer.appendChild(messageElement);
+        typingIndicator.style.display = 'none';
             messageContainer.appendChild(citationsContainer);
         }
         
