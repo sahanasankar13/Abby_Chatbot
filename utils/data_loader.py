@@ -95,6 +95,27 @@ def preprocess_question_answer_pairs(qa_pairs):
     """
     processed_pairs = []
     
+    # Add important additional QA pairs for common questions
+    menstrual_cycle_qa = {
+        'Question': 'What is the menstrual cycle?',
+        'Answer': '''The menstrual cycle is the monthly hormonal cycle a woman's body goes through to prepare for pregnancy. An average cycle takes about 28 days and occurs in phases:
+
+1. Menstrual phase (Days 1-5): The uterus sheds its lining, resulting in menstrual bleeding or a period.
+
+2. Follicular phase (Days 1-13): The body prepares to release an egg. Estrogen levels rise and the uterine lining begins to thicken.
+
+3. Ovulation (Day 14, in a 28-day cycle): The ovary releases a mature egg, which travels through the fallopian tube. This is when pregnancy is most likely to occur.
+
+4. Luteal phase (Days 15-28): If the egg isn't fertilized, hormone levels decrease and the body prepares to shed the uterine lining, starting the cycle again.
+
+The length of the menstrual cycle varies from person to person. Some people have shorter cycles (21 days) while others have longer ones (35 days). The cycle length may also vary from month to month for the same person.''',
+        'Link': 'https://www.plannedparenthood.org/learn/health-and-wellness/menstruation',
+        'Category': 'Health'
+    }
+    
+    # Add the additional QA pair to the beginning of the list for higher priority
+    qa_pairs = [menstrual_cycle_qa] + qa_pairs
+    
     for pair in qa_pairs:
         # Clean and process the text
         question = pair['Question'].strip()

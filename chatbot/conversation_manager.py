@@ -48,22 +48,19 @@ class ConversationManager:
             processing_time = time.time() - start_time
             logger.debug(f"Baseline model processing time: {processing_time:.2f} seconds")
             
+            # Get the category of the question from baseline model
+            category = self.baseline_model.categorize_question(message)
+            
             # Add friendly elements to the response
             friendly_response = self.friendly_bot.add_friendly_elements(response, question_type)
             
-            # Add citation markers based on question type and content
-            if question_type == 'policy':
+            # Only add citation for RAG responses (knowledge category)
+            # This means we only cite Planned Parenthood when using their data
+            if category == 'knowledge' and self.baseline_model.bert_rag.is_confident(message, response):
+                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
+            elif category == 'policy':
                 friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'abortion_policy_api')
                 friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'guttmacher')
-            elif 'pregnancy' in message.lower() or 'contraception' in message.lower():
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'acog')
-            elif 'health' in message.lower() or 'infection' in message.lower() or 'disease' in message.lower():
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'cdc')
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'who')
-            else:
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'planned_parenthood')
-                friendly_response = self.citation_manager.add_citation_to_text(friendly_response, 'ai_generated')
             
             # Format response with citations
             formatted_response = self.citation_manager.format_response_with_citations(friendly_response)
