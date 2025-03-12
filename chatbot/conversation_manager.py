@@ -17,7 +17,7 @@ class ConversationManager:
     def __init__(self, evaluation_model="both"):
         """
         Initialize the conversation manager
-        
+
         Args:
             evaluation_model (str): Model to use for response evaluation
                 "openai": Use OpenAI's models only
@@ -96,7 +96,7 @@ class ConversationManager:
 
             is_abortion_question = any(indicator in message_lower
                                        for indicator in abortion_indicators)
-            
+
             has_emotional_content = any(indicator in message_lower
                                      for indicator in emotional_indicators)
 
@@ -105,24 +105,24 @@ class ConversationManager:
             if state_context:
                 location_context = state_context
                 logger.info(f"Found state context directly in message: {location_context}")
-                
+
             # Check if we need to include general knowledge information along with policy/emotional content
             has_knowledge_question = any(indicator in message_lower
                                for indicator in ["how does", "what is", "how do", "what are", "tell me about", 
                                                 "how will", "will i", "explain", "works", "procedure", "pill",
                                                 "medication", "recovery", "timeline", "process"])
-                
+
             # Handle combined emotional abortion-related questions with location information AND knowledge request
             if is_abortion_question and has_emotional_content and location_context and has_knowledge_question:
                 logger.info(f"Detected complex query: emotional + policy + knowledge for {location_context}")
-                
+
                 # 1. Get policy information
                 policy_response = self.baseline_model.process_question(
                     message,
                     self.conversation_history,
                     location_context=location_context,
                     force_category='policy')
-                
+
                 # 2. Get knowledge information about the procedure
                 # Create a knowledge-specific query by removing emotional content
                 knowledge_query = "How does an abortion procedure work? What methods are available?"
@@ -130,7 +130,7 @@ class ConversationManager:
                     knowledge_query,
                     [],  # Empty history to avoid confusion
                     force_category='knowledge')
-                
+
                 # 3. Combine all three components (emotional support, policy, knowledge)
                 comprehensive_response = (
                     f"I understand feeling anxious about this situation. It's completely normal to have these emotions "
@@ -142,33 +142,33 @@ class ConversationManager:
                     f"If you're feeling overwhelmed, consider speaking with a mental health professional who specializes "
                     f"in reproductive health concerns."
                 )
-                
+
                 # Add citations to both sources
                 cited_response = comprehensive_response
                 if "I'm sorry, I'm having trouble providing policy information" not in policy_response:
                     cited_response = self.citation_manager.add_citation_to_text(
                         cited_response, 'abortion_policy_api')
-                
+
                 cited_response = self.citation_manager.add_citation_to_text(
                     cited_response, 'planned_parenthood')
-                
+
                 formatted_response = self.citation_manager.format_response_with_citations(
                     cited_response)
                 message_id = self.add_to_history('bot', formatted_response['text'])
                 formatted_response['message_id'] = message_id
                 return formatted_response
-                
+
             # Handle combined emotional abortion-related questions with location information
             elif is_abortion_question and has_emotional_content and location_context:
                 logger.info(f"Detected emotional abortion question with location {location_context}, providing supportive policy response")
-                
+
                 # Get the policy information
                 policy_response = self.baseline_model.process_question(
                     message,
                     self.conversation_history,
                     location_context=location_context,
                     force_category='policy')
-                
+
                 # Add emotional support wrapper
                 supportive_policy_response = (
                     f"I understand feeling anxious about this situation. It's completely normal to have these emotions "
@@ -179,28 +179,28 @@ class ConversationManager:
                     f"If you're feeling overwhelmed, consider speaking with a mental health professional who specializes "
                     f"in reproductive health concerns."
                 )
-                
+
                 # Add citation based on policy data
                 cited_response = self.citation_manager.add_citation_to_text(
                     supportive_policy_response, 'abortion_policy_api')
-                
+
                 formatted_response = self.citation_manager.format_response_with_citations(
                     cited_response)
                 message_id = self.add_to_history('bot', formatted_response['text'])
                 formatted_response['message_id'] = message_id
                 return formatted_response
-                
+
             # Handle emotional abortion questions with knowledge request but without location
             elif is_abortion_question and has_emotional_content and has_knowledge_question:
                 logger.info("Detected emotional abortion question with knowledge request but no location")
-                
+
                 # Get knowledge information about the procedure
                 knowledge_query = "How does an abortion procedure work? What methods are available?"
                 knowledge_response = self.baseline_model.process_question(
                     knowledge_query,
                     [],  # Empty history to avoid confusion
                     force_category='knowledge')
-                
+
                 supportive_knowledge_response = (
                     "I understand this is a stressful and emotional decision. It's completely normal to feel uncertain "
                     "or worried when making choices about your reproductive health. I'm here to provide support and "
@@ -210,21 +210,21 @@ class ConversationManager:
                     "information about abortion access in your area, could you let me know which state you're in? "
                     "Different states have different regulations, and I want to make sure I provide you with the most accurate information."
                 )
-                
+
                 # Add citation for this supportive response
                 cited_response = self.citation_manager.add_citation_to_text(
                     supportive_knowledge_response, 'planned_parenthood')
-                
+
                 formatted_response = self.citation_manager.format_response_with_citations(
                     cited_response)
                 message_id = self.add_to_history('bot', formatted_response['text'])
                 formatted_response['message_id'] = message_id
                 return formatted_response
-                
+
             # Handle emotional abortion-related questions without location or knowledge request
             elif is_abortion_question and has_emotional_content:
                 logger.info("Detected emotional abortion question, providing supportive response")
-                
+
                 supportive_response = (
                     "I understand this is a stressful and emotional decision. It's completely normal to feel uncertain "
                     "or worried when making choices about your reproductive health. I'm here to provide support and "
@@ -233,17 +233,17 @@ class ConversationManager:
                     "information about abortion access in your area, could you let me know which state you're in? "
                     "Different states have different regulations, and I want to make sure I provide you with the most accurate information."
                 )
-                
+
                 # Add citation for this supportive response
                 cited_response = self.citation_manager.add_citation_to_text(
                     supportive_response, 'planned_parenthood')
-                
+
                 formatted_response = self.citation_manager.format_response_with_citations(
                     cited_response)
                 message_id = self.add_to_history('bot', formatted_response['text'])
                 formatted_response['message_id'] = message_id
                 return formatted_response
-            
+
             # Handle standard abortion policy questions
             elif is_abortion_question:
                 logger.info(
@@ -307,7 +307,7 @@ class ConversationManager:
                                   message.lower().strip().startswith(f"{greeting} ") or
                                   message.lower().strip().endswith(f" {greeting}")
                                   for greeting in simple_greeting_indicators)
-            
+
             # If it's a very simple greeting, respond directly without using the full model pipeline
             if is_simple_greeting and len(message.split()) <= 4:
                 logger.info("Detected simple greeting, bypassing full model pipeline")
@@ -326,7 +326,7 @@ class ConversationManager:
                 message_id = self.add_to_history('bot', simple_response)
                 formatted_response['message_id'] = message_id
                 return formatted_response
-            
+
             # For non-greeting messages, continue with normal processing
             # Detect question type for adding appropriate friendly elements
             question_type = self.friendly_bot.detect_question_type(message)
@@ -335,7 +335,7 @@ class ConversationManager:
             # Get the category of the question from baseline model first
             category = self.baseline_model.categorize_question(
                 message, self.conversation_history)
-                
+
             logger.info(f"Message categorized as: {category}")
 
             # Get response from baseline model, passing conversation history and location context
@@ -732,3 +732,29 @@ class ConversationManager:
             list: List of conversation messages
         """
         return self.conversation_history
+
+    def detect_location_context(self, message: str) -> Optional[str]:
+        """
+        Detect if a location is mentioned in the message
+
+        Args:
+            message (str): The user message to analyze
+
+        Returns:
+            Optional[str]: The detected location or None if no location is found
+        """
+        message_lower = message.lower()
+
+        # Check for non-US countries first
+        non_us_countries = ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
+                          'china', 'japan', 'brazil', 'spain', 'italy', 'russia']
+        for country in non_us_countries:
+            if country in message_lower:
+                logger.info(f"Found non-US country mention in message: {country}")
+                return country
+
+        # Check for direct mentions of US states
+        for state, code in self.policy_api.STATE_CODES.items():
+            if state.lower() in message_lower or code.lower() in message_lower:
+                logger.info(f"Found direct state mention in message: {state.lower()}")
+                return state.lower()

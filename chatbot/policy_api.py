@@ -316,3 +316,69 @@ class PolicyAPI:
                 "(Source: Abortion Policy API)")
 
             return fallback
+
+    def get_state_code(self, location_context: str) -> Optional[str]:
+        """Converts a location string (state name or abbreviation) into a 2-letter state code."""
+        location_context = location_context.lower()
+        if location_context in self.STATE_NAMES_LOWER:
+            return self.STATE_NAMES_LOWER[location_context]
+        
+        # Check for known 2-letter abbreviations in the text
+        # (Only valid if they match an actual state code)
+        import re
+        pattern = r'\b([A-Za-z]{2})\b'
+        matches = re.findall(pattern, location_context)
+        for match in matches:
+            abbr = match.upper()
+            if abbr in self.STATE_NAMES:
+                return abbr
+        return None
+
+    def get_abortion_policy(self, location_context: str) -> str:
+        """
+        Get abortion policy information for a given location
+
+        Args:
+            location_context (str): The location to get policy for (state name or abbreviation)
+
+        Returns:
+            str: Policy information for the location
+        """
+        try:
+            # Check if this is a non-US country
+            if location_context.lower() in ['india', 'canada', 'uk', 'australia', 'mexico', 'france', 'germany', 
+                                         'china', 'japan', 'brazil', 'spain', 'italy', 'russia']:
+                logger.debug(f"Non-US country detected: {location_context}")
+                return (
+                    f"I'm sorry, but I only have detailed policy information for U.S. states right now. "
+                    f"I don't have specific data about abortion policies in {location_context}.")
+
+            # Convert to state code for API call
+            state_code = self.get_state_code(location_context)
+
+            # If no valid US state is found, we disclaim we only have US data
+            if not state_code:
+                logger.debug("No valid US state recognized -> returning fallback message.")
+                return (
+                    "I'm sorry, but I only have policy information for U.S. states right now. "
+                    "I don't have data about abortion policies in that location.")
+
+            # Fetch policy data
+            policy_data = self.get_policy_data(state_code)
+            if "error" in policy_data:
+                logger.warning(
+                    f"Error in policy data for state '{state_code}': {policy_data['error']}"
+                )
+                return (
+                    f"I'm sorry, I'm having trouble accessing policy information for {state_code}. "
+                    "Abortion policies vary by state and may change. "
+                    "You might consider contacting Planned Parenthood or a local provider for the most current details."
+                )
+
+            # Format policy data into a user-friendly response
+            return self._format_policy_response(location_context, state_code, policy_data)
+
+
+        except Exception as e:
+            logger.error(f"Error getting abortion policy: {e}", exc_info=True)
+            return "I'm sorry, something went wrong. Please try again later."
