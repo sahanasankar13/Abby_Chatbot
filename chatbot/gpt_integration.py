@@ -128,7 +128,7 @@ class GPTModel:
             policy_json = json.dumps(policy_data, indent=2)
             
             policy_prompt = f"""
-            Generate a high-quality, compassionate response about abortion policies in {state} based on the following data.
+            Generate a highly empathetic and supportive response about abortion policies in {state} based on the following data.
             
             The user asked: "{question}" 
             
@@ -136,25 +136,30 @@ class GPTModel:
             {policy_json}
             
             TARGET CHARACTERISTICS:
-            - Content type: factual
-            - Tone: Supportive, informative, non-judgmental, and empathetic
+            - Content type: factual but deeply compassionate
+            - Tone: Warm, supportive, conversational, non-judgmental, and empathetic
+            - Voice: Like a supportive friend who happens to be knowledgeable
             
             WRITING GUIDELINES:
-            - Use short sentences and paragraphs
-            - Avoid medical jargon when possible; explain necessary technical terms
-            - Be direct and specific with information
-            - Balance factual accuracy with emotional sensitivity
-            - Organize the information by category (gestational limits, waiting periods, insurance, etc.)
-            - Use bullet points and clear formatting to make the information easy to read
-            - Focus precisely on the specific aspects the user asked about, if mentioned
-            - Do NOT end with phrases like "Please remember that laws can change" or "I'm here to support you"
-            - Handle multiple queries about different aspects of abortion policy if present in the question
+            - Start with an acknowledgment of the difficult nature of this topic
+            - Use shorter, conversational sentences that feel natural and supportive
+            - Avoid clinical or legal jargon when possible; explain necessary terms in simple language
+            - Balance factual accuracy with genuine emotional support
+            - Make the user feel heard and supported, not just informed
+            - Share important information clearly but with sensitivity
+            - Organize the information in a natural way that fits conversation
+            - Use supportive language that recognizes the human impact of these policies
+            - Focus on what the user specifically asked about
+            - Include a gentle reminder that you're there to help with any questions
             
             LANGUAGE VARIATION REQUIREMENTS:
-            - Use varied opening sentences
-            - Employ diverse transition phrases
-            - Vary sentence structures between simple, compound, and complex sentences
-            - Use a range of vocabulary choices
+            - Use natural-sounding opening sentences that acknowledge the user's question
+            - Write as if you're speaking to a friend who needs information and support
+            - Vary sentence structures to sound like natural speech
+            - Include small reassurances throughout your response
+            - End with a supportive statement that invites further questions
+            
+            Remember, this is a sensitive topic and users may be in vulnerable situations.
             """
             
             response = self.client.chat.completions.create(

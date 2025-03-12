@@ -65,9 +65,9 @@ document.addEventListener('DOMContentLoaded', function() {
             messageElement.innerHTML = message;
 
             messageContainer.appendChild(messageElement);
-            
+
             // Skip sources completely for short conversational responses
-            if (message.length < 100 || !citations || citations.length === 0) {
+            if ((message.length < 100 && !message.includes("abortion")) || !citations || citations.length === 0) {
                 chatMessages.appendChild(messageContainer);
                 animateMessage(messageElement);
                 return;
@@ -80,14 +80,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const validSources = ["Abortion Policy API", "Planned Parenthood", "Guttmacher Institute", 
                                      "CDC", "WHO", "American College", "Centers for Disease Control", 
                                      "World Health Organization"];
-                
+
                 // Only show citations if we have valid external sources (not just AI-generated)
                 const hasApiSources = citation_objects.some(co => {
                     if (!co || !co.source) return false;
                     return validSources.some(validSource => co.source.includes(validSource));
                 });
 
-                if (hasApiSources) {
+                // Always show sources for policy-related responses
+                if (hasApiSources || message.includes("policy") || message.includes("state") || message.includes("law") || message.includes("abortion")) {
                     const citationsContainer = document.createElement('div');
                     citationsContainer.className = 'citations-container';
 
