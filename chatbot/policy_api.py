@@ -141,8 +141,11 @@ class PolicyAPI:
                 "minors": "minors"
             }
             
-            # Ensure state code is uppercase
-            state_code = state_code.upper()
+            # Convert state code to proper name format (the API requires proper capitalized names like "Texas")
+            state_name = self.STATE_NAMES.get(state_code.upper(), None)
+            if not state_name:
+                logger.error(f"Invalid state code provided: {state_code}")
+                return {"error": f"Invalid state code: {state_code}", "state_attempted": state_code}
             
             # Use 'token' in headers as discovered in testing
             headers = {"token": self.api_key}
@@ -153,13 +156,14 @@ class PolicyAPI:
             
             # Combined policy data object
             policy_data = {
-                "state_code": state_code,
+                "state_code": state_code.upper(),
+                "state_name": state_name,
                 "endpoints": {}
             }
             
             # Collect data from all endpoints
             for key, endpoint in endpoints.items():
-                url = f"{self.base_url}/{endpoint}/states/{state_code}"
+                url = f"{self.base_url}/{endpoint}/states/{state_name}"
                 logger.debug(f"Making request to endpoint: {url}")
                 
                 # Add slight delay to avoid rate limiting
