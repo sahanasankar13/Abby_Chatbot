@@ -32,6 +32,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show typing indicator
         showTypingIndicator();
+        
+        // Send message to server
+        fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide typing indicator
+            hideTypingIndicator();
+            
+            // Add bot response
+            if (data.error) {
+                addBotMessage("I'm sorry, something went wrong. Please try again later.");
+                console.error(data.error);
+            } else {
+                addBotMessage(formatResponseWithMarkdown(data.response));
+            }
+        })
+        .catch(error => {
+            // Hide typing indicator
+            hideTypingIndicator();
+            
+            // Show error message
+            addBotMessage("I'm sorry, I couldn't connect to the server. Please try again later.");
+            console.error('Error:', error);
+        });
 
         // Send message to server
         fetch('/api/chat', {
@@ -106,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
         text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
 
         // Handle paragraphs
-        text = text.replace(^(.+)$/gm, function(match, content) {
+        text = text.replace(/^(.+)$/gm, function(match, content) {
             if (content.startsWith('<h') || content.startsWith('<ul') || content.startsWith('<li') || !content.trim()) {
                 return content;
             }
@@ -117,6 +147,71 @@ document.addEventListener('DOMContentLoaded', function() {
         text = text.replace(/\n\n+/g, '<br>');
 
         return text;
+    }
+    
+    // Function to add user message to chat
+    function addUserMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message user-message';
+        messageElement.textContent = message;
+        
+        chatMessages.appendChild(messageElement);
+        scrollToBottom();
+    }
+    
+    // Function to show typing indicator
+    function showTypingIndicator() {
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'typing-indicator';
+        typingIndicator.id = 'typingIndicator';
+        
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('span');
+            typingIndicator.appendChild(dot);
+        }
+        
+        chatMessages.appendChild(typingIndicator);
+        scrollToBottom();
+    }
+    
+    // Function to hide typing indicator
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+    
+    // Function to scroll to bottom of chat
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Theme toggle functionality
+    const themeToggle = document.querySelector('.theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            
+            // Update icon
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('fa-moon')) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+            }
+            
+            // Save preference
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+        });
+        
+        // Check for saved theme preference
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (savedDarkMode) {
+            document.body.classList.add('dark-mode');
+            themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+        }
     }
 
     // Function to show typing indicator

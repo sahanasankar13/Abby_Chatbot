@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+app.config['JSON_AS_ASCII'] = False  # Ensure proper UTF-8 response
 
 # Initialize conversation manager
 conversation_manager = ConversationManager()
