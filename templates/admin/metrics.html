@@ -1,5 +1,59 @@
 {% extends "layout.html" %}
 
+{% block head %}
+<style>
+    /* Dark mode styles for metrics dashboard */
+    body {
+        background-color: #1d1d1f !important;
+        color: #f5f5f7 !important;
+    }
+    
+    .card {
+        background-color: #2c2c2e !important;
+        border-color: #424245 !important;
+    }
+    
+    .card-header {
+        background-color: #323236 !important;
+        border-color: #424245 !important;
+    }
+    
+    .list-group-item {
+        background-color: #2c2c2e !important;
+        border-color: #424245 !important;
+        color: #f5f5f7 !important;
+    }
+    
+    .form-control {
+        background-color: #323236 !important;
+        border-color: #424245 !important;
+        color: #f5f5f7 !important;
+    }
+    
+    .form-label {
+        color: #f5f5f7 !important;
+    }
+    
+    .card-title, .small {
+        color: #f5f5f7 !important;
+    }
+    
+    .text-muted {
+        color: #a0a0a5 !important;
+    }
+    
+    .alert-info {
+        background-color: #1a3b57 !important;
+        border-color: #2a5885 !important;
+        color: #f5f5f7 !important;
+    }
+    
+    .badge.bg-secondary {
+        background-color: #4e4e52 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row py-3">
@@ -199,12 +253,12 @@
                     {{ metrics.avg_clarity }},
                     {{ metrics.avg_empathy }}
                 ],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                pointBackgroundColor: 'rgba(75, 192, 192, 1)',
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+                pointHoverBorderColor: 'rgba(75, 192, 192, 1)'
             }]
         },
         options: {
@@ -213,7 +267,27 @@
                     beginAtZero: true,
                     max: 10,
                     ticks: {
-                        stepSize: 2
+                        stepSize: 2,
+                        color: '#f5f5f7'
+                    },
+                    angleLines: {
+                        color: 'rgba(255, 255, 255, 0.2)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.2)'
+                    },
+                    pointLabels: {
+                        color: '#f5f5f7',
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#f5f5f7'
                     }
                 }
             },
@@ -251,7 +325,35 @@
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 10
+                    max: 10,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#f5f5f7'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#f5f5f7'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#f5f5f7'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleColor: '#f5f5f7',
+                    bodyColor: '#f5f5f7',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1
                 }
             }
         }

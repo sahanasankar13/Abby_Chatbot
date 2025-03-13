@@ -336,6 +336,13 @@ body {
   background-color: rgba(29, 29, 31, 0.8);
 }
 
+/* Ensure input field remains light-colored and readable in both light and dark mode */
+[data-bs-theme="dark"] .form-control {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border-color: #555;
+}
+
 /* Feedback styles */
 .feedback-container {
   display: flex;
@@ -632,12 +639,18 @@ body {
   padding: 0.8rem 1.5rem;
   font-size: 1rem;
   border: 1px solid var(--apple-border);
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
   color: #333;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   transition: all 0.3s ease;
   box-shadow: 0 1px 4px var(--apple-shadow);
+  font-weight: 500;
+}
+
+.form-control::placeholder {
+  color: #666;
+  opacity: 1;
   font-weight: 500;
 }
 
