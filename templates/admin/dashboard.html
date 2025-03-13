@@ -549,6 +549,70 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Category-Based Performance -->
+                                <div class="col-md-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Inference by Category (ms)</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-group list-group-flush">
+                                                {% for category, time in metrics.performance.inference_time_by_category|default({}).items() %}
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    {{ category|replace('_', ' ')|capitalize }}
+                                                    <span class="badge bg-primary rounded-pill">{{ time|round(1) }} ms</span>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Topic-Specific Metrics and ROUGE Metrics -->
+                            <div class="row">
+                                <!-- Topic-Based Performance -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Inference by Topic (ms)</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Reproductive Health Topic</th>
+                                                            <th class="text-end">Time (ms)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for topic, time in metrics.performance.inference_time_by_topic|default({}).items() %}
+                                                        <tr>
+                                                            <td>{{ topic|replace('_', ' ')|capitalize }}</td>
+                                                            <td class="text-end">{{ time|round(1) }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Real-time ROUGE Metrics -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Real-time ROUGE Metrics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="rougeChart" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                                
                                 <!-- Memory Usage -->
                                 <div class="col-md-4 mb-4">
                                     <div class="card h-100">
@@ -724,6 +788,57 @@
         }
     });
 
+    // ROUGE Metrics Bar Chart
+    const rougeCtx = document.getElementById('rougeChart').getContext('2d');
+    const rougeChart = new Chart(rougeCtx, {
+        type: 'bar',
+        data: {
+            labels: ['ROUGE-1', 'ROUGE-2', 'ROUGE-L'],
+            datasets: [{
+                label: 'Current Values',
+                data: [
+                    {{ metrics.rouge_metrics.rouge1|default(0)|round(3) }},
+                    {{ metrics.rouge_metrics.rouge2|default(0)|round(3) }},
+                    {{ metrics.rouge_metrics.rougeL|default(0)|round(3) }}
+                ],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(153, 102, 255, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1,
+                    title: {
+                        display: true,
+                        text: 'Score (0-1)'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(4);
+                        }
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
     // Performance History Line Chart
     const perfCtx = document.getElementById('performanceChart').getContext('2d');
     const perfChart = new Chart(perfCtx, {
