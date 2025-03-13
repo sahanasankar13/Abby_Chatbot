@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
+    const suggestedPrompts = document.getElementById('suggestedPrompts');
+    const promptButtons = document.querySelectorAll('.prompt-btn');
 
     // Enable send button when there's text
     userInput.addEventListener('input', function() {
@@ -18,6 +20,26 @@ document.addEventListener('DOMContentLoaded', function() {
             userInput.value = '';
             sendButton.disabled = true;
         }
+    });
+    
+    // Handle suggestion prompt buttons
+    promptButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const promptText = this.getAttribute('data-prompt');
+            userInput.value = promptText;
+            sendButton.disabled = false;
+            // Focus on input so user can modify if desired
+            userInput.focus();
+            
+            // Auto-send after a short delay if user doesn't modify
+            setTimeout(() => {
+                if (userInput.value === promptText) {
+                    sendMessage(promptText);
+                    userInput.value = '';
+                    sendButton.disabled = true;
+                }
+            }, 800);
+        });
     });
 
     // Initialize chat with a welcome message (without feedback options)

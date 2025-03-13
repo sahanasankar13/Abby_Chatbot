@@ -261,6 +261,7 @@ class PolicyAPI:
         """
         Format policy data into a user-friendly, conversational response.
         This method sanitizes incorrect data and formats the response in a clear, accurate way.
+        Also adds empathetic elements based on state policy restrictiveness.
         """
         # import GPTModel dynamically to avoid circular imports
         from chatbot.gpt_integration import GPTModel
@@ -270,7 +271,31 @@ class PolicyAPI:
             self.gpt_model = GPTModel()
 
         state_name = policy_data["state_name"]
-
+        
+        # Determine state restrictiveness to provide appropriate empathetic response
+        restrictiveness_level = self._get_state_restrictiveness(state_code, policy_data)
+        
+        # Prepare empathetic response based on restrictiveness level
+        empathetic_prefix = ""
+        if restrictiveness_level == "restrictive":
+            empathetic_prefix = (
+                f"I understand this may be difficult to hear, but {state_name} has restrictive abortion laws. "
+                f"I know this can be stressful and concerning if you're seeking care. "
+                f"Here's what you should know: "
+            )
+        elif restrictiveness_level == "moderate":
+            empathetic_prefix = (
+                f"I understand you may be concerned about access to care in {state_name}. "
+                f"While there are some restrictions in place, there are still options available. "
+                f"Here's what you should know: "
+            )
+        elif restrictiveness_level == "supportive":
+            empathetic_prefix = (
+                f"I want to let you know that {state_name} generally has supportive policies for reproductive healthcare access. "
+                f"This means you likely have several options available to you. "
+                f"Here's what you should know: "
+            )
+        
         # Sanitize policy data to fix known issues
         if "endpoints" in policy_data and "gestational_limits" in policy_data[
                 "endpoints"]:
@@ -325,6 +350,25 @@ class PolicyAPI:
                         response_text = response_text.replace(
                             f"{num} weeks", "no specific gestational limit")
 
+            # Add the empathetic prefix to the response if available
+            if empathetic_prefix:
+                # Log what we're doing
+                logger.info(f"Adding empathetic prefix for {state_name} (level: {restrictiveness_level})")
+                
+                # If the response already starts with "Yes, abortion is available" or "No, abortion is not available",
+                # we need to make sure not to repeat that information
+                if response_text.startswith("Yes, abortion is available") or response_text.startswith("No, abortion is not available"):
+                    # Extract the first sentence
+                    first_sentence_end = response_text.find(".")
+                    if first_sentence_end > 0:
+                        first_sentence = response_text[:first_sentence_end + 1]
+                        rest_of_response = response_text[first_sentence_end + 1:].strip()
+                        # Combine with empathetic prefix
+                        response_text = f"{empathetic_prefix.strip()} {first_sentence} {rest_of_response}"
+                else:
+                    # Just prepend the empathetic prefix
+                    response_text = f"{empathetic_prefix}{response_text}"
+
             return response_text
 
         except Exception as e:
@@ -338,6 +382,92 @@ class PolicyAPI:
 
             return fallback
 
+    def _get_state_restrictiveness(self, state_code: str, policy_data: Dict[str, Any]) -> str:
+        """
+        Determine the restrictiveness level of a state's abortion policies.
+        
+        Args:
+            state_code (str): The two-letter state code
+            policy_data (Dict[str, Any]): Policy data from the API
+            
+        Returns:
+            str: Restrictiveness level ('restrictive', 'moderate', 'supportive', or 'unknown')
+        """
+        try:
+            # Classification is based on gestational limits and other restrictions
+            
+            # Default to unknown if we lack data
+            if not policy_data or "endpoints" not in policy_data:
+                return "unknown"
+                
+            # Check for banned states
+            if "gestational_limits" in policy_data["endpoints"]:
+                gestational_data = policy_data["endpoints"]["gestational_limits"]
+                
+                # Completely banned states (or effectively banned with very early limits)
+                if isinstance(gestational_data, dict):
+                    if "banned" in gestational_data and gestational_data.get("banned", False):
+                        return "restrictive"
+                    # States with 6-week bans (or earlier) are effectively highly restrictive
+                    if "banned_after_weeks_since_LMP" in gestational_data:
+                        limit = gestational_data["banned_after_weeks_since_LMP"]
+                        if isinstance(limit, (int, float)) and limit <= 6:
+                            return "restrictive"
+                        # States with limits between 7-15 weeks are moderately restrictive
+                        elif isinstance(limit, (int, float)) and limit <= 15:
+                            return "moderate"
+            
+            # If we get here and haven't returned, check other indicators
+            restrictive_indicators = 0
+            supportive_indicators = 0
+            
+            # Check waiting periods
+            if "waiting_periods" in policy_data["endpoints"]:
+                waiting = policy_data["endpoints"]["waiting_periods"]
+                if isinstance(waiting, dict) and waiting.get("hours", 0) >= 24:
+                    restrictive_indicators += 1
+            
+            # Check for insurance coverage
+            if "insurance_coverage" in policy_data["endpoints"]:
+                insurance = policy_data["endpoints"]["insurance_coverage"]
+                if isinstance(insurance, dict):
+                    if insurance.get("private_coverage_prohibited", False):
+                        restrictive_indicators += 1
+                    if insurance.get("exchange_coverage_prohibited", False):
+                        restrictive_indicators += 1
+                    if insurance.get("medicaid_coverage_provider", "") == "yes":
+                        supportive_indicators += 1
+            
+            # Check for parental involvement
+            if "minors" in policy_data["endpoints"]:
+                minors = policy_data["endpoints"]["minors"]
+                if isinstance(minors, dict) and minors.get("parental_consent_required", False):
+                    restrictive_indicators += 1
+            
+            # Determine level based on indicators
+            if restrictive_indicators >= 2:
+                return "restrictive"
+            elif restrictive_indicators > supportive_indicators:
+                return "moderate"
+            elif supportive_indicators > 0:
+                return "supportive"
+            
+            # If we still can't determine, check gestational limits again for later limits
+            if "gestational_limits" in policy_data["endpoints"]:
+                gestational_data = policy_data["endpoints"]["gestational_limits"]
+                if isinstance(gestational_data, dict) and "banned_after_weeks_since_LMP" in gestational_data:
+                    limit = gestational_data["banned_after_weeks_since_LMP"]
+                    # If limit is 20+ weeks or no specific limit, state is likely supportive
+                    if limit == "no specific limit" or limit == 99 or (isinstance(limit, (int, float)) and limit >= 20):
+                        return "supportive"
+            
+            # If we can't determine clearly, default to moderate
+            return "moderate"
+            
+        except Exception as e:
+            logger.error(f"Error determining state restrictiveness: {str(e)}", exc_info=True)
+            return "unknown"
+    
     def get_state_code(self, location_context: str) -> Optional[str]:
         """Converts a location string (state name or abbreviation) into a 2-letter state code."""
         location_context = location_context.lower()
