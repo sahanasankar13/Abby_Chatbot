@@ -1072,5 +1072,20 @@
       "positive_percentage": 0,
       "negative_percentage": 0
     }
+  },
+  {
+    "timestamp": "2025-03-13T02:57:34.338016",
+    "duration_seconds": 300.0003573894501,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
   }
 ]

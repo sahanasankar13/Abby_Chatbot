@@ -332,20 +332,43 @@ class ConversationManager:
 
             # Check if this is a simple greeting that should have a brief response
             simple_greeting_indicators = ["hi", "hello", "hey", "good morning", "good afternoon", 
-                                        "good evening", "how are you", "what's up", "greetings"]
+                                        "good evening", "what's up", "greetings"]
+            how_are_you_indicators = ["how are you", "how's it going", "how are things", "how do you feel"]
+            
             is_simple_greeting = any(message.lower().strip() == greeting or 
                                   message.lower().strip().startswith(f"{greeting} ") or
                                   message.lower().strip().endswith(f" {greeting}")
                                   for greeting in simple_greeting_indicators)
+                                  
+            is_how_are_you = any(indicator in message.lower() for indicator in how_are_you_indicators)
 
+            # If someone asks "how are you" type questions, provide a more personal response without feedback options
+            if is_how_are_you and len(message.split()) <= 7:
+                logger.info("Detected 'how are you' question, providing personal response")
+                personal_responses = [
+                    "I'm just a digital assistant, but I'm ready to help you with any reproductive health questions you might have. What can I assist you with today?",
+                    "I don't have feelings, but I'm here and ready to help you with accurate information about reproductive health. What would you like to know?",
+                    "I'm here and ready to assist you with reproductive health information. How can I help you today?",
+                    "I'm functioning well and ready to provide you with helpful information. What reproductive health topics would you like to discuss?"
+                ]
+                personal_response = random.choice(personal_responses)
+                formatted_response = {
+                    "text": personal_response,
+                    "citations": [],
+                    "citation_objects": []
+                }
+                message_id = self.add_to_history('bot', personal_response)
+                formatted_response['message_id'] = message_id
+                return formatted_response
+            
             # If it's a very simple greeting, respond directly without using the full model pipeline
-            if is_simple_greeting and len(message.split()) <= 4:
+            elif is_simple_greeting and len(message.split()) <= 4:
                 logger.info("Detected simple greeting, bypassing full model pipeline")
                 greeting_responses = [
-                    "Hello! How can I help you today?",
-                    "Hi there! How can I assist you?",
-                    "Hello! I'm here if you have any questions about reproductive health.",
-                    "Hi! What can I help you with today?"
+                    "Hello! I'm Abby, here to provide information about reproductive healthcare. How can I help you today?",
+                    "Hi there! I'm Abby, and I'm here to answer your questions about reproductive health. What would you like to know?",
+                    "Hello! I'm Abby, your reproductive health information guide. How can I assist you?",
+                    "Hi! I'm Abby. I can provide you with information about reproductive health topics. What questions do you have?"
                 ]
                 simple_response = random.choice(greeting_responses)
                 formatted_response = {
