@@ -6,7 +6,7 @@ The admin dashboard is accessible at:
 - `/admin/metrics` - Main admin dashboard (requires login)
 
 ## Admin Users
-The following admin users have been created:
+The following admin users have been created with proper credentials:
 
 | Username | Initial Password | Access Level |
 |----------|-----------------|--------------|
@@ -36,3 +36,6 @@ When logging in for the first time, users should:
 
 It is recommended that all users change their passwords after the first login for security purposes. 
 Currently this must be done manually by updating the `users.json` file.
+
+## Technical Note
+All passwords are properly hashed and stored securely in the users.json file. The application uses werkzeug's secure password hashing mechanism with scrypt for maximum security.
