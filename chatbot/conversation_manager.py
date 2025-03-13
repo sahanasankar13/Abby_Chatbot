@@ -271,7 +271,7 @@ class ConversationManager:
                 return formatted_response
 
             # Handle standard abortion policy questions
-            elif is_abortion_question:
+            elif is_abortion_access_question:
                 logger.info(
                     "Detected abortion request, treating as policy question with state context"
                 )
