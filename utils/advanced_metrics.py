@@ -86,13 +86,15 @@ class AdvancedMetricsCalculator:
             return []
     
     def calculate_text_similarity_metrics(self, references: List[str], 
-                                         predictions: List[str]) -> Dict[str, Any]:
+                                         predictions: List[str],
+                                         record_realtime_metrics: bool = True) -> Dict[str, Any]:
         """
         Calculate text similarity metrics (BLEU, ROUGE, BERTScore)
         
         Args:
             references (List[str]): List of reference/ground truth texts
             predictions (List[str]): List of generated/predicted texts
+            record_realtime_metrics (bool): Whether to record metrics for real-time tracking
             
         Returns:
             Dict[str, Any]: Dictionary with calculated metrics
@@ -128,6 +130,20 @@ class AdvancedMetricsCalculator:
                 scores = self.rouge_scorer.score(ref, pred)
                 for key in rouge_scores:
                     rouge_scores[key].append(scores[key].fmeasure)
+                
+                # Record real-time metrics for individual item evaluation
+                if record_realtime_metrics:
+                    try:
+                        from utils.metrics import record_rouge_metrics
+                        record_rouge_metrics(
+                            rouge1=scores['rouge1'].fmeasure,
+                            rouge2=scores['rouge2'].fmeasure,
+                            rougeL=scores['rougeL'].fmeasure
+                        )
+                    except ImportError:
+                        logger.warning("Failed to import metrics module for real-time tracking")
+                    except Exception as e:
+                        logger.warning(f"Failed to record real-time ROUGE metrics: {str(e)}")
             
             metrics['rouge'] = {
                 'rouge1': sum(rouge_scores['rouge1']) / len(rouge_scores['rouge1']) if rouge_scores['rouge1'] else 0,
@@ -151,6 +167,46 @@ class AdvancedMetricsCalculator:
             metrics['bert_score'] = {'precision': 0.0, 'recall': 0.0, 'f1': 0.0, 'error': str(e)}
         
         return metrics
+        
+    def calculate_single_rouge_score(self, reference: str, prediction: str, 
+                                    record_realtime: bool = True) -> Dict[str, float]:
+        """
+        Calculate ROUGE scores for a single text pair and optionally record for real-time tracking
+        
+        Args:
+            reference (str): Reference/ground truth text
+            prediction (str): Generated/predicted text
+            record_realtime (bool): Whether to record for real-time tracking
+            
+        Returns:
+            Dict[str, float]: Dictionary with ROUGE scores
+        """
+        try:
+            scores = self.rouge_scorer.score(reference, prediction)
+            result = {
+                'rouge1': scores['rouge1'].fmeasure,
+                'rouge2': scores['rouge2'].fmeasure,
+                'rougeL': scores['rougeL'].fmeasure
+            }
+            
+            # Record metrics for real-time tracking
+            if record_realtime:
+                try:
+                    from utils.metrics import record_rouge_metrics
+                    record_rouge_metrics(
+                        rouge1=result['rouge1'],
+                        rouge2=result['rouge2'],
+                        rougeL=result['rougeL']
+                    )
+                except ImportError:
+                    logger.warning("Failed to import metrics module for real-time tracking")
+                except Exception as e:
+                    logger.warning(f"Failed to record real-time ROUGE metrics: {str(e)}")
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error calculating ROUGE scores: {str(e)}")
+            return {'rouge1': 0.0, 'rouge2': 0.0, 'rougeL': 0.0, 'error': str(e)}
     
     def calculate_retrieval_metrics(self, retrieved_docs: List[List[Dict]], 
                                    relevant_docs: List[List[Dict]],

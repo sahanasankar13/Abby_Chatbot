@@ -172,23 +172,51 @@ class BaselineModel:
         Returns:
             str: The model's response
         """
+        # Start timing the inference
+        import time
+        from utils.metrics import record_time, record_category_time
+        
+        start_time = time.time()
+        
         try:
             # Check if this is a multi-query question
-            if " and " in question.lower() or ";" in question:
-                return self._handle_multi_query(question, conversation_history)
-
-            # Single query flow
-            # Use forced category if provided, otherwise categorize normally
-            if force_category:
-                category = force_category
-                logger.debug(f"Using forced category: {category}")
+            is_multi_query = " and " in question.lower() or ";" in question
+            if is_multi_query:
+                category = "multi_query"
+                logger.debug("Detected multi-query question")
+                response = self._handle_multi_query(question, conversation_history)
             else:
-                # Categorize the question (passing conversation history for context awareness)
-                category = self.categorize_question(question, conversation_history)
-                logger.debug(f"Question category: {category}")
+                # Single query flow
+                # Use forced category if provided, otherwise categorize normally
+                if force_category:
+                    category = force_category
+                    logger.debug(f"Using forced category: {category}")
+                else:
+                    # Categorize the question (passing conversation history for context awareness)
+                    category = self.categorize_question(question, conversation_history)
+                    logger.debug(f"Question category: {category}")
 
             # Process according to category
-            return self._process_single_query(question, category, conversation_history, location_context)
+            response = self._process_single_query(question, category, conversation_history, location_context)
+
+            # Record inference time with category
+            elapsed_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+            
+            try:
+                # Record overall inference time
+                record_time("inference_time", elapsed_time)
+                
+                # Record category-specific inference time
+                record_category_time("inference_time", category, elapsed_time)
+                
+                # Also identify reproductive health topic for more detailed tracking
+                topic = self._get_reproductive_health_topic(question)
+                if topic:
+                    record_category_time("inference_time_by_topic", topic, elapsed_time)
+            except Exception as e:
+                logger.warning(f"Failed to record inference time metrics: {str(e)}")
+                
+            return response
 
         except Exception as e:
             logger.error(f"Error processing question: {str(e)}", exc_info=True)
@@ -264,6 +292,26 @@ class BaselineModel:
                 combined_response, 
                 combined_sources
             )
+
+            # Record multi-query-specific metrics
+            try:
+                from utils.metrics import record_category_time, increment_counter
+                increment_counter("multi_query_responses")
+                
+                # Record the number of parts in the multi-query
+                increment_counter(f"multi_query_parts_{len(parts)}")
+                
+                # Record the reproductive health topics covered in this multi-query
+                topics = set()
+                for part in parts:
+                    topic = self._get_reproductive_health_topic(part)
+                    if topic:
+                        topics.add(topic)
+                        
+                for topic in topics:
+                    increment_counter(f"multi_query_topic_{topic}")
+            except Exception as e:
+                logger.warning(f"Failed to record multi-query metrics: {str(e)}")
 
             return final_response
 
