@@ -844,7 +844,13 @@ class BertRAGModel:
             "food": "I'm trained to provide information about reproductive health, not food or nutrition in general. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
             "sports": "I'm programmed to assist with reproductive health questions, not sports information. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
             "entertainment": "I'm designed to provide information about reproductive health, not entertainment. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those instead.",
+            "emotional_expression": "I understand you're expressing a personal feeling. While I'm here to listen, I'm specifically designed to provide information about reproductive health topics. If you have any questions about contraception, pregnancy, or sexual health, I'd be happy to help with those.",
             "general": "I'm Abby, a chatbot specifically designed to provide information about reproductive health. I don't have information on this topic. If you have any questions about contraception, pregnancy, abortion access, or sexual health, I'd be happy to help with those instead."
         }
 
+        # Check if this is emotional expression - if so, we'll return the response WITHOUT citation
+        if primary_topic == "emotional_expression":
+            # Return without citation by setting a special flag that the caller should check
+            return topic_responses["emotional_expression"] + "NO_CITATION"
+        
         return topic_responses.get(primary_topic, topic_responses["general"])
