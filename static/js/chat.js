@@ -184,18 +184,38 @@ document.addEventListener('DOMContentLoaded', function() {
         typingIndicator.className = 'typing-indicator';
         typingIndicator.id = 'typingIndicator';
         
-        for (let i = 0; i < 3; i++) {
-            const dot = document.createElement('span');
-            typingIndicator.appendChild(dot);
-        }
+        // Create the typing text span (will be animated)
+        const typingText = document.createElement('span');
+        typingText.className = 'typing-text';
+        typingText.textContent = 'Abby is typing';
+        
+        // Create the blinking cursor element
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        
+        // Add elements to the typing indicator
+        typingIndicator.appendChild(typingText);
+        typingIndicator.appendChild(cursor);
         
         chatMessages.appendChild(typingIndicator);
         scrollToBottom();
+        
+        // Start animation for a more realistic typing effect
+        let dotsCount = 0;
+        typingIndicator.typingInterval = setInterval(() => {
+            dotsCount = (dotsCount % 3) + 1;
+            const dots = '.'.repeat(dotsCount);
+            typingText.textContent = `Abby is typing${dots}`;
+        }, 500);
     }
 
     function removeTypingIndicator() {
         const typingIndicator = document.getElementById('typingIndicator');
         if (typingIndicator) {
+            // Clear the interval if it exists
+            if (typingIndicator.typingInterval) {
+                clearInterval(typingIndicator.typingInterval);
+            }
             typingIndicator.remove();
         }
     }

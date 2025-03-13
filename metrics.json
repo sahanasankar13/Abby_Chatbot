@@ -1342,5 +1342,71 @@
       "positive_percentage": 0,
       "negative_percentage": 0
     }
+  },
+  {
+    "timestamp": "2025-03-13T04:57:41.996631",
+    "duration_seconds": 300.0003077983856,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T04:57:59.291386",
+    "duration_seconds": 300.0030286312103,
+    "counters": {
+      "questions_knowledge": 2,
+      "evaluations_total": 4,
+      "evaluations_improved": 4,
+      "quality_score_low": 3,
+      "questions_policy": 2,
+      "quality_score_medium": 1
+    },
+    "timers": {
+      "question_classification": {
+        "count": 4,
+        "total": 2.730267286300659,
+        "average": 0.6825668215751648,
+        "min": 0.5888693332672119,
+        "max": 0.8847651481628418
+      },
+      "response_time_knowledge": {
+        "count": 2,
+        "total": 58.727052450180054,
+        "average": 29.363526225090027,
+        "min": 17.38084125518799,
+        "max": 41.346211194992065
+      },
+      "response_time_policy": {
+        "count": 2,
+        "total": 47.19452738761902,
+        "average": 23.59726369380951,
+        "min": 18.692519187927246,
+        "max": 28.502008199691772
+      }
+    },
+    "api_calls": {
+      "gpt-3.5-turbo-classification": 4,
+      "openai_evaluation": 4,
+      "openai": 2
+    },
+    "api_tokens": {
+      "openai_evaluation": 1164,
+      "openai": 422
+    },
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
   }
 ]
