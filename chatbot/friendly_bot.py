@@ -27,6 +27,31 @@ class FriendlyBot:
             "Thank you for trusting me with your question. I'll do my best to provide helpful information. "
         ]
         
+        # Specialized emotional support responses for difficult feelings
+        self.emotional_support_responses = {
+            "guilt": [
+                "Many people experience feelings of guilt, and those feelings are valid. It's important to be gentle with yourself during this time. ",
+                "Feeling guilty doesn't mean you did something wrong. Your feelings matter, and processing them is part of your journey. ",
+                "Guilt is a common emotion after making difficult decisions about reproductive health. Your feelings are valid, and it's okay to seek support. "
+            ],
+            "regret": [
+                "It's normal to have complex feelings, including regret, about reproductive health decisions. Being kind to yourself is important. ",
+                "Many people experience regret or uncertainty after making difficult health decisions. These feelings are valid parts of your experience. "
+            ],
+            "fear": [
+                "It's okay to feel scared. Reproductive health decisions can bring up many emotions, and fear is a natural response. ",
+                "Your concerns and fears are valid. Many people experience similar feelings when facing reproductive health decisions. "
+            ],
+            "shame": [
+                "Many people experience feelings of shame around reproductive health decisions, but you deserve compassion, not judgment. ",
+                "Shame can be a heavy burden to carry. Remember that your worth isn't defined by your reproductive choices. "
+            ],
+            "sadness": [
+                "It's okay to feel sad. Taking time to acknowledge and process your feelings is an important part of healing. ",
+                "Sadness is a natural response to difficult experiences. Be patient with yourself as you process these emotions. "
+            ]
+        }
+        
         self.reassurance_phrases = [
             "I hope that helps! Let me know if you have any other questions. ",
             "Please feel free to ask if you need any clarification. ",
@@ -51,13 +76,14 @@ class FriendlyBot:
             "I'd like to provide some information that might help: "
         ]
     
-    def add_friendly_elements(self, message, question_type):
+    def add_friendly_elements(self, message, question_type, user_question=None):
         """
         Add friendly, empathetic elements to the response and improve structure
         
         Args:
             message (str): The original response message
             question_type (str): Type of question ('personal', 'informational', 'policy')
+            user_question (str, optional): The user's original question for emotional analysis
         
         Returns:
             str: Enhanced friendly response with improved structure
@@ -83,9 +109,17 @@ class FriendlyBot:
                 intro = random.choice(self.educational_intros)
                 formatted_message = f"{intro}{formatted_message}"
             
-            # Start with empathy for personal questions
+            # Start with empathy for personal questions 
             if question_type == 'personal':
-                prefix = random.choice(self.empathetic_phrases)
+                # Use emotion-specific support if available
+                if user_question:
+                    emotion_type, emotion_support = self.detect_emotional_content(user_question)
+                    if emotion_support:
+                        prefix = emotion_support
+                    else:
+                        prefix = random.choice(self.empathetic_phrases)
+                else:
+                    prefix = random.choice(self.empathetic_phrases)
             # Use caring phrases for informational questions
             elif question_type == 'informational':
                 prefix = random.choice(self.caring_phrases) if random.random() < 0.5 else ""
@@ -104,6 +138,36 @@ class FriendlyBot:
         except Exception as e:
             logger.error(f"Error adding friendly elements: {str(e)}", exc_info=True)
             return message  # Return original message if enhancement fails
+            
+    def detect_emotional_content(self, question):
+        """
+        Detect specific emotional content in the user's question
+        
+        Args:
+            question (str): User's question
+            
+        Returns:
+            tuple: (emotion_type, support_response) or (None, None) if no specific emotion detected
+        """
+        question_lower = question.lower()
+        
+        emotion_keywords = {
+            "guilt": ["guilt", "guilty", "blame", "blamed", "blaming", "ashamed of"],
+            "regret": ["regret", "mistake", "wish i hadn't", "wish i didn't"],
+            "fear": ["afraid", "scared", "fear", "frightened", "terrified", "anxious"],
+            "shame": ["shame", "ashamed", "embarrassed", "humiliated"],
+            "sadness": ["sad", "depressed", "unhappy", "heartbroken", "devastated", "grief"]
+        }
+        
+        # Check for each emotion type
+        for emotion, keywords in emotion_keywords.items():
+            if any(keyword in question_lower for keyword in keywords):
+                # Return the emotion type and a randomly selected support response
+                if emotion in self.emotional_support_responses:
+                    return emotion, random.choice(self.emotional_support_responses[emotion])
+                    
+        # No specific emotion detected
+        return None, None
     
     def _format_paragraphs(self, message):
         """

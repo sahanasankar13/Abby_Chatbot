@@ -264,21 +264,41 @@ class ConversationManager:
             elif (is_abortion_access_question or is_abortion_info_question) and has_emotional_content:
                 logger.info("Detected emotional abortion question, providing supportive response")
 
-                supportive_response = (
-                    "I understand this is a stressful and emotional decision. It's completely normal to feel uncertain "
-                    "or worried when making choices about your reproductive health. I'm here to provide support and "
-                    "accurate information without judgment.\n\n"
-                    "Many people experience similar feelings when considering their options. To give you specific "
-                    "information about abortion access in your area, could you let me know which state you're in? "
-                    "Different states have different regulations, and I want to make sure I provide you with the most accurate information."
-                )
+                # Analyze if it's a specific emotional question like guilt
+                question_type = self.friendly_bot.detect_question_type(content)
+                emotion_type, emotion_support = self.friendly_bot.detect_emotional_content(content)
+                
+                if emotion_type:
+                    logger.info(f"Detected specific emotional content: {emotion_type}")
+                    
+                    # Create a more targeted emotional support response
+                    supportive_response = emotion_support
+                    
+                    # Add a general follow-up that doesn't mention state/location unless needed
+                    supportive_response += (
+                        "Many people experience these feelings when considering their reproductive health options. "
+                        "Everyone's emotional response is valid and unique to their situation. "
+                        "If you'd like to talk more specifically about resources or options, I'm here to help."
+                    )
+                else:
+                    # Use the standard supportive response for general emotional content
+                    supportive_response = (
+                        "I understand this is a stressful and emotional decision. It's completely normal to feel uncertain "
+                        "or worried when making choices about your reproductive health. I'm here to provide support and "
+                        "accurate information without judgment.\n\n"
+                        "Many people experience similar feelings when considering their options. To give you specific "
+                        "information about abortion access in your area, could you let me know which state you're in? "
+                        "Different states have different regulations, and I want to make sure I provide you with the most accurate information."
+                    )
 
-                # Add citation for this supportive response
-                cited_response = self.citation_manager.add_citation_to_text(
-                    supportive_response, 'planned_parenthood')
-
-                formatted_response = self.citation_manager.format_response_with_citations(
-                    cited_response)
+                # For emotional support responses, we don't need citations as they're not factual information
+                # If we directly cited a counseling resource, we would add it, but these are general statements
+                formatted_response = {
+                    'text': supportive_response,
+                    'citations': [],
+                    'citations_html': ''
+                }
+                
                 message_id = self.add_to_history('bot', formatted_response['text'])
                 formatted_response['message_id'] = message_id
                 return formatted_response

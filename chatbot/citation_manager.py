@@ -125,7 +125,10 @@ class CitationManager:
             "how can i help", "i'm doing well", "how are you",
             "thanks for asking", "could you let me know", "feel free to ask",
             "please let me know", "i'd like to provide",
-            "i understand this can be"
+            "i understand this can be", "feeling", "emotions", "feelings",
+            "it's okay to", "many people experience", "your feelings are",
+            "be gentle with yourself", "emotional", "i'd like to provide",
+            "i understand this is", "guilt", "regret", "shame", "fear"
         ]
 
         # Check for question marks and short sentences
@@ -135,10 +138,21 @@ class CitationManager:
         # Check for conversation indicators
         has_indicator = any(indicator in text_lower
                             for indicator in conversation_indicators)
+            
+        # Check if text is primarily emotional support rather than factual information
+        emotional_support_indicators = [
+            "guilt", "regret", "shame", "fear", "sadness", 
+            "your feelings are valid", "it's okay to feel", 
+            "many people experience", "be gentle with yourself",
+            "your worth isn't defined by", "you deserve compassion"
+        ]
+        
+        is_emotional_support = any(indicator in text_lower 
+                                for indicator in emotional_support_indicators)
 
         # Determine if it's conversational based on these factors
         # Lowered threshold to be consistent with conversation_manager.py
-        return is_question or has_indicator or len(text.split()) < 10
+        return is_question or has_indicator or is_emotional_support or len(text.split()) < 10
 
     def extract_citations_from_text(self, text: str) -> List[Citation]:
         """
