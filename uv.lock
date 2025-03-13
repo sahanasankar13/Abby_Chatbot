@@ -544,6 +544,19 @@ wheels = [
 ]
 
 [[package]]
+name = "flask-login"
+version = "0.6.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flask" },
+    { name = "werkzeug" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c3/6e/2f4e13e373bb49e68c02c51ceadd22d172715a06716f9299d9df01b6ddb2/Flask-Login-0.6.3.tar.gz", hash = "sha256:5e23d14a607ef12806c699590b89d0f0e0d67baeec599d75947bf9c147330333", size = 48834 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/f5/67e9cc5c2036f58115f9fe0f00d203cf6780c3ff8ae0e705e7a9d9e8ff9e/Flask_Login-0.6.3-py3-none-any.whl", hash = "sha256:849b25b82a436bf830a054e74214074af59097171562ab10bfa999e6b78aae5d", size = 17303 },
+]
+
+[[package]]
 name = "flask-sqlalchemy"
 version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1999,10 +2012,13 @@ dependencies = [
     { name = "evaluate" },
     { name = "faiss-cpu" },
     { name = "flask" },
+    { name = "flask-login" },
     { name = "flask-sqlalchemy" },
     { name = "gunicorn" },
     { name = "langdetect" },
+    { name = "matplotlib" },
     { name = "nltk" },
+    { name = "numpy" },
     { name = "openai" },
     { name = "pandas" },
     { name = "psutil" },
@@ -2016,6 +2032,7 @@ dependencies = [
     { name = "torch", version = "2.6.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'linux'" },
     { name = "transformers" },
     { name = "trectools" },
+    { name = "werkzeug" },
 ]
 
 [package.metadata]
@@ -2025,10 +2042,13 @@ requires-dist = [
     { name = "evaluate", specifier = ">=0.4.3" },
     { name = "faiss-cpu", specifier = ">=1.10.0" },
     { name = "flask", specifier = ">=3.1.0" },
+    { name = "flask-login", specifier = ">=0.6.3" },
     { name = "flask-sqlalchemy", specifier = ">=3.1.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "langdetect", specifier = ">=1.0.9" },
+    { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "nltk", specifier = ">=3.9.1" },
+    { name = "numpy", specifier = ">=2.2.3" },
     { name = "openai", specifier = ">=1.66.1" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "psutil", specifier = ">=7.0.0" },
@@ -2042,6 +2062,7 @@ requires-dist = [
     { name = "torch", marker = "sys_platform == 'linux'", specifier = ">=2.6.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "transformers", specifier = ">=4.49.0" },
     { name = "trectools", specifier = ">=0.0.50" },
+    { name = "werkzeug", specifier = ">=3.1.3" },
 ]
 
 [[package]]

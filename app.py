@@ -1,11 +1,14 @@
 import os
 import logging
 import datetime
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from chatbot.conversation_manager import ConversationManager
 from utils.text_processing import PIIDetector # Added import for PII detection
 from utils.advanced_metrics import AdvancedMetricsCalculator, generate_performance_report
 import threading
+from models import User
+from functools import wraps
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -15,6 +18,27 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 app.config['JSON_AS_ASCII'] = False  # Ensure proper UTF-8 response
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access the admin dashboard.'
+login_manager.login_message_category = 'warning'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_user(user_id)
+
+# Custom decorator to require admin role
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash('You do not have permission to access this page.', 'danger')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Initialize conversation manager with response evaluation
 # Options for evaluation_model: "openai", "local", "both"
@@ -122,7 +146,43 @@ def submit_feedback():
         logger.error(f"Error processing feedback: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your feedback'}), 500
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """
+    Login page for admin authentication
+    """
+    if current_user.is_authenticated:
+        return redirect(url_for('view_metrics'))
+        
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        user = User.get_by_username(username)
+        if user and user.check_password(password) and user.is_admin:
+            login_user(user)
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                return redirect(next_page)
+            return redirect(url_for('view_metrics'))
+        else:
+            flash('Invalid username or password', 'danger')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """
+    Logout route
+    """
+    logout_user()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('index'))
+
 @app.route('/admin/feedback', methods=['GET'])
+@login_required
+@admin_required
 def view_feedback():
     """
     Redirect to the combined admin dashboard
@@ -130,6 +190,8 @@ def view_feedback():
     return redirect(url_for('view_metrics'))
         
 @app.route('/admin/metrics', methods=['GET'])
+@login_required
+@admin_required
 def view_metrics():
     """
     Admin dashboard for viewing chatbot performance metrics and feedback
@@ -321,6 +383,8 @@ def view_metrics():
                              error_details=str(e))
 
 @app.route('/run-ragas-evaluation', methods=['POST'])
+@login_required
+@admin_required
 def run_ragas_evaluation():
     """
     Run Ragas metrics evaluation on sample data

@@ -24,6 +24,6 @@ for package in nltk_packages:
 from app import app
 
 if __name__ == "__main__":
-    # Use port from environment variable or default to 5000 to match workflow configuration
-    port = int(os.environ.get("PORT", 5000))
+    # Use port from environment variable or default to 5001 to avoid potential conflicts
+    port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port, debug=True)
