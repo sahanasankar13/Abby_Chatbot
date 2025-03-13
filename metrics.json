@@ -1087,5 +1087,63 @@
       "positive_percentage": 0,
       "negative_percentage": 0
     }
+  },
+  {
+    "timestamp": "2025-03-13T03:15:47.956447",
+    "duration_seconds": 300.00032687187195,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T03:15:57.329377",
+    "duration_seconds": 300.0003230571747,
+    "counters": {
+      "questions_policy": 1,
+      "evaluations_total": 2,
+      "evaluations_improved": 2,
+      "quality_score_medium": 1,
+      "questions_conversational": 3,
+      "quality_score_low": 1
+    },
+    "timers": {
+      "response_time_policy": {
+        "count": 1,
+        "total": 23.837377071380615,
+        "average": 23.837377071380615,
+        "min": 23.837377071380615,
+        "max": 23.837377071380615
+      },
+      "response_time_conversational": {
+        "count": 1,
+        "total": 17.123066186904907,
+        "average": 17.123066186904907,
+        "min": 17.123066186904907,
+        "max": 17.123066186904907
+      }
+    },
+    "api_calls": {
+      "openai_evaluation": 2,
+      "openai": 2
+    },
+    "api_tokens": {
+      "openai_evaluation": 520,
+      "openai": 497
+    },
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
   }
 ]
