@@ -1,6 +1,7 @@
 import os
 import logging
 import datetime
+import uuid
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from chatbot.conversation_manager import ConversationManager
@@ -62,27 +63,41 @@ def chat():
         if not data or 'message' not in data:
             return jsonify({'error': 'Missing message parameter'}), 400
 
-        message = data['message']
+        original_message = data['message']
         
-        # Log the incoming question for debugging
-        logger.debug(f"Received chat message: {message}")
-
-        # Check for PII in the message
+        # IMMEDIATELY check for PII before any logging or processing
         pii_detector = PIIDetector()
-
-        pii_warning = pii_detector.warn_about_pii(message)
-        if pii_warning:
-            logger.warning("PII detected in user message")
-
-            # If PII is detected, redact it before processing
-            redacted_message, _ = pii_detector.redact_pii(message)
-            response_data = conversation_manager.process_message(redacted_message)
-
-            # Add PII warning to the response text
-            response_data['text'] = f"{pii_warning}\n\n{response_data['text']}"
+        has_pii = pii_detector.has_pii(original_message)
+        
+        if has_pii:
+            # Never log the original message with PII
+            logger.warning("PII detected in user message - message not logged")
+            
+            # Generate warning message
+            pii_warning = pii_detector.warn_about_pii(original_message)
+            
+            # Ensure pii_warning is not None
+            if not pii_warning:
+                pii_warning = "I noticed you shared personal information in your message. For privacy and security reasons, please avoid sharing personal details."
+            
+            # Completely avoid processing messages with PII
+            message_id = str(uuid.uuid4())
+            response_data = {
+                'text': pii_warning + "\n\nIs there something specific about reproductive health I can help you with?",
+                'citations': [],
+                'citation_objects': [],
+                'message_id': message_id
+            }
+            
+            # No PII is stored in conversation history
+            conversation_manager.add_to_history('user', "[PII DETECTED - MESSAGE REDACTED]")
+            conversation_manager.add_to_history('bot', response_data['text'], message_id=message_id)
         else:
+            # Safe to log and process the message since no PII was detected
+            logger.debug(f"Received chat message: {original_message}")
+            
             # Get response from conversation manager
-            response_data = conversation_manager.process_message(message)
+            response_data = conversation_manager.process_message(original_message)
             
         # Graphics disabled per user request
         # from chatbot.visual_info import VisualInfoGraphics
