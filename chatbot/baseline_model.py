@@ -271,30 +271,64 @@ class BaselineModel:
             logger.error(f"Error handling multi-query: {str(e)}", exc_info=True)
             return "I'm sorry, I had trouble processing your multi-part question. Could you try asking one question at a time?"
 
-    def _is_pregnancy_planning_question(self, question):
+    def _get_reproductive_health_topic(self, question):
         """
-        Detect if a question is about pregnancy planning, fertility, or conception
+        Identify the reproductive health topic from a question
         
         Args:
             question (str): The user's question
             
         Returns:
-            bool: True if the question is about pregnancy planning
+            str: The identified topic or None if no specific topic is found
         """
         question_lower = question.lower()
-        planning_keywords = [
-            "trying to conceive", "trying to get pregnant", "ttc", 
-            "fertility", "ovulation", "conception", "conceive",
-            "getting pregnant", "preconception", "pre-conception",
-            "prepare for pregnancy", "planning for pregnancy", 
-            "before getting pregnant", "before pregnancy"
-        ]
         
-        return any(keyword in question_lower for keyword in planning_keywords)
+        # Define topic categories and their keywords
+        topic_keywords = {
+            "pregnancy_planning": [
+                "trying to conceive", "trying to get pregnant", "ttc", 
+                "fertility", "ovulation", "conception", "conceive",
+                "getting pregnant", "preconception", "pre-conception",
+                "prepare for pregnancy", "planning for pregnancy", 
+                "before getting pregnant", "before pregnancy"
+            ],
+            "pregnancy": [
+                "pregnant", "pregnancy", "prenatal", "trimester", 
+                "fetal", "fetus", "morning sickness", "baby bump",
+                "ultrasound", "expecting", "gestational"
+            ],
+            "birth_control": [
+                "birth control", "contraception", "contraceptive", "iud", 
+                "pill", "condom", "implant", "nexplanon", "depo",
+                "morning after", "plan b", "spermicide"
+            ],
+            "menstruation": [
+                "period", "menstrual", "menstruation", "cycle", "pms",
+                "cramps", "bleeding", "spotting", "tampon", "pad", "flow"
+            ],
+            "reproductive_health": [
+                "reproductive health", "sexual health", "gynecology", 
+                "obgyn", "pelvic", "vaginal", "cervical", "uterine", 
+                "ovarian", "testicular", "std", "sti", "infection"
+            ],
+            "abortion": [
+                "abortion", "terminate", "termination", "miscarriage", 
+                "pregnancy loss", "roe", "wade", "pro-choice", "pro-life"
+            ]
+        }
         
-    def _add_trusted_pregnancy_sources(self, response, question):
+        # Check for topic matches
+        for topic, keywords in topic_keywords.items():
+            if any(keyword in question_lower for keyword in keywords):
+                return topic
+                
+        # Return a general reproductive health topic if no specific match
+        return "general_reproductive_health"
+        
+    def _add_trusted_sources(self, response, question):
         """
-        Add links to trusted external sources for pregnancy planning questions
+        Add links to trusted external sources for reproductive health questions
+        based on the specific topic detected
         
         Args:
             response (str): The original response
@@ -310,34 +344,66 @@ class BaselineModel:
                 "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
             }
         
+        # Initialize source info
         source_info = {
             "source": "planned_parenthood",
             "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
         }
         
-        # Add a section with additional sources
-        additional_sources = "\n\nFor more detailed information on pregnancy planning, you may want to check these trusted resources:\n"
+        # Identify the topic
+        topic = self._get_reproductive_health_topic(question)
         
-        # Analyze question to determine relevant sources
-        question_lower = question.lower()
+        # Define trusted sources for different topics
+        topic_sources = {
+            "pregnancy_planning": [
+                ("Mayo Clinic", "Preconception planning", "https://www.mayoclinic.org/healthy-lifestyle/getting-pregnant/in-depth/preconception-planning/art-20047296"),
+                ("National Institutes of Health", "Fertility and Infertility", "https://www.nichd.nih.gov/health/topics/fertility"),
+                ("Centers for Disease Control and Prevention", "Planning for Pregnancy", "https://www.cdc.gov/preconception/planning.html")
+            ],
+            "pregnancy": [
+                ("American College of Obstetricians and Gynecologists", "Pregnancy Resources", "https://www.acog.org/womens-health/pregnancy"),
+                ("Mayo Clinic", "Pregnancy week by week", "https://www.mayoclinic.org/healthy-lifestyle/pregnancy-week-by-week/basics/healthy-pregnancy/hlv-20049471"),
+                ("Centers for Disease Control and Prevention", "Pregnancy", "https://www.cdc.gov/pregnancy/index.html")
+            ],
+            "birth_control": [
+                ("Centers for Disease Control and Prevention", "Contraception", "https://www.cdc.gov/reproductivehealth/contraception/index.htm"),
+                ("American College of Obstetricians and Gynecologists", "Birth Control", "https://www.acog.org/womens-health/birth-control"),
+                ("Mayo Clinic", "Birth control options", "https://www.mayoclinic.org/tests-procedures/birth-control/about/pac-20384621")
+            ],
+            "menstruation": [
+                ("Mayo Clinic", "Menstrual cycle", "https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186"),
+                ("National Institutes of Health", "Menstruation and Menstrual Problems", "https://www.nichd.nih.gov/health/topics/menstruation"),
+                ("American College of Obstetricians and Gynecologists", "Abnormal Uterine Bleeding", "https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding")
+            ],
+            "reproductive_health": [
+                ("Centers for Disease Control and Prevention", "Reproductive Health", "https://www.cdc.gov/reproductivehealth/index.html"),
+                ("World Health Organization", "Sexual and reproductive health", "https://www.who.int/health-topics/sexual-and-reproductive-health"),
+                ("National Institutes of Health", "Reproductive Health", "https://www.nichd.nih.gov/health/topics/reproductive")
+            ],
+            "abortion": [
+                ("American College of Obstetricians and Gynecologists", "Abortion Policy", "https://www.acog.org/clinical-information/policy-and-position-statements/statements-of-policy/2022/abortion-policy"),
+                ("National Institutes of Health", "Medical Care After Pregnancy Loss", "https://www.nichd.nih.gov/health/topics/pregnancyloss/conditioninfo/treatment"),
+                ("Abortion Policy API", "State Policies", "https://www.abortionpolicyapi.com/")
+            ],
+            "general_reproductive_health": [
+                ("Centers for Disease Control and Prevention", "Reproductive Health", "https://www.cdc.gov/reproductivehealth/index.html"),
+                ("American College of Obstetricians and Gynecologists", "Women's Health", "https://www.acog.org/womens-health"),
+                ("National Institutes of Health", "Reproductive Health", "https://www.nichd.nih.gov/health/topics/reproductive")
+            ]
+        }
         
-        if "preconception" in question_lower or "prepare" in question_lower or "planning" in question_lower:
-            additional_sources += "- Mayo Clinic: Preconception planning (Source: Mayo Clinic)\n"
-            source_info["citations"].append({"source": "Mayo Clinic", "url": "https://www.mayoclinic.org/healthy-lifestyle/getting-pregnant/in-depth/preconception-planning/art-20047296"})
+        # Add introduction for additional sources
+        additional_sources = f"\n\nFor more detailed information on {topic.replace('_', ' ')}, you may want to check these trusted resources:\n"
         
-        if "fertility" in question_lower or "infertility" in question_lower:
-            additional_sources += "- National Institutes of Health: Fertility and Infertility (Source: National Institutes of Health)\n"
-            source_info["citations"].append({"source": "National Institutes of Health", "url": "https://www.nichd.nih.gov/health/topics/fertility"})
+        # Add the relevant sources for the topic
+        selected_sources = topic_sources.get(topic, topic_sources["general_reproductive_health"])
         
-        if "cdc" not in question_lower:  # Add CDC source if not specifically mentioned
-            additional_sources += "- Centers for Disease Control and Prevention: Planning for Pregnancy (Source: Centers for Disease Control and Prevention)\n"
-            source_info["citations"].append({"source": "Centers for Disease Control and Prevention", "url": "https://www.cdc.gov/preconception/planning.html"})
+        for source, title, url in selected_sources:
+            additional_sources += f"- {source}: {title} (Source: {source})\n"
+            source_info["citations"].append({"source": source, "url": url})
         
-        # Always add ACOG as a general resource
-        additional_sources += "- American College of Obstetricians and Gynecologists: Pregnancy Resources (Source: American College of Obstetricians and Gynecologists)"
-        source_info["citations"].append({"source": "American College of Obstetricians and Gynecologists", "url": "https://www.acog.org/womens-health/pregnancy"})
-        
-        enhanced_response = response + additional_sources
+        # If there's a response, enhance it with the sources
+        enhanced_response = response + additional_sources.rstrip()
         return enhanced_response, source_info
         
     def _process_single_query(self, question, category, conversation_history=None, location_context=None):
@@ -407,9 +473,6 @@ class BaselineModel:
                 # Check if this is an abortion types or methods question that should offer policy info too
                 is_abortion_types_question = "types of abortion" in question_lower or "different types of abortion" in question_lower or "abortion methods" in question_lower
                 
-                # Check if this is a pregnancy planning question that should include trusted sources
-                is_pregnancy_planning = self._is_pregnancy_planning_question(question)
-                
                 if is_abortion_types_question:
                     logger.info("Detected abortion types/methods question - providing RAG response with policy offer")
                     base_response = rag_response if self.bert_rag.is_confident(question, rag_response) else self.gpt_model.enhance_response(question, rag_response)
@@ -418,19 +481,19 @@ class BaselineModel:
                     policy_offer = "\n\nWould you like information about abortion policies in a specific state? If so, please let me know which state you're interested in."
                     initial_response = base_response + policy_offer
                     
-                elif is_pregnancy_planning:
-                    logger.info("Detected pregnancy planning question - adding trusted source links")
-                    # Get base response from RAG
-                    base_response = rag_response if self.bert_rag.is_confident(question, rag_response) else self.gpt_model.enhance_response(question, rag_response)
+                elif not self.bert_rag.is_confident(question, rag_response):
+                    # The RAG system doesn't have a confident answer
+                    logger.info("RAG not confident, adding trusted sources based on topic")
                     
-                    # Add trusted sources and update source info
-                    initial_response, source_info = self._add_trusted_pregnancy_sources(base_response, question)
+                    # First enhance the response with GPT to get a better quality answer
+                    base_response = self.gpt_model.enhance_response(question, rag_response)
                     
-                elif self.bert_rag.is_confident(question, rag_response):
-                    initial_response = rag_response
+                    # Add trusted sources based on the detected topic
+                    initial_response, source_info = self._add_trusted_sources(base_response, question)
+                    
                 else:
-                    logger.debug("RAG not confident, enhancing with GPT")
-                    initial_response = self.gpt_model.enhance_response(question, rag_response)
+                    # RAG is confident, use its response directly
+                    initial_response = rag_response
 
             else:  # conversational
                 logger.debug(f"Using GPT for conversational response to: {question}")

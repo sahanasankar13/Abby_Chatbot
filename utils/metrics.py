@@ -89,6 +89,9 @@ class MetricsTracker:
             # Timers for performance measurements
             self._timers = defaultdict(list)
             
+            # Categorized timers for tracking by question type
+            self._category_timers = defaultdict(lambda: defaultdict(list))
+            
             # API usage tracking
             self._api_calls = defaultdict(int)
             self._api_tokens = defaultdict(int)
@@ -97,6 +100,13 @@ class MetricsTracker:
             self._feedback = {
                 "positive": 0,
                 "negative": 0
+            }
+            
+            # Real-time ROUGE metrics
+            self._rouge_metrics = {
+                "rouge1": [],
+                "rouge2": [],
+                "rougeL": []
             }
             
             # Store last reset time
@@ -128,23 +138,30 @@ class MetricsTracker:
         with self._metrics_lock:
             self._counters[metric_name] += value
     
-    def record_time(self, metric_name: str, elapsed_time: float):
+    def record_time(self, metric_name: str, elapsed_time: float, category: str = None):
         """
-        Record a timing metric
+        Record a timing metric, optionally with a category
         
         Args:
             metric_name (str): Name of the timing metric
             elapsed_time (float): Time in seconds
+            category (str, optional): Category for the metric (e.g., question type)
         """
         with self._metrics_lock:
+            # Record in the general timers
             self._timers[metric_name].append(elapsed_time)
+            
+            # If a category is provided, record in category-specific timers as well
+            if category:
+                self._category_timers[metric_name][category].append(elapsed_time)
     
-    def time_function(self, metric_name: str):
+    def time_function(self, metric_name: str, category_func=None):
         """
         Decorator to time a function and record the elapsed time
         
         Args:
             metric_name (str): Name of the timing metric
+            category_func (callable, optional): Function that extracts category from args/kwargs
             
         Returns:
             Decorated function
@@ -154,10 +171,45 @@ class MetricsTracker:
                 start_time = time.time()
                 result = func(*args, **kwargs)
                 elapsed_time = time.time() - start_time
-                self.record_time(metric_name, elapsed_time)
+                
+                # Extract category if a category function is provided
+                category = None
+                if category_func:
+                    try:
+                        category = category_func(*args, **kwargs)
+                    except Exception as e:
+                        logger.warning(f"Error extracting category: {str(e)}")
+                
+                self.record_time(metric_name, elapsed_time, category)
                 return result
             return wrapper
         return decorator
+        
+    def record_category_time(self, metric_name: str, category: str, elapsed_time: float):
+        """
+        Record a timing metric specifically for a category
+        
+        Args:
+            metric_name (str): Name of the timing metric
+            category (str): Category for the metric (e.g., question type)
+            elapsed_time (float): Time in seconds
+        """
+        with self._metrics_lock:
+            self._category_timers[metric_name][category].append(elapsed_time)
+            
+    def record_rouge_metrics(self, rouge1: float, rouge2: float, rougeL: float):
+        """
+        Record ROUGE metrics for real-time evaluation
+        
+        Args:
+            rouge1 (float): ROUGE-1 F1 score
+            rouge2 (float): ROUGE-2 F1 score
+            rougeL (float): ROUGE-L F1 score
+        """
+        with self._metrics_lock:
+            self._rouge_metrics["rouge1"].append(rouge1)
+            self._rouge_metrics["rouge2"].append(rouge2)
+            self._rouge_metrics["rougeL"].append(rougeL)
     
     def record_api_call(self, api_name: str, tokens_used: int = 0):
         """
@@ -213,6 +265,48 @@ class MetricsTracker:
                         "max": 0
                     }
             
+            # Process category-specific timers
+            category_timer_stats = {}
+            for metric_name, categories in self._category_timers.items():
+                category_timer_stats[metric_name] = {}
+                for category, values in categories.items():
+                    if values:
+                        category_timer_stats[metric_name][category] = {
+                            "count": len(values),
+                            "total": sum(values),
+                            "average": sum(values) / len(values),
+                            "min": min(values),
+                            "max": max(values)
+                        }
+                    else:
+                        category_timer_stats[metric_name][category] = {
+                            "count": 0,
+                            "total": 0,
+                            "average": 0,
+                            "min": 0,
+                            "max": 0
+                        }
+            
+            # Process ROUGE metrics
+            rouge_metrics = {}
+            for rouge_type, values in self._rouge_metrics.items():
+                if values:
+                    rouge_metrics[rouge_type] = {
+                        "count": len(values),
+                        "average": sum(values) / len(values),
+                        "min": min(values),
+                        "max": max(values),
+                        "latest": values[-1] if values else 0
+                    }
+                else:
+                    rouge_metrics[rouge_type] = {
+                        "count": 0,
+                        "average": 0,
+                        "min": 0,
+                        "max": 0,
+                        "latest": 0
+                    }
+            
             # Calculate feedback percentages
             total_feedback = self._feedback["positive"] + self._feedback["negative"]
             pos_pct = (self._feedback["positive"] / total_feedback * 100) if total_feedback > 0 else 0
@@ -223,6 +317,8 @@ class MetricsTracker:
                 "duration_seconds": time.time() - self._last_reset,
                 "counters": dict(self._counters),
                 "timers": timer_stats,
+                "category_timers": category_timer_stats,
+                "rouge_metrics": rouge_metrics,
                 "api_calls": dict(self._api_calls),
                 "api_tokens": dict(self._api_tokens),
                 "feedback": {
@@ -375,13 +471,51 @@ def increment_counter(metric_name: str, value: int = 1):
     """Increment a counter metric"""
     metrics.increment_counter(metric_name, value)
 
-def record_time(metric_name: str, elapsed_time: float):
-    """Record a timing metric"""
-    metrics.record_time(metric_name, elapsed_time)
+def record_time(metric_name: str, elapsed_time: float, category: str = None):
+    """
+    Record a timing metric, optionally with a category
+    
+    Args:
+        metric_name (str): Name of the timing metric
+        elapsed_time (float): Time in seconds
+        category (str, optional): Category for the metric (e.g., question type)
+    """
+    metrics.record_time(metric_name, elapsed_time, category)
 
-def time_function(metric_name: str):
-    """Decorator to time a function"""
-    return metrics.time_function(metric_name)
+def record_category_time(metric_name: str, category: str, elapsed_time: float):
+    """
+    Record a timing metric specifically for a category
+    
+    Args:
+        metric_name (str): Name of the timing metric
+        category (str): Category for the metric (e.g., question type)
+        elapsed_time (float): Time in seconds
+    """
+    metrics.record_category_time(metric_name, category, elapsed_time)
+
+def record_rouge_metrics(rouge1: float, rouge2: float, rougeL: float):
+    """
+    Record ROUGE metrics for real-time evaluation
+    
+    Args:
+        rouge1 (float): ROUGE-1 F1 score
+        rouge2 (float): ROUGE-2 F1 score
+        rougeL (float): ROUGE-L F1 score
+    """
+    metrics.record_rouge_metrics(rouge1, rouge2, rougeL)
+
+def time_function(metric_name: str, category_func=None):
+    """
+    Decorator to time a function and record the elapsed time
+    
+    Args:
+        metric_name (str): Name of the timing metric
+        category_func (callable, optional): Function that extracts category from args/kwargs
+        
+    Returns:
+        Decorated function
+    """
+    return metrics.time_function(metric_name, category_func)
 
 def record_api_call(api_name: str, tokens_used: int = 0):
     """Record an API call with optional token usage"""
