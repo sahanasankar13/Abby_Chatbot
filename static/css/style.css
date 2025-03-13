@@ -776,17 +776,6 @@ body {
   to { width: 100% }
 }
 
-/* Typing cursor for character-by-character animation */
-.typing-cursor {
-  display: inline-block;
-  width: 2px;
-  height: 16px;
-  background-color: var(--apple-blue);
-  margin-left: 1px;
-  vertical-align: middle;
-  animation: blink 1s step-end infinite;
-}
-
 /* Citation styles */
 .citations-container {
   margin-top: 0.75rem;
