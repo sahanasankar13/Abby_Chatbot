@@ -90,7 +90,27 @@ class CitationManager:
         "abortion_policy_api":
         Citation(source="Abortion Policy API",
                  url="https://www.abortionpolicyapi.com/",
-                 title="Abortion Policy API")
+                 title="Abortion Policy API"),
+        "acog":
+        Citation(source="American College of Obstetricians and Gynecologists",
+                url="https://www.acog.org/womens-health/pregnancy",
+                title="Pregnancy Resources",
+                authors=["American College of Obstetricians and Gynecologists"]),
+        "cdc_pregnancy":
+        Citation(source="Centers for Disease Control and Prevention",
+                url="https://www.cdc.gov/preconception/planning.html",
+                title="Planning for Pregnancy",
+                authors=["Centers for Disease Control and Prevention"]),
+        "nih_fertility":
+        Citation(source="National Institutes of Health",
+                url="https://www.nichd.nih.gov/health/topics/fertility",
+                title="Fertility and Infertility",
+                authors=["National Institute of Child Health and Human Development"]),
+        "mayo_preconception":
+        Citation(source="Mayo Clinic",
+                url="https://www.mayoclinic.org/healthy-lifestyle/getting-pregnant/in-depth/preconception-planning/art-20047296",
+                title="Preconception planning: Is your body ready for pregnancy?",
+                authors=["Mayo Clinic Staff"])
     }
 
     def __init__(self):

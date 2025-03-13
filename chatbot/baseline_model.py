@@ -271,6 +271,75 @@ class BaselineModel:
             logger.error(f"Error handling multi-query: {str(e)}", exc_info=True)
             return "I'm sorry, I had trouble processing your multi-part question. Could you try asking one question at a time?"
 
+    def _is_pregnancy_planning_question(self, question):
+        """
+        Detect if a question is about pregnancy planning, fertility, or conception
+        
+        Args:
+            question (str): The user's question
+            
+        Returns:
+            bool: True if the question is about pregnancy planning
+        """
+        question_lower = question.lower()
+        planning_keywords = [
+            "trying to conceive", "trying to get pregnant", "ttc", 
+            "fertility", "ovulation", "conception", "conceive",
+            "getting pregnant", "preconception", "pre-conception",
+            "prepare for pregnancy", "planning for pregnancy", 
+            "before getting pregnant", "before pregnancy"
+        ]
+        
+        return any(keyword in question_lower for keyword in planning_keywords)
+        
+    def _add_trusted_pregnancy_sources(self, response, question):
+        """
+        Add links to trusted external sources for pregnancy planning questions
+        
+        Args:
+            response (str): The original response
+            question (str): The user's question
+            
+        Returns:
+            tuple: (Enhanced response with source links, Updated source info)
+        """
+        # Only add sources if the response doesn't already have citations
+        if "(Source:" in response:
+            return response, {
+                "source": "planned_parenthood",
+                "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
+            }
+        
+        source_info = {
+            "source": "planned_parenthood",
+            "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
+        }
+        
+        # Add a section with additional sources
+        additional_sources = "\n\nFor more detailed information on pregnancy planning, you may want to check these trusted resources:\n"
+        
+        # Analyze question to determine relevant sources
+        question_lower = question.lower()
+        
+        if "preconception" in question_lower or "prepare" in question_lower or "planning" in question_lower:
+            additional_sources += "- Mayo Clinic: Preconception planning (Source: Mayo Clinic)\n"
+            source_info["citations"].append({"source": "Mayo Clinic", "url": "https://www.mayoclinic.org/healthy-lifestyle/getting-pregnant/in-depth/preconception-planning/art-20047296"})
+        
+        if "fertility" in question_lower or "infertility" in question_lower:
+            additional_sources += "- National Institutes of Health: Fertility and Infertility (Source: National Institutes of Health)\n"
+            source_info["citations"].append({"source": "National Institutes of Health", "url": "https://www.nichd.nih.gov/health/topics/fertility"})
+        
+        if "cdc" not in question_lower:  # Add CDC source if not specifically mentioned
+            additional_sources += "- Centers for Disease Control and Prevention: Planning for Pregnancy (Source: Centers for Disease Control and Prevention)\n"
+            source_info["citations"].append({"source": "Centers for Disease Control and Prevention", "url": "https://www.cdc.gov/preconception/planning.html"})
+        
+        # Always add ACOG as a general resource
+        additional_sources += "- American College of Obstetricians and Gynecologists: Pregnancy Resources (Source: American College of Obstetricians and Gynecologists)"
+        source_info["citations"].append({"source": "American College of Obstetricians and Gynecologists", "url": "https://www.acog.org/womens-health/pregnancy"})
+        
+        enhanced_response = response + additional_sources
+        return enhanced_response, source_info
+        
     def _process_single_query(self, question, category, conversation_history=None, location_context=None):
         """
         Process a single query based on its category, applying response evaluation
@@ -332,9 +401,14 @@ class BaselineModel:
                     "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
                 }
                 
-                # Check if this is an abortion types or methods question that should offer policy info too
+                # Check for special question types that need additional handling
                 question_lower = question.lower()
+                
+                # Check if this is an abortion types or methods question that should offer policy info too
                 is_abortion_types_question = "types of abortion" in question_lower or "different types of abortion" in question_lower or "abortion methods" in question_lower
+                
+                # Check if this is a pregnancy planning question that should include trusted sources
+                is_pregnancy_planning = self._is_pregnancy_planning_question(question)
                 
                 if is_abortion_types_question:
                     logger.info("Detected abortion types/methods question - providing RAG response with policy offer")
@@ -343,6 +417,15 @@ class BaselineModel:
                     # Append the offer for state-specific policy information
                     policy_offer = "\n\nWould you like information about abortion policies in a specific state? If so, please let me know which state you're interested in."
                     initial_response = base_response + policy_offer
+                    
+                elif is_pregnancy_planning:
+                    logger.info("Detected pregnancy planning question - adding trusted source links")
+                    # Get base response from RAG
+                    base_response = rag_response if self.bert_rag.is_confident(question, rag_response) else self.gpt_model.enhance_response(question, rag_response)
+                    
+                    # Add trusted sources and update source info
+                    initial_response, source_info = self._add_trusted_pregnancy_sources(base_response, question)
+                    
                 elif self.bert_rag.is_confident(question, rag_response):
                     initial_response = rag_response
                 else:
