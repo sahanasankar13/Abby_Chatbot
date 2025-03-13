@@ -298,7 +298,8 @@ class ConversationManager:
                 formatted_response = {
                     'text': supportive_response,
                     'citations': [],
-                    'citations_html': ''
+                    'citations_html': '',
+                    'citation_objects': []  # Add empty citation_objects to match the expected format
                 }
                 
                 message_id = self.add_to_history('bot', formatted_response['text'])
@@ -422,7 +423,8 @@ class ConversationManager:
                 formatted_response = {
                     "text": personal_response,
                     "citations": [],
-                    "citation_objects": []
+                    "citation_objects": [],
+                    "citations_html": ""
                 }
                 message_id = self.add_to_history('bot', personal_response)
                 formatted_response['message_id'] = message_id
@@ -441,7 +443,8 @@ class ConversationManager:
                 formatted_response = {
                     "text": simple_response,
                     "citations": [],
-                    "citation_objects": []
+                    "citation_objects": [],
+                    "citations_html": ""
                 }
                 message_id = self.add_to_history('bot', simple_response)
                 formatted_response['message_id'] = message_id
@@ -515,7 +518,8 @@ class ConversationManager:
             return {
                 "text": error_response,
                 "citations": [],
-                "citation_objects": []
+                "citation_objects": [],
+                "citations_html": ""
             }
 
     def _check_for_state_names(self, message):
