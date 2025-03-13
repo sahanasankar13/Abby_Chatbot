@@ -213,7 +213,8 @@ class BertRAGModel:
             "travel": ["travel", "flight", "hotel", "vacation", "trip", "tourism", "destination", "airfare", "airline", "beach", "resort", "passport"],
             "food": ["recipe", "cook", "food", "meal", "restaurant", "cuisine", "ingredient", "diet", "nutrition", "eat", "dinner", "lunch", "breakfast"],
             "sports": ["game", "team", "player", "score", "win", "lose", "sport", "match", "tournament", "champion", "football", "basketball", "soccer", "baseball"],
-            "entertainment": ["movie", "film", "show", "series", "actor", "music", "song", "artist", "album", "concert", "tv", "television", "celebrity", "theater"]
+            "entertainment": ["movie", "film", "show", "series", "actor", "music", "song", "artist", "album", "concert", "tv", "television", "celebrity", "theater"],
+            "emotional_expression": ["hate", "love", "angry", "mad", "upset", "sad", "depressed", "lonely", "happy", "excited", "worried", "anxious", "scared", "afraid", "hurt", "pain", "suffer", "confused", "lost", "hopeless", "helpless", "tired", "exhausted", "overwhelmed", "stressed"]
         }
 
         # Check if any reproductive health terms are in the question
