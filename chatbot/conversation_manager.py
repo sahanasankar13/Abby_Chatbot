@@ -414,10 +414,10 @@ class ConversationManager:
             if is_how_are_you and len(message.split()) <= 7:
                 logger.info("Detected 'how are you' question, providing personal response")
                 personal_responses = [
-                    "I'm just a digital assistant, but I'm ready to help you with any reproductive health questions you might have. What can I assist you with today?",
-                    "I don't have feelings, but I'm here and ready to help you with accurate information about reproductive health. What would you like to know?",
+                    "I'm doing well, thanks for asking! I'm here to help with any reproductive health questions you might have. What can I assist you with today?",
+                    "Thanks for asking! I'm here and ready to help you with accurate information about reproductive health. What would you like to know?",
                     "I'm here and ready to assist you with reproductive health information. How can I help you today?",
-                    "I'm functioning well and ready to provide you with helpful information. What reproductive health topics would you like to discuss?"
+                    "I'm doing great! What reproductive health topics would you like to discuss?"
                 ]
                 personal_response = random.choice(personal_responses)
                 formatted_response = {
