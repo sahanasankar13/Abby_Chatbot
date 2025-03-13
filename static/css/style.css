@@ -219,14 +219,16 @@ body {
 /* Suggestion prompts styling */
 .suggested-prompts {
   padding: 1rem 1.5rem;
-  border-top: 1px solid var(--apple-border);
-  background-color: rgba(245, 245, 247, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  margin: 1rem 0;
+  background-color: transparent;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 650px;
+  align-self: center;
 }
 
 [data-bs-theme="dark"] .suggested-prompts {
-  background-color: rgba(29, 29, 31, 0.8);
+  background-color: transparent;
 }
 
 .prompts-container {
@@ -235,27 +237,31 @@ body {
   gap: 0.75rem;
   max-width: 900px;
   margin: 0 auto;
+  padding: 0.5rem;
 }
 
 .prompt-row {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .prompt-btn {
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
+  max-width: 300px;
+  margin: 0 auto;
   padding: 0.75rem 1rem;
-  background-color: rgba(210, 210, 215, 0.5);
+  background-color: rgba(248, 248, 252, 0.8);
   color: var(--apple-text);
   border: 1px solid var(--apple-border);
-  border-radius: 12px;
+  border-radius: 22px;
   font-size: 0.95rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-weight: 500;
 }
 

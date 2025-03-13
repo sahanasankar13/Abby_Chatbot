@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Initialize chat with a welcome message (without feedback options)
-    addBotWelcomeMessage("Hi, I'm Abby. I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is confidential. What questions do you have today?");
+    addBotWelcomeMessage("Hi! 👋 How can I help you today?");
 
     // Functions for chat interaction
     function addUserMessage(message) {
@@ -211,8 +211,53 @@ document.addEventListener('DOMContentLoaded', function() {
         messageContainer.appendChild(messageEl);
         
         // No feedback options for welcome message
-        
         chatMessages.appendChild(messageContainer);
+        
+        // Add suggestion prompts after welcome message
+        const suggestedPrompts = document.createElement('div');
+        suggestedPrompts.id = 'suggestedPrompts';
+        suggestedPrompts.className = 'suggested-prompts';
+        
+        suggestedPrompts.innerHTML = `
+            <div class="prompts-container">
+                <div class="prompt-row">
+                    <button class="prompt-btn" data-prompt="Can I get an abortion in my state?">Can I get an abortion in my state? 🗺️</button>
+                    <button class="prompt-btn" data-prompt="What contraception methods are available?">What contraception methods are available? 💊</button>
+                </div>
+                <div class="prompt-row">
+                    <button class="prompt-btn" data-prompt="How does pregnancy happen?">How does pregnancy happen? 🤰</button>
+                    <button class="prompt-btn" data-prompt="What are some stress management tips?">What are some stress management tips? 🧘</button>
+                </div>
+                <div class="prompt-row">
+                    <button class="prompt-btn" data-prompt="Explain STI prevention">Explain STI prevention 🛡️</button>
+                    <button class="prompt-btn" data-prompt="What are the signs of pregnancy?">What are the signs of pregnancy? 🔍</button>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(suggestedPrompts);
+        
+        // Add event listeners to the prompt buttons
+        const promptButtons = suggestedPrompts.querySelectorAll('.prompt-btn');
+        promptButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const promptText = this.getAttribute('data-prompt');
+                userInput.value = promptText;
+                sendButton.disabled = false;
+                // Focus on input so user can modify if desired
+                userInput.focus();
+                
+                // Auto-send after a short delay if user doesn't modify
+                setTimeout(() => {
+                    if (userInput.value === promptText) {
+                        sendMessage(promptText);
+                        userInput.value = '';
+                        sendButton.disabled = true;
+                    }
+                }, 800);
+            });
+        });
+        
         scrollToBottom();
     }
     
@@ -402,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     chatMessages.innerHTML = '';
                     
                     // Re-add the welcome message
-                    addBotWelcomeMessage("Hi, I'm Abby. I'm here to provide information about reproductive healthcare and offer support. Everything we discuss is confidential. What questions do you have today?");
+                    addBotWelcomeMessage("Hi! 👋 How can I help you today?");
                     
                     // Add confirmation message
                     addBotMessage("Your session has been ended. If you have more questions in the future, feel free to ask!");
