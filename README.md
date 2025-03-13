@@ -84,9 +84,42 @@ The following environment variables are required:
 
 1. An AWS account with appropriate permissions
 2. AWS CLI installed and configured
-3. Docker installed (for container deployment)
+3. Docker installed (for container deployment options)
 
-### Deployment Options
+### School Project Deployment (Budget-Friendly)
+
+For school projects with a limited budget (e.g. $250 or less), we recommend using a simplified AWS Elastic Beanstalk setup:
+
+1. See the **[aws-simplified-deployment-guide.md](aws-simplified-deployment-guide.md)** for complete step-by-step instructions designed for AWS beginners.
+
+2. Key cost-saving tips:
+   - Use t2.micro instances (free tier eligible)
+   - Deploy a single instance without a load balancer
+   - Turn off the environment when not in use
+   - Set up billing alerts to avoid unexpected charges
+   - Delete all resources when the project is complete
+
+3. Quick deployment commands:
+   ```bash
+   # Install EB CLI
+   pip install awsebcli
+   
+   # Initialize application
+   eb init -p python-3.11 reproductive-health-chatbot
+   
+   # Create a low-cost environment
+   eb create reproductive-health-chatbot-env --instance-type t2.micro --single
+   
+   # Set environment variables
+   eb setenv OPENAI_API_KEY=your-key ABORTION_POLICY_API_KEY=your-key SESSION_SECRET=your-secret
+   
+   # Open your application
+   eb open
+   ```
+
+### Production Deployment Options
+
+For production deployments with higher requirements for scalability and reliability:
 
 #### Option 1: AWS Elastic Beanstalk (Recommended)
 

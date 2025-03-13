@@ -148,5 +148,899 @@
       "positive_percentage": 0,
       "negative_percentage": 0
     }
+  },
+  {
+    "timestamp": "2025-03-12T23:45:19.180233",
+    "duration_seconds": 300.0011496543884,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:45:29.559434",
+    "duration_seconds": 300.00121998786926,
+    "counters": {
+      "questions_conversational": 2,
+      "questions_policy": 3,
+      "evaluations_total": 8,
+      "evaluations_improved": 8,
+      "quality_score_low": 4,
+      "quality_score_medium": 4,
+      "questions_knowledge": 4
+    },
+    "timers": {
+      "response_time_policy": {
+        "count": 3,
+        "total": 52.105743169784546,
+        "average": 17.36858105659485,
+        "min": 11.53069519996643,
+        "max": 24.58759307861328
+      },
+      "response_time_conversational": {
+        "count": 1,
+        "total": 8.72229552268982,
+        "average": 8.72229552268982,
+        "min": 8.72229552268982,
+        "max": 8.72229552268982
+      },
+      "response_time_knowledge": {
+        "count": 3,
+        "total": 39.29013967514038,
+        "average": 13.096713225046793,
+        "min": 10.968720197677612,
+        "max": 16.568814516067505
+      }
+    },
+    "api_calls": {
+      "openai_evaluation": 8,
+      "openai": 4
+    },
+    "api_tokens": {
+      "openai_evaluation": 2224,
+      "openai": 923
+    },
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:50:19.189573",
+    "duration_seconds": 300.0042338371277,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:50:29.563441",
+    "duration_seconds": 300.00231742858887,
+    "counters": {
+      "evaluations_total": 19,
+      "evaluations_improved": 19,
+      "quality_score_low": 9,
+      "questions_knowledge": 17,
+      "quality_score_medium": 10
+    },
+    "timers": {
+      "response_time_knowledge": {
+        "count": 18,
+        "total": 234.2721152305603,
+        "average": 13.015117512808906,
+        "min": 7.781447172164917,
+        "max": 20.77945327758789
+      }
+    },
+    "api_calls": {
+      "openai_evaluation": 19
+    },
+    "api_tokens": {
+      "openai_evaluation": 6834
+    },
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:55:19.196829",
+    "duration_seconds": 300.00034976005554,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-12T23:55:29.565213",
+    "duration_seconds": 300.0004987716675,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:00:19.200124",
+    "duration_seconds": 300.00045347213745,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:00:29.566818",
+    "duration_seconds": 300.0006206035614,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:05:19.201218",
+    "duration_seconds": 300.000275850296,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:05:29.568463",
+    "duration_seconds": 300.00036907196045,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:10:19.202343",
+    "duration_seconds": 300.0003001689911,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:10:29.569772",
+    "duration_seconds": 300.00028824806213,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:15:19.203718",
+    "duration_seconds": 300.000369310379,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:15:29.571399",
+    "duration_seconds": 300.00029015541077,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:20:19.207635",
+    "duration_seconds": 300.00032567977905,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:20:29.573133",
+    "duration_seconds": 300.0005123615265,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:25:19.210135",
+    "duration_seconds": 300.00036907196045,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:25:29.575851",
+    "duration_seconds": 300.00040578842163,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:30:19.213432",
+    "duration_seconds": 300.00155806541443,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:30:29.590795",
+    "duration_seconds": 300.0022897720337,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:35:19.216876",
+    "duration_seconds": 300.0003044605255,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:35:29.592334",
+    "duration_seconds": 300.00035309791565,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:40:19.218488",
+    "duration_seconds": 300.0002954006195,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:40:29.593890",
+    "duration_seconds": 300.00031208992004,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:45:19.219975",
+    "duration_seconds": 300.0002872943878,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:45:29.596979",
+    "duration_seconds": 300.0003137588501,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:50:19.224632",
+    "duration_seconds": 300.00029850006104,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:50:29.598851",
+    "duration_seconds": 300.00034499168396,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:55:19.226786",
+    "duration_seconds": 300.00025749206543,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T00:55:29.600712",
+    "duration_seconds": 300.0003137588501,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:00:19.228967",
+    "duration_seconds": 300.00028824806213,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:00:29.604351",
+    "duration_seconds": 300.0003066062927,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:05:19.231259",
+    "duration_seconds": 300.00034952163696,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:05:29.606426",
+    "duration_seconds": 300.00030398368835,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:10:19.233433",
+    "duration_seconds": 300.0004060268402,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:10:29.608881",
+    "duration_seconds": 300.00034761428833,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:15:19.235594",
+    "duration_seconds": 300.0002875328064,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:15:29.612318",
+    "duration_seconds": 300.00040459632874,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:20:19.237772",
+    "duration_seconds": 300.00026774406433,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:20:29.615050",
+    "duration_seconds": 300.000536441803,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:25:19.239922",
+    "duration_seconds": 300.00033688545227,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:25:29.617124",
+    "duration_seconds": 300.000275850296,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:30:19.244231",
+    "duration_seconds": 300.0004780292511,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:30:29.619756",
+    "duration_seconds": 300.00029611587524,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:35:19.246623",
+    "duration_seconds": 300.00030398368835,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:35:29.622459",
+    "duration_seconds": 300.0002932548523,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:40:19.249641",
+    "duration_seconds": 300.00038743019104,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:40:29.624685",
+    "duration_seconds": 300.0002932548523,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:45:19.253101",
+    "duration_seconds": 300.0003116130829,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:45:29.627424",
+    "duration_seconds": 300.00043392181396,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:50:19.255268",
+    "duration_seconds": 300.0003514289856,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:50:29.630134",
+    "duration_seconds": 300.00032591819763,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:55:19.257931",
+    "duration_seconds": 300.00032901763916,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T01:55:29.632545",
+    "duration_seconds": 300.0003046989441,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T02:00:19.268450",
+    "duration_seconds": 300.00189113616943,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T02:00:29.635063",
+    "duration_seconds": 300.00042629241943,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
   }
 ]
