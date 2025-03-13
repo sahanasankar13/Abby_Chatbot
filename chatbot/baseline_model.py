@@ -7,6 +7,7 @@ from chatbot.bert_rag import BertRAGModel
 from chatbot.gpt_integration import GPTModel
 from chatbot.policy_api import PolicyAPI
 from chatbot.response_evaluator import ResponseEvaluator
+from chatbot.question_classifier import QuestionClassifier
 from utils.metrics import increment_counter, record_time, record_api_call
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class BaselineModel:
         self.gpt_model = GPTModel()
         self.policy_api = PolicyAPI()
         self.response_evaluator = ResponseEvaluator(evaluation_model=evaluation_model)
+        self.question_classifier = QuestionClassifier()
         
         # Track recent responses and contexts for evaluation
         self.recent_responses = []
@@ -39,7 +41,7 @@ class BaselineModel:
 
     def categorize_question(self, question, history=None):
         """
-        Determine the category of the question
+        Determine the category of the question using GPT-3.5 Turbo
 
         Args:
             question (str): User's question
@@ -49,161 +51,112 @@ class BaselineModel:
             str: Category ('policy', 'knowledge', 'conversational', 'out_of_scope')
         """
         try:
-            # Check if there's abortion context in history for single-word state inputs
+            # First, use the GPT-3.5 classifier for smart categorization
+            logger.info(f"Using GPT-3.5 classifier for question: {question}")
+            record_api_call("gpt-3.5-turbo-classification")
+            
+            # Time the classification for metrics
+            start_time = time.time()
+            classification = self.question_classifier.get_full_classification(question, history)
+            elapsed_time = time.time() - start_time
+            record_time("question_classification", elapsed_time)
+            
+            logger.info(f"GPT-3.5 classification result: {classification}")
+            
+            # Handle special case for location-only input (just a state name)
+            if "location_only" in classification.get("categories", []):
+                logger.info(f"Location-only input detected: {classification.get('location_context')}")
+                return "policy"
+                
+            # Map the GPT-3.5 classification to our categories
+            if classification.get("is_policy_question", False) and classification.get("is_abortion_related", False):
+                logger.info("Classified as abortion policy question")
+                return "policy"
+                
+            # Check if this is primarily an informational question
+            if "information" in classification.get("categories", []):
+                logger.info("Classified as knowledge/information question")
+                return "knowledge"
+                
+            # Check if this is an emotional support/personal question
+            if "emotional_support" in classification.get("categories", []) or classification.get("is_emotional", False):
+                logger.info("Classified as emotional/personal question")
+                return "conversational"
+                
+            # Check if this is a greeting or simple conversational exchange
+            if "greeting" in classification.get("categories", []):
+                logger.info("Classified as greeting/conversational")
+                return "conversational"
+                
+            # If we're still not sure, do some additional checks for policy questions
+            # This helps catch policy questions that might have been missed
+            question_lower = question.lower()
+            
+            # Special case for single-word state inputs after abortion context
             if len(question.split()) <= 1 and history:
                 # Look for abortion-related messages in history
                 abortion_terms = ["abortion", "terminate", "pregnancy", "termination"]
-                for entry in history:
-                    if entry['sender'] == 'user' and any(term in entry['message'].lower() for term in abortion_terms):
-                        # If single word is a state name after abortion question, treat as policy
+                if any(any(term in entry['message'].lower() for term in abortion_terms) 
+                       for entry in history if entry['sender'] == 'user'):
+                    # Check if the single word looks like a state name/abbreviation
+                    state_input = self.policy_api.get_state_code(question)
+                    if state_input:
+                        logger.info(f"Single-word state input detected after abortion context: {question}")
                         return "policy"
-
-            # Policy-related keywords
-            policy_keywords = [
-                'law', 'legal', 'requirement', 'mandated', 'mandatory', 'insurance',
-                'medicaid', 'court', 'legislation', 'state', 'minor', 'consent',
-                'judicial', 'bypass', 'parental', 'waiting period', 'ultrasound',
-                'counseling', 'waiting', 'cost', 'coverage'
-            ]
-
-            question_lower = question.lower()
-
-            # Direct policy pattern detection (what is the abortion policy in [state])
-            if "abortion policy in" in question_lower or "abortion policies in" in question_lower:
-                logger.debug("Direct abortion policy question with state detected")
-                return 'policy'
-
-            # Check for explicit state mentions combined with abortion/policy keywords
-            states = ["alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", 
-                     "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", 
-                     "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", 
-                     "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", 
-                     "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", 
-                     "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", 
-                     "tennessee", "texas", "utah", "vermont", "virginia", "washington", "west virginia", 
-                     "wisconsin", "wyoming", "dc", "district of columbia", "washington dc"]
-
-            # Check for state abbreviations
-            state_abbrevs = ["al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", "il", 
-                             "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms", "mo", "mt", 
-                             "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", 
-                             "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc"]
-
-            # Direct abortion policy questions - always categorize as policy
-            if question_lower.startswith("can i get an abortion in") or "can i get an abortion" in question_lower:
-                logger.debug("Direct abortion policy question detected")
-                return 'policy'
-
-            # Questions about abortion laws/legality in a state
-            if "abortion laws" in question_lower or "abortion law" in question_lower:
-                logger.debug("Abortion law question detected")
-                return 'policy'
-
-            # If question mentions abortion and a state, categorize as policy
-            state_mentioned = any(f" {state} " in f" {question_lower} " or
-                                 question_lower.endswith(f" {state}") or
-                                 question_lower.startswith(f"{state} ") or
-                                 question_lower == state
-                                 for state in states)
-
-            abbr_mentioned = any(f" {abbr} " in f" {question_lower} " or
-                                question_lower.endswith(f" {abbr}") or
-                                question_lower.startswith(f"{abbr} ") or
-                                question_lower == abbr
-                                for abbr in state_abbrevs)
-                                
-            # Check if this is a follow-up state message after abortion question
-            is_state_only = question_lower in states or question_lower in state_abbrevs
             
-            # Use history parameter instead of accessing conversation_history directly
-            last_messages = [msg['message'] for msg in history[-3:] if msg['sender'] == 'user'] if history else []
-            has_abortion_context = any('abortion' in msg.lower() for msg in last_messages)
-
-            if ('abortion' in question_lower and (state_mentioned or abbr_mentioned)) or \
-               (is_state_only and has_abortion_context):
-                logger.debug(f"Question mentions abortion and a state or is a state name after abortion context: {question}")
-                return 'policy'
-
-            # Check for policy-related keywords
-            if any(keyword in question_lower for keyword in policy_keywords):
-                logger.debug(f"Question contains policy keyword: {[kw for kw in policy_keywords if kw in question_lower]}")
-                return 'policy'
-
-            # Special case for abortion-related questions with action verbs
-            if 'abortion' in question_lower:
-                action_indicators = ['can i', 'get an', 'have an', 'available', 'access']
-                if any(indicator in question_lower for indicator in action_indicators):
-                    logger.info(f"Abortion question with action indicator detected: {question}")
-                    return 'policy'
-
-            # Special case: Check if current question is about abortion availability or legality
-            # and we have state information in conversation history
-            if ('abortion' in question_lower or 'pregnant' in question_lower) and history:
-                logger.info(f"Special case check: Question about abortion with history: {question_lower}")
-                access_indicators = ['get', 'have', 'legal', 'available', 'there', 'allowed', 'can i']
-
-                # Special case for referential questions about a location mentioned before
-                if ('there' in question_lower or 'that state' in question_lower) and any(indicator in question_lower for indicator in access_indicators):
-                    logger.info("Detected referential location question - treating as policy question")
-                    return 'policy'
-
-                # If question contains "abortion" and any access indicators, check for state info in history
-                if any(indicator in question_lower for indicator in access_indicators):
-                    logger.info(f"Found access indicator in question: {[ind for ind in access_indicators if ind in question_lower]}")
-
-                    # Check if there's state information in the conversation history
-                    for message in reversed(history):
-                        if message['sender'] == 'user':
-                            msg_lower = message['message'].lower()
-                            logger.info(f"Checking history message: {msg_lower}")
-
-                            # Check for direct state mentions
-                            state_found = False
-                            for state in states:
-                                if state in msg_lower:
-                                    logger.info(f"Found state in history: {state}")
-                                    state_found = True
-                                    return 'policy'
-
-                            # Check for "I live in" patterns with any state
-                            location_phrases = ["i live in", "i'm in", "i am in", "i'm from", "i am from"]
-                            for phrase in location_phrases:
-                                if phrase in msg_lower:
-                                    location_part = msg_lower.split(phrase)[1].strip()
-                                    # Look for a state name in this part
-                                    for state in states:
-                                        if state in location_part:
-                                            logger.info(f"Found location context with phrase '{phrase}': {state}")
-                                            return 'policy'
-
-                            # More general check for state mentions
-                            for state in states:
-                                if state in msg_lower:
-                                    logger.info(f"Found state name {state} in message: {msg_lower}")
-                                    return 'policy'
-
-                    logger.info("No state information found in history for abortion question")
-
-            # For questions that seem to be seeking specific information
-            information_indicators = ['what', 'how', 'when', 'where', 'why', 'who', 'which']
-            if any(indicator in question_lower for indicator in information_indicators):
+            # Direct pattern detection for policy questions that might be missed
+            if "abortion policy" in question_lower or "abortion laws" in question_lower:
+                logger.info("Direct abortion policy reference detected")
+                return "policy"
+                
+            # If the question has a location context, it's likely about policy
+            if classification.get("location_context") and "abortion" in question_lower:
+                logger.info(f"Location context with abortion question: {classification.get('location_context')}")
+                return "policy"
+                
+            # For informational questions that don't fit the above categories
+            if any(indicator in question_lower for indicator in 
+                  ['what', 'how', 'when', 'where', 'why', 'who', 'which']):
                 return 'knowledge'
-
-            # Use GPT to detect more complex policy questions that our rules might miss
-            try:
-                if ('abortion' in question_lower or 'pregnancy' in question_lower):
-                    if self.gpt_model.detect_policy_question(question, history):
-                        logger.info("GPT detected policy question")
-                        return 'policy'
-            except Exception as e:
-                logger.error(f"Error using GPT for policy detection: {str(e)}")
-
-            # Default to conversational
-            return 'conversational'
+                
+            # Default based on GPT classification confidence
+            if classification.get("confidence", 0) > 0.7:
+                # Trust the primary category from GPT classification
+                primary_category = classification.get("categories", ["information"])[0]
+                if primary_category == "policy":
+                    return "policy"
+                elif primary_category == "information":
+                    return "knowledge"
+                elif primary_category in ["emotional_support", "greeting"]:
+                    return "conversational"
+                else:
+                    return "conversational"
+            
+            # If still uncertain, default to conversational
+            return "conversational"
 
         except Exception as e:
-            logger.error(f"Error categorizing question: {str(e)}", exc_info=True)
-            return 'out_of_scope'
+            logger.error(f"Error categorizing question with GPT-3.5: {str(e)}", exc_info=True)
+            
+            # Fallback to simpler categorization if GPT classification fails
+            try:
+                question_lower = question.lower()
+                
+                # Simple checks for policy questions
+                if "abortion" in question_lower and any(state in question_lower for state in self.policy_api.STATE_NAMES_LOWER.keys()):
+                    return "policy"
+                    
+                # Simple checks for knowledge questions
+                if any(indicator in question_lower for indicator in 
+                      ['what', 'how', 'when', 'where', 'why', 'who', 'which']):
+                    return "knowledge"
+                    
+                # Default to conversational
+                return "conversational"
+                
+            except Exception as fallback_error:
+                logger.error(f"Error in fallback categorization: {str(fallback_error)}", exc_info=True)
+                return "out_of_scope"
 
     def process_question(self, question, conversation_history=[], location_context=None, force_category=None):
         """

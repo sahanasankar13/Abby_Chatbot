@@ -7,6 +7,7 @@ from chatbot.baseline_model import BaselineModel
 from chatbot.friendly_bot import FriendlyBot
 from chatbot.citation_manager import CitationManager
 from chatbot.policy_api import PolicyAPI
+from chatbot.question_classifier import QuestionClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class ConversationManager:
             self.friendly_bot = FriendlyBot()
             self.citation_manager = CitationManager()
             self.policy_api = PolicyAPI()
+            self.question_classifier = QuestionClassifier()
             self.conversation_history = []
             self._session_ended = False
             
@@ -60,9 +62,20 @@ class ConversationManager:
             # Store message in history
             self.add_to_history('user', message)
 
-            # Extract location context with enhanced search through history
-            location_context = self._extract_location(
+            # Use the GPT-3.5 based question classifier to get advanced classification
+            classification = self.question_classifier.get_full_classification(
                 message, self.conversation_history)
+            
+            logger.info(f"Question classified as: {classification}")
+            
+            # Extract location from the classifier or use conventional methods as backup
+            location_context = classification.get('location_context')
+            
+            # If classifier didn't find location, try conventional methods
+            if not location_context:
+                location_context = self._extract_location(
+                    message, self.conversation_history)
+                
             if location_context:
                 logger.info(f"Detected location context: {location_context}")
 
