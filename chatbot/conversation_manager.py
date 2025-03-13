@@ -265,21 +265,23 @@ class ConversationManager:
                 logger.info("Detected emotional abortion question, providing supportive response")
 
                 # Analyze if it's a specific emotional question like guilt
-                question_type = self.friendly_bot.detect_question_type(content)
-                emotion_type, emotion_support = self.friendly_bot.detect_emotional_content(content)
+                question_type = self.friendly_bot.detect_question_type(message)
+                emotion_type, emotion_support = self.friendly_bot.detect_emotional_content(message)
                 
-                if emotion_type:
+                if emotion_type and emotion_support:
                     logger.info(f"Detected specific emotional content: {emotion_type}")
                     
                     # Create a more targeted emotional support response
                     supportive_response = emotion_support
                     
                     # Add a general follow-up that doesn't mention state/location unless needed
-                    supportive_response += (
+                    follow_up = (
                         "Many people experience these feelings when considering their reproductive health options. "
                         "Everyone's emotional response is valid and unique to their situation. "
                         "If you'd like to talk more specifically about resources or options, I'm here to help."
                     )
+                    
+                    supportive_response = supportive_response + follow_up
                 else:
                     # Use the standard supportive response for general emotional content
                     supportive_response = (
@@ -476,9 +478,9 @@ class ConversationManager:
                 )
                 response = uncertain_response
 
-            # Add friendly elements to the response
+            # Add friendly elements to the response, passing the original message for emotional analysis
             friendly_response = self.friendly_bot.add_friendly_elements(
-                response, question_type)
+                response, question_type, user_question=message)
 
             # Only add citations to substantial responses (not simple conversational exchanges)
             # Increased threshold to consider more responses as substantial enough for citations
