@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Enable send button when there's text
     userInput.addEventListener('input', function() {
         sendButton.disabled = !userInput.value.trim();
+        
+        // Hide suggested prompts when user starts typing
+        if (userInput.value.trim()) {
+            const suggestedPrompts = document.getElementById('suggestedPrompts');
+            if (suggestedPrompts) {
+                suggestedPrompts.style.display = 'none';
+            }
+        }
     });
 
     // Handle form submission
@@ -247,6 +255,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Focus on input so user can modify if desired
                 userInput.focus();
                 
+                // Hide suggested prompts immediately when clicked
+                const suggestedPrompts = document.getElementById('suggestedPrompts');
+                if (suggestedPrompts) {
+                    suggestedPrompts.style.display = 'none';
+                }
+                
                 // Auto-send after a short delay if user doesn't modify
                 setTimeout(() => {
                     if (userInput.value === promptText) {
@@ -267,6 +281,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function sendMessage(message) {
         addUserMessage(message);
+        
+        // Hide suggested prompts when user sends a message
+        const suggestedPrompts = document.getElementById('suggestedPrompts');
+        if (suggestedPrompts) {
+            suggestedPrompts.style.display = 'none';
+        }
         
         // Check for special command: "end"
         if (message.toLowerCase() === 'end') {
@@ -446,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Clear all messages from the UI only
                     chatMessages.innerHTML = '';
                     
-                    // Re-add the welcome message
+                    // Re-add the welcome message with suggested prompts
                     addBotWelcomeMessage("Hi! 👋 How can I help you today?");
                     
                     // Add confirmation message
