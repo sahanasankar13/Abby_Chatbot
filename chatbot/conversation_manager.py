@@ -756,7 +756,13 @@ class ConversationManager:
         """
         import uuid
         from utils.text_processing import PIIDetector
-
+        
+        # If session was previously ended and this is a new user message,
+        # reset the session ended flag and keep the conversation going
+        if self._session_ended and sender == 'user':
+            logger.info("Resuming conversation after session was previously ended")
+            self._session_ended = False
+            
         # Generate message ID if not provided
         if not message_id:
             message_id = str(uuid.uuid4())
@@ -790,10 +796,17 @@ class ConversationManager:
     def get_history(self):
         """
         Get the conversation history
+        
+        If _session_ended is True, return an empty list to indicate 
+        the UI should start a fresh conversation display.
 
         Returns:
-            list: List of conversation messages
+            list: List of conversation messages or empty list if session ended
         """
+        if self._session_ended:
+            logger.info("Session marked as ended, returning empty history for UI")
+            return []
+            
         return self.conversation_history
 
     def clear_history(self):
@@ -867,11 +880,14 @@ class ConversationManager:
 
     def is_state_only_message(self, content):
         """Check if the message is just a state name or abbreviation"""
-        from chatbot.baseline_model import states, state_abbrevs
-
+        # Use policy_api's state names that we already have access to
         content = content.strip().lower()
-        # Check if content is exactly a state name or abbreviation
-        if content in states or content in state_abbrevs:
+        
+        # Check if content matches a state name or abbreviation
+        state_names_lower = [name.lower() for name in self.policy_api.STATE_NAMES.values()]
+        state_abbrevs_lower = [abbr.lower() for abbr in self.policy_api.STATE_NAMES.keys()]
+        
+        if content in state_names_lower or content in state_abbrevs_lower:
             return True
 
         return False
