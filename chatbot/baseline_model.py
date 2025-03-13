@@ -367,19 +367,30 @@ class BaselineModel:
             elif category == 'knowledge':
                 logger.debug(f"Using BERT RAG for response to: {question}")
                 rag_response, contexts = self.bert_rag.get_response_with_context(question)
-
+                
                 # Store the contexts for Ragas evaluation
                 self.recent_contexts.append(contexts)
                 while len(self.recent_contexts) > self.max_tracked_responses:
                     self.recent_contexts.pop(0)
-
+                
                 # Add source information for the evaluator
                 source_info = {
                     "source": "planned_parenthood",
                     "citations": [{"source": "Planned Parenthood", "url": "https://www.plannedparenthood.org/"}]
                 }
-
-                if self.bert_rag.is_confident(question, rag_response):
+                
+                # Check if this is an abortion types or methods question that should offer policy info too
+                question_lower = question.lower()
+                is_abortion_types_question = "types of abortion" in question_lower or "different types of abortion" in question_lower or "abortion methods" in question_lower
+                
+                if is_abortion_types_question:
+                    logger.info("Detected abortion types/methods question - providing RAG response with policy offer")
+                    base_response = rag_response if self.bert_rag.is_confident(question, rag_response) else self.gpt_model.enhance_response(question, rag_response)
+                    
+                    # Append the offer for state-specific policy information
+                    policy_offer = "\n\nWould you like information about abortion policies in a specific state? If so, please let me know which state you're interested in."
+                    initial_response = base_response + policy_offer
+                elif self.bert_rag.is_confident(question, rag_response):
                     initial_response = rag_response
                 else:
                     logger.debug("RAG not confident, enhancing with GPT")

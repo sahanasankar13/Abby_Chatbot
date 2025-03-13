@@ -193,6 +193,10 @@ class BertRAGModel:
     def _is_out_of_scope(self, question):
         """Check if question is outside the scope of reproductive health"""
         question_lower = question.lower()
+        
+        # Special check for ethical questions or general abortion types
+        if "abortion murder" in question_lower or "abortion killing" in question_lower or "abortion moral" in question_lower or "abortion ethics" in question_lower or "types of abortion" in question_lower or "different types of abortion" in question_lower or "abortion methods" in question_lower:
+            return False  # Not out of scope, use RAG first then optionally ask about policy
 
         # Define reproductive health related terms
         reproductive_health_terms = ["birth control", "contraception", "pregnancy", "abortion", "std", "sti", 
