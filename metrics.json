@@ -1145,5 +1145,142 @@
       "positive_percentage": 0,
       "negative_percentage": 0
     }
+  },
+  {
+    "timestamp": "2025-03-13T03:55:15.055490",
+    "duration_seconds": 300.00031423568726,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T03:55:33.595270",
+    "duration_seconds": 300.00032567977905,
+    "counters": {
+      "questions_policy": 2,
+      "evaluations_total": 3,
+      "evaluations_improved": 3,
+      "quality_score_medium": 2,
+      "questions_conversational": 2,
+      "quality_score_low": 1
+    },
+    "timers": {
+      "response_time_policy": {
+        "count": 2,
+        "total": 61.59367632865906,
+        "average": 30.79683816432953,
+        "min": 14.743481159210205,
+        "max": 46.85019516944885
+      },
+      "response_time_conversational": {
+        "count": 1,
+        "total": 20.878746271133423,
+        "average": 20.878746271133423,
+        "min": 20.878746271133423,
+        "max": 20.878746271133423
+      }
+    },
+    "api_calls": {
+      "openai_evaluation": 3,
+      "openai": 3
+    },
+    "api_tokens": {
+      "openai_evaluation": 740,
+      "openai": 753
+    },
+    "feedback": {
+      "positive": 1,
+      "negative": 1,
+      "total": 2,
+      "positive_percentage": 50.0,
+      "negative_percentage": 50.0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T04:01:13.476590",
+    "duration_seconds": 300.0003607273102,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T04:01:23.535643",
+    "duration_seconds": 300.00032114982605,
+    "counters": {
+      "questions_conversational": 1,
+      "evaluations_total": 1,
+      "evaluations_improved": 1,
+      "quality_score_low": 1
+    },
+    "timers": {
+      "response_time_conversational": {
+        "count": 1,
+        "total": 12.599755048751831,
+        "average": 12.599755048751831,
+        "min": 12.599755048751831,
+        "max": 12.599755048751831
+      }
+    },
+    "api_calls": {
+      "openai_evaluation": 1,
+      "openai": 1
+    },
+    "api_tokens": {
+      "openai_evaluation": 136,
+      "openai": 224
+    },
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T04:06:13.479766",
+    "duration_seconds": 300.00042605400085,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
+  },
+  {
+    "timestamp": "2025-03-13T04:06:23.538302",
+    "duration_seconds": 300.0003740787506,
+    "counters": {},
+    "timers": {},
+    "api_calls": {},
+    "api_tokens": {},
+    "feedback": {
+      "positive": 0,
+      "negative": 0,
+      "total": 0,
+      "positive_percentage": 0,
+      "negative_percentage": 0
+    }
   }
 ]

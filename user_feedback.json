@@ -16,5 +16,17 @@
     "rating": 1,
     "comment": null,
     "timestamp": "2025-03-13T03:33:02.898459"
+  },
+  {
+    "message_id": "msg_1741837967214",
+    "rating": -1,
+    "comment": null,
+    "timestamp": "2025-03-13T03:52:58.279792"
+  },
+  {
+    "message_id": "end_session_1741838089445",
+    "rating": 5,
+    "comment": "test",
+    "timestamp": "2025-03-13T03:54:49.490403"
   }
 ]
