@@ -85,13 +85,19 @@ class ConversationManager:
                             )
                             break
 
-            # Special handling for abortion requests
-            abortion_indicators = [
+            # Special handling for abortion access requests (policy-specific)
+            abortion_access_indicators = [
                 "need an abortion", "want an abortion", "get an abortion",
-                "abortion there", "abort", "terminate", "terminate pregnancy",
-                "pregnancy termination", "can i get an abortion",
-                "abortion in", "where can i get an abortion",
-                "where to get an abortion"
+                "abortion there", "abortion in", "where can i get an abortion",
+                "where to get an abortion", "access to abortion", "abortion access",
+                "abortion laws", "abortion legal", "abortion legislation"
+            ]
+
+            # Indicators for general abortion information (not policy-specific)
+            abortion_info_indicators = [
+                "what is abortion", "abortion info", "abortion information",
+                "types of abortion", "abortion options", "abortion procedure",
+                "what's an abortion", "define abortion", "abortion definition"
             ]
 
             # Emotional indicators for personal support rather than just policy information
@@ -102,8 +108,20 @@ class ConversationManager:
                 "feeling", "feel", "scared of", "worried about", "regret", "guilt"
             ]
 
-            is_abortion_question = any(indicator in message_lower
-                                       for indicator in abortion_indicators)
+            # Determine the type of abortion question
+            is_abortion_access_question = any(indicator in message_lower
+                                       for indicator in abortion_access_indicators)
+            
+            is_abortion_info_question = any(indicator in message_lower
+                                       for indicator in abortion_info_indicators) or "abortion" in message_lower
+
+            # Special check for multi-part questions with abortion as a general term
+            is_multi_part_question = "?" in message and message.count("?") > 1 and "abortion" in message_lower
+            
+            # Override to prevent policy-based answers for multi-part educational queries
+            if is_multi_part_question and not any(indicator in message_lower for indicator in abortion_access_indicators):
+                is_abortion_access_question = False
+                is_abortion_info_question = True
 
             has_emotional_content = any(indicator in message_lower
                                      for indicator in emotional_indicators)
@@ -121,7 +139,7 @@ class ConversationManager:
                                                 "medication", "recovery", "timeline", "process"])
 
             # Handle combined emotional abortion-related questions with location information AND knowledge request
-            if is_abortion_question and has_emotional_content and location_context and has_knowledge_question:
+            if (is_abortion_access_question or is_abortion_info_question) and has_emotional_content and location_context and has_knowledge_question:
                 logger.info(f"Detected complex query: emotional + policy + knowledge for {location_context}")
 
                 # 1. Get policy information
@@ -167,7 +185,7 @@ class ConversationManager:
                 return formatted_response
 
             # Handle combined emotional abortion-related questions with location information
-            elif is_abortion_question and has_emotional_content and location_context:
+            elif (is_abortion_access_question or is_abortion_info_question) and has_emotional_content and location_context:
                 logger.info(f"Detected emotional abortion question with location {location_context}, providing supportive policy response")
 
                 # Get the policy information
@@ -199,7 +217,7 @@ class ConversationManager:
                 return formatted_response
 
             # Handle emotional abortion questions with knowledge request but without location
-            elif is_abortion_question and has_emotional_content and has_knowledge_question:
+            elif (is_abortion_access_question or is_abortion_info_question) and has_emotional_content and has_knowledge_question:
                 logger.info("Detected emotional abortion question with knowledge request but no location")
 
                 # Get knowledge information about the procedure
@@ -230,7 +248,7 @@ class ConversationManager:
                 return formatted_response
 
             # Handle emotional abortion-related questions without location or knowledge request
-            elif is_abortion_question and has_emotional_content:
+            elif (is_abortion_access_question or is_abortion_info_question) and has_emotional_content:
                 logger.info("Detected emotional abortion question, providing supportive response")
 
                 supportive_response = (
