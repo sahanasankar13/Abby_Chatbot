@@ -34,6 +34,11 @@ class ConversationManager:
             self.citation_manager = CitationManager()
             self.policy_api = PolicyAPI()
             self.conversation_history = []
+            self._session_ended = False
+            
+            # Initialize PII detector 
+            from utils.text_processing import PIIDetector
+            self.pii_detector = PIIDetector()
 
             logger.info("Conversation Manager initialized successfully")
         except Exception as e:
@@ -328,7 +333,16 @@ class ConversationManager:
                         formatted = self.citation_manager.format_response_with_citations(response)
                         self.add_to_history('bot', formatted['text'])
                         return formatted
-                        break
+                
+                # If we got here, it's a state name but not after an abortion question
+                # We should still properly handle it rather than treating it as a new conversation
+                if not is_state_after_abortion:
+                    logger.info(f"Detected state name '{message}' without abortion context, asking for clarification")
+                    response = f"I see you've mentioned {message.capitalize()}. What would you like to know about reproductive health or abortion policies in {message.capitalize()}?"
+                    response = self.citation_manager.add_citation_to_text(response, 'planned_parenthood')
+                    formatted = self.citation_manager.format_response_with_citations(response)
+                    self.add_to_history('bot', formatted['text'])
+                    return formatted
 
             # Check if this is a simple greeting that should have a brief response
             simple_greeting_indicators = ["hi", "hello", "hey", "good morning", "good afternoon", 
@@ -798,6 +812,10 @@ class ConversationManager:
             # Just log that we're ending the session for this user
             if self.conversation_history:
                 logger.info(f"Session ended with {len(self.conversation_history)} messages")
+                
+                # Preserve the history for analytics but set a flag so the UI knows to start fresh
+                # We don't actually clear the history, as that would lose context
+                self._session_ended = True
                 
                 # In a future enhancement, we could store the complete history in a database
                 # with a session ID for better analytics
