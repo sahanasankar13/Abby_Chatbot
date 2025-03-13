@@ -889,8 +889,8 @@ class ConversationManager:
         # Check if PII should be detected before abort policy questions
         if not self.is_state_only_message(content):
             # Check if message contains PII and sanitize if needed
-            pii_detected, sanitized_content = self.pii_detector.detect_and_sanitize(content)
-            if pii_detected:
+            sanitized_content, warning = self.pii_detector.detect_and_sanitize(content)
+            if warning:
                 logger.info("PII detected and sanitized in message")
                 content = sanitized_content
 

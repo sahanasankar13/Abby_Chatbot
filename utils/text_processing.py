@@ -253,3 +253,24 @@ class PIIDetector:
         warning += " This information will not be stored, but it's best practice to keep it private."
         
         return warning
+        
+    def detect_and_sanitize(self, text: str) -> Tuple[str, Optional[str]]:
+        """
+        Detect PII in text and return sanitized version along with a warning
+        
+        Args:
+            text (str): Text to check for PII
+            
+        Returns:
+            Tuple[str, Optional[str]]: (Sanitized text, Warning message or None)
+        """
+        if not self.has_pii(text):
+            return text, None
+            
+        # Sanitize the text by redacting PII
+        sanitized_text, _ = self.redact_pii(text)
+        
+        # Generate appropriate warning
+        warning = self.warn_about_pii(text)
+        
+        return sanitized_text, warning
