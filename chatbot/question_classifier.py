@@ -1,5 +1,5 @@
 """
-Question classifier using GPT-3.5 Turbo to intelligently categorize user questions
+Question classifier using GPT-4o to intelligently categorize user questions
 for the reproductive health chatbot.
 """
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class QuestionClassifier:
     """
-    Uses GPT-3.5 Turbo to classify questions into different categories
+    Uses GPT-4o to classify questions into different categories
     for appropriate handling in the reproductive health chatbot.
     """
     
@@ -28,7 +28,7 @@ class QuestionClassifier:
             if self.openai_api_key:
                 self.client = OpenAI(api_key=self.openai_api_key)
                 self.openai_available = True
-                logger.info("Question Classifier initialized with GPT-3.5 Turbo")
+                logger.info("Question Classifier initialized with GPT-4o preference (will fallback to GPT-3.5-turbo if needed)")
             else:
                 logger.warning("OPENAI_API_KEY not found, using rule-based classification")
                 self.client = None
@@ -100,7 +100,7 @@ class QuestionClassifier:
         
     def classify_question(self, question: str, history: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
-        Classify a user question into appropriate categories using GPT-3.5 Turbo
+        Classify a user question into appropriate categories using GPT-4o
         
         Args:
             question (str): The user's question
@@ -130,7 +130,7 @@ class QuestionClassifier:
                 logger.warning("OpenAI not available, using rule-based classification")
                 return self._rule_based_classification(question, history, location_context)
                 
-            # Define the prompt for GPT-3.5 Turbo classification
+            # Define the prompt for GPT-4o classification
             system_message = """You are a specialized classifier for reproductive health questions. 
 Your task is to categorize user questions to help route them to the right response system.
 Analyze the question and return ONLY a JSON object with the following fields:
@@ -154,15 +154,30 @@ Do not include any text outside the JSON object. The JSON should be valid and pa
             # Make the OpenAI API call
             try:
                 from openai import OpenAI
-                response = self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": f"{context}User question: {question}"}
-                    ],
-                    temperature=0.1,  # Low temperature for more consistent results
-                    max_tokens=150
-                )
+                try:
+                    # First try with GPT-4o
+                    response = self.client.chat.completions.create(
+                        model="gpt-4o",  # Using GPT-4o for better classification accuracy
+                        messages=[
+                            {"role": "system", "content": system_message},
+                            {"role": "user", "content": f"{context}User question: {question}"}
+                        ],
+                        temperature=0.1,  # Low temperature for more consistent results
+                        max_tokens=150
+                    )
+                    logger.info("Successfully used GPT-4o for classification")
+                except Exception as model_error:
+                    # Fall back to GPT-3.5-turbo if GPT-4o is not available
+                    logger.warning(f"GPT-4o not available: {str(model_error)}. Falling back to GPT-3.5-turbo")
+                    response = self.client.chat.completions.create(
+                        model="gpt-3.5-turbo",  # Fallback to GPT-3.5-turbo
+                        messages=[
+                            {"role": "system", "content": system_message},
+                            {"role": "user", "content": f"{context}User question: {question}"}
+                        ],
+                        temperature=0.1,
+                        max_tokens=150
+                    )
                 
                 # Extract and parse the JSON response
                 result_text = response.choices[0].message.content.strip()
