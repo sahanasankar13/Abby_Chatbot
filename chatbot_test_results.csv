@@ -1,0 +1,51 @@
+Test Case,Score,Feedback,User Message,Bot Response,Citations
+Goodbye,7,"Good response; Appropriate goodbye response","Goodbye","Goodbye! If you have any more questions about reproductive health in the future, don't hesitate to reach out. Take care!",""
+Hello with typo,7,"Good response; Appropriate greeting","Helllo, can yu help me?","Hello! I'm here to help answer your questions about reproductive health. How can I assist you today?",""
+Personal info and Texas policy,9,"Excellent response; Properly warns about PII and provides policy answer","My name is Chloe Nicole and my email is chloe@sahana.com. What is the abortion policy in Texas?","I noticed you shared personal information in your message. For privacy and security reasons, please avoid sharing personal details like your name and email address. For your question about Texas abortion policy: In Texas, abortion is prohibited except when necessary to save the pregnant person's life or prevent substantial impairment of major bodily function. There are no exceptions for rape or incest. The ban includes medication abortion, and there are criminal penalties for providers. Texas also has a 'trigger ban' that went into effect after Roe v. Wade was overturned, making abortion a felony.","Abortion Policy API, Planned Parenthood"
+Maine policy,8,"Good response; Contains policy information; Includes citations","What is the abortion policy in Maine?","In Maine, abortion is legal throughout pregnancy if deemed necessary by a healthcare provider. The state protects abortion rights by statute, ensuring access to care. Abortion is covered by MaineCare (Medicaid) and required to be covered by private insurance. Additionally, Maine allows qualified non-physician healthcare providers to perform abortions. The state has enacted protective shield laws for providers and patients since the Dobbs decision.","Abortion Policy API, Planned Parenthood"
+Texas policy,6,"Adequate response; Missing policy information; Includes citations","What is the abortion policy in Texas?","In Texas, abortion is prohibited except when necessary to save the pregnant person's life or prevent substantial impairment of major bodily function. There are no exceptions for rape or incest. The ban includes medication abortion, and there are criminal penalties for providers. Texas also has a 'trigger ban' that went into effect after Roe v. Wade was overturned, making abortion a felony. If you need support or more information, I recommend contacting Planned Parenthood or the National Abortion Federation Hotline.","Abortion Policy API, Planned Parenthood"
+West Virginia policy,6,"Adequate response; Missing policy information; Includes citations","What is the abortion policy in West Virginia?","In West Virginia, abortion is banned with limited exceptions for medical emergencies, rape, and incest (with reporting requirements). The ban includes criminal penalties for providers. Prior abortion restrictions included a 20-week ban, mandatory waiting periods, and parental notification. If you need assistance or additional information, I recommend contacting the National Abortion Federation Hotline for support and resources.","Abortion Policy API, Planned Parenthood"
+Reproductive healthcare services,8,"Good response; Mentions multiple services: birth control, contraception, testing, abortion, pregnancy","What reproductive healthcare services are available?","Reproductive healthcare services typically include:
+
+1. Contraception options (birth control pills, IUDs, implants, condoms)
+2. STI/STD testing and treatment
+3. Pregnancy testing and counseling
+4. Prenatal care
+5. Abortion services where legal
+6. Fertility services
+7. Gynecological exams and Pap smears
+8. Breast exams and mammograms
+9. Sexual health education
+10. Menopause management
+
+Most services are available through primary care providers, OB/GYN specialists, Planned Parenthood, community health centers, and specialized reproductive health clinics.","Planned Parenthood"
+Exercise after abortion pill,8,"Mentions specific terms: medical abortion; Includes citations","Can I work out after I take the abortion pill?","After taking the abortion pill (medical abortion), it's generally recommended to avoid strenuous exercise for 1-2 weeks while your body recovers. Light activity like gentle walking is usually fine after the first few days, but you should listen to your body and rest when needed. Heavy lifting, intense cardio, and vigorous workouts should be avoided until bleeding lessens significantly. Everyone's recovery varies, so it's important to follow your healthcare provider's specific recommendations. If you experience increased bleeding, severe pain, or other concerning symptoms during exercise, stop immediately and contact your healthcare provider.","Planned Parenthood"
+Abortion pill effectiveness,9,"Excellent response; Addresses effectiveness of abortion pill; Includes citations","How effective is the abortion pill?","The abortion pill (medical abortion) is highly effective, with a success rate of approximately 94-98% when used before 10 weeks of pregnancy. Effectiveness decreases slightly as pregnancy progresses, which is why it's typically recommended for use within the first 10-11 weeks. In the small percentage of cases where the medication doesn't completely end the pregnancy, a follow-up procedure may be needed. The regimen involves two medications: mifepristone, which blocks progesterone, and misoprostol, which causes uterine contractions. This two-step process is more effective than using misoprostol alone.","Planned Parenthood, World Health Organization"
+Having a baby,8,"Good response; Provides pregnancy support information","My boyfriend and I want to have a baby","Congratulations on considering starting a family! Here are some initial steps to prepare for a healthy pregnancy:
+
+1. Start prenatal vitamins with folic acid 2-3 months before trying to conceive
+2. Schedule a preconception check-up with your healthcare provider
+3. Review your medications with your doctor for pregnancy safety
+4. Adopt healthy lifestyle habits (balanced diet, regular exercise, avoid alcohol/smoking)
+5. Track your menstrual cycle to identify fertile windows
+6. Consider genetic counseling if there's family history of genetic conditions
+
+Once pregnant, early and regular prenatal care is important for monitoring your health and your baby's development. Would you like more specific information about any of these steps?","American College of Obstetricians and Gynecologists"
+Getting pregnant,8,"Good response; Provides detailed pregnancy/fertility information: prenatal, conception, fertility","my boyfriend and i want to get pregnant","Congratulations on your decision to try to conceive! Here are some steps to help optimize your fertility:
+
+1. Start taking prenatal vitamins with at least 400mcg of folic acid daily (ideally 2-3 months before conception)
+2. Track your menstrual cycle to identify your most fertile days (typically 12-16 days before your next period)
+3. Have regular intercourse every 2-3 days during your fertile window
+4. Maintain a healthy lifestyle - balanced diet, regular exercise, healthy BMI
+5. Avoid smoking, excessive alcohol, and recreational drugs
+6. Schedule a preconception checkup with your healthcare provider
+7. Review any current medications with your doctor
+
+Remember that most healthy couples conceive within one year of trying. If you're under 35 and haven't conceived after a year of trying (or 6 months if you're over 35), consider consulting with a fertility specialist.","American College of Obstetricians and Gynecologists, Centers for Disease Control"
+Emergency contraception period,8,"Good response; Provides detailed EC information: plan b, period; Includes citations","Will taking emergency contraception change when I get my period?","Taking emergency contraception (EC) like Plan B can affect when you get your next period. Some common effects include:
+
+- Your period might come earlier or later than expected (typically within a week of the expected date)
+- The flow might be heavier, lighter, or more irregular than usual
+- You might experience spotting before your actual period starts
+
+These changes are temporary and usually resolve with your next menstrual cycle. If your period is more than a week late after taking emergency contraception, it's advisable to take a pregnancy test. Emergency contraception works primarily by delaying ovulation rather than affecting an existing pregnancy, which is why these menstrual changes occur.","Planned Parenthood"
