@@ -1,0 +1,15 @@
+{
+  "name": "abby-chatbot-serverless",
+  "version": "1.0.0",
+  "description": "Serverless deployment for Abby Chatbot",
+  "main": "lambda_handler.py",
+  "scripts": {
+    "deploy": "sls deploy",
+    "remove": "sls remove"
+  },
+  "dependencies": {
+    "serverless": "^3.34.0",
+    "serverless-python-requirements": "^6.0.0",
+    "serverless-dotenv-plugin": "^6.0.0"
+  }
+} 
