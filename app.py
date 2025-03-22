@@ -153,14 +153,18 @@ async def chat(request: ChatRequest,
         if "text" in response_data:
             # Remove inline citations in text
             
-            # Remove numbered citations [1], [2], etc.
+            # Remove numbered citations [1], [2], etc. and the actual bracket character [.
             response_data["text"] = re.sub(r'\[\d+\]', '', response_data["text"])
+            response_data["text"] = re.sub(r'\[\.\s*', '', response_data["text"])
             
             # Remove citations in parentheses like (Planned Parenthood, SOURCE...)
             response_data["text"] = re.sub(r'\s?\([^)]*(?:SOURCE|source)[^)]*\)', '', response_data["text"])
             
             # Remove "SOURCE" text
             response_data["text"] = re.sub(r'\s?SOURCE.+?(?=\s|$|\.|,)', '', response_data["text"])
+            
+            # Remove stray brackets that might be left from citation formatting
+            response_data["text"] = re.sub(r'\s?\[\.?\]', '', response_data["text"])
             
             # Remove "For more information, see sources" at the end
             response_data["text"] = re.sub(
@@ -175,28 +179,101 @@ async def chat(request: ChatRequest,
                 response_data["text"]
             )
         
-        # Process citation objects
-        if "citation_objects" in response_data:
-            # If citation_objects is a list of strings, convert to proper format
-            if response_data["citation_objects"] and isinstance(response_data["citation_objects"][0], str):
-                source_names = response_data["citation_objects"]
-                proper_citation_objects = []
-                
-                for source in source_names:
-                    # Default URL for Planned Parenthood if that's the source
-                    url = None
-                    if "Planned Parenthood" in source:
-                        url = "https://www.plannedparenthood.org"
+        # Extract state information from aspect_responses if available
+        if "aspect_responses" in response_data:
+            for aspect_response in response_data["aspect_responses"]:
+                if aspect_response.get("aspect_type") == "policy":
+                    # Copy state_code if it exists in this aspect response
+                    if "state_code" in aspect_response and "state_code" not in response_data:
+                        response_data["state_code"] = aspect_response["state_code"]
+                        logger.info(f"Added state_code to response: {aspect_response['state_code']}")
                     
-                    # Create citation object with available info
-                    proper_citation_objects.append({
-                        "source": source,
-                        "title": source,
-                        "url": url,
-                        "accessed_date": datetime.now().strftime('%Y-%m-%d')
-                    })
+                    # Copy state_codes if it exists in this aspect response
+                    if "state_codes" in aspect_response and "state_codes" not in response_data:
+                        response_data["state_codes"] = aspect_response["state_codes"]
+                        logger.info(f"Added state_codes to response: {aspect_response['state_codes']}")
+                    
+                    break
+        
+        # Log information about citations
+        logger.info(f"Response has {len(response_data.get('citations', []))} citations")
+        citation_objects = response_data.get('citation_objects', [])
+        
+        # Fix citation_objects if they're still strings
+        if citation_objects and all(isinstance(c, str) for c in citation_objects):
+            logger.info("Converting citation_objects from strings to objects")
+            new_citation_objects = []
+            
+            # Check if we have aspect_responses with citation_objects that contain URLs
+            aspect_citation_urls = {}
+            if "aspect_responses" in response_data:
+                for aspect_response in response_data["aspect_responses"]:
+                    if aspect_response.get("aspect_type") == "knowledge":
+                        aspect_citations = aspect_response.get("citation_objects", [])
+                        if aspect_citations and isinstance(aspect_citations[0], dict):
+                            # Extract URLs from the knowledge handler
+                            for idx, citation in enumerate(aspect_citations):
+                                source = citation.get("source")
+                                url = citation.get("url")
+                                title = citation.get("title")
+                                if source and url:
+                                    aspect_citation_urls[source + str(idx)] = {
+                                        "url": url,
+                                        "title": title or source
+                                    }
+            
+            # Create new citation objects with proper URLs if available
+            for idx, source in enumerate(citation_objects):
+                source_key = source + str(idx)
+                # Default values
+                url = "https://www.plannedparenthood.org"
+                title = source
                 
-                response_data["citation_objects"] = proper_citation_objects
+                # If we have a specific URL from the knowledge handler, use it
+                if source_key in aspect_citation_urls:
+                    url = aspect_citation_urls[source_key]["url"]
+                    title = aspect_citation_urls[source_key]["title"]
+                
+                citation_dict = {
+                    "source": source,
+                    "title": title,
+                    "url": url,
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+                logger.info(f"Created citation object: {json.dumps(citation_dict)}")
+                new_citation_objects.append(citation_dict)
+            
+            response_data["citation_objects"] = new_citation_objects
+        
+        # Remove duplicate citation objects
+        if response_data.get("citation_objects"):
+            # Track unique URLs
+            unique_urls = {}
+            unique_citation_objects = []
+            
+            for citation in response_data["citation_objects"]:
+                if isinstance(citation, dict):
+                    url = citation.get("url")
+                    if url and url not in unique_urls:
+                        unique_urls[url] = True
+                        unique_citation_objects.append(citation)
+                    # Keep non-URL citations
+                    elif not url:
+                        unique_citation_objects.append(citation)
+                else:
+                    # Keep string citations
+                    unique_citation_objects.append(citation)
+            
+            # Update response with deduplicated citations
+            response_data["citation_objects"] = unique_citation_objects
+            # Update citations list too for consistency
+            if "citations" in response_data:
+                response_data["citations"] = [c.get("source") for c in unique_citation_objects if isinstance(c, dict) and "source" in c]
+            
+            logger.info(f"Removed duplicate citations, {len(response_data['citation_objects'])} unique citations remain")
+            
+        # Log the final citation objects
+        logger.info(f"Citation objects: {json.dumps(response_data.get('citation_objects', []))}")
         
         # Store bot response in memory
         memory.add_message(
@@ -229,10 +306,6 @@ async def chat(request: ChatRequest,
                         logger.info(f"Added state_codes to response: {aspect_response['state_codes']}")
                     
                     break
-        
-        # Log information about citations
-        logger.info(f"Response has {len(response_data.get('citations', []))} citations")
-        logger.info(f"Citation objects: {json.dumps(response_data.get('citation_objects', []))}")
         
         return response_data
         
@@ -469,6 +542,7 @@ async def test_multi_aspect(request: ChatRequest,
             metadata={
                 "message_id": message_id,
                 "citations": response_data.get("citations", []),
+                "citation_objects": response_data.get("citation_objects", []),
                 "is_multi_aspect_test": True
             }
         )
