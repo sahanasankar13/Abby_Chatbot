@@ -10,6 +10,7 @@ from .response_composer import ResponseComposer
 from .knowledge_handler import KnowledgeHandler
 from .emotional_support_handler import EmotionalSupportHandler
 from .policy_handler import PolicyHandler
+from .preprocessor import Preprocessor
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +19,11 @@ class MultiAspectQueryProcessor:
     Main orchestrator for the multi-aspect query handling process.
     
     This class manages the full lifecycle of a user query:
-    1. Classification
-    2. Aspect decomposition
-    3. Specialized handling per aspect
-    4. Response composition
+    1. Preprocessing (input validation and cleaning)
+    2. Classification
+    3. Aspect decomposition
+    4. Specialized handling per aspect
+    5. Response composition
     
     It maintains references to all specialized handlers and manages their execution.
     """
@@ -49,6 +51,9 @@ class MultiAspectQueryProcessor:
         self.policy_api_base_url = policy_api_base_url or os.getenv("POLICY_API_BASE_URL", 
                                                                    "https://api.abortionpolicyapi.com/v1/")
         
+        # Initialize preprocessing component
+        self.preprocessor = Preprocessor()
+        
         # Initialize components
         self.unified_classifier = UnifiedClassifier(api_key=self.api_key, model_name=openai_model)
         self.aspect_decomposer = AspectDecomposer(api_key=self.api_key, model_name=openai_model)
@@ -63,6 +68,7 @@ class MultiAspectQueryProcessor:
         
         # Performance tracking
         self.processing_times = {
+            "preprocessing": [],
             "classification": [],
             "decomposition": [],
             "handling": {},
@@ -94,10 +100,31 @@ class MultiAspectQueryProcessor:
             if conversation_history is None:
                 conversation_history = []
             
+            # 0. Preprocess the query
+            preprocessing_start = time.time()
+            preprocess_result = self.preprocessor.process(message)
+            self.processing_times["preprocessing"].append(time.time() - preprocessing_start)
+            
+            logger.info(f"Preprocessing result: {preprocess_result['metadata']['preprocessing']}")
+            
+            # If message is not processable (e.g., non-English), return early
+            if not preprocess_result['is_processable']:
+                logger.info(f"Message not processable: {preprocess_result['stop_reason']}")
+                return {
+                    "text": preprocess_result['processed_message'],
+                    "citations": [],
+                    "citation_objects": [],
+                    "preprocessing_metadata": preprocess_result['metadata'],
+                    "processing_time": time.time() - start_time
+                }
+            
+            # Use the processed message for further processing
+            processed_message = preprocess_result['processed_message']
+            
             # 1. Classify the query
             classification_start = time.time()
             classification = await self.unified_classifier.classify(
-                message, 
+                processed_message, 
                 conversation_history
             )
             self.processing_times["classification"].append(time.time() - classification_start)
@@ -107,7 +134,7 @@ class MultiAspectQueryProcessor:
             # 2. Decompose into aspects if needed
             decomposition_start = time.time()
             aspects = await self.aspect_decomposer.decompose(
-                message, 
+                processed_message, 
                 classification, 
                 conversation_history
             )
@@ -129,10 +156,11 @@ class MultiAspectQueryProcessor:
                         self._process_aspect(
                             handler=handler,
                             aspect=aspect,
-                            message=message,
+                            message=processed_message,
                             conversation_history=conversation_history,
                             user_location=user_location,
-                            aspect_type=aspect_type
+                            aspect_type=aspect_type,
+                            original_message=message
                         )
                     )
                     aspect_tasks.append(task)
@@ -148,7 +176,7 @@ class MultiAspectQueryProcessor:
             # 4. Compose the final response
             composition_start = time.time()
             response = self.response_composer.compose_response(
-                message=message,
+                message=processed_message,
                 aspect_responses=aspect_responses,
                 classification=classification
             )
@@ -156,6 +184,9 @@ class MultiAspectQueryProcessor:
             
             # Add processing time to the response
             response["processing_time"] = time.time() - start_time
+            
+            # Add preprocessing metadata
+            response["preprocessing_metadata"] = preprocess_result['metadata']
             
             # Ensure state information is included in the main response
             for aspect_response in aspect_responses:
@@ -190,17 +221,19 @@ class MultiAspectQueryProcessor:
                              message: str,
                              conversation_history: List[Dict[str, Any]],
                              user_location: Optional[Dict[str, str]],
-                             aspect_type: str) -> Optional[Dict[str, Any]]:
+                             aspect_type: str,
+                             original_message: str = None) -> Optional[Dict[str, Any]]:
         """
         Process a single aspect using the appropriate handler
         
         Args:
             handler: The specialized handler
             aspect: The aspect data
-            message: Original user message
+            message: Processed user message
             conversation_history: Previous conversation messages
             user_location: User's location data
             aspect_type: Type of the aspect
+            original_message: Original user message before preprocessing
             
         Returns:
             Optional[Dict[str, Any]]: Handler response or None if failed
@@ -250,6 +283,10 @@ class MultiAspectQueryProcessor:
             "total_queries_processed": len(self.processing_times["classification"]),
             "handler_usage": {}
         }
+        
+        # Calculate average preprocessing time
+        if self.processing_times["preprocessing"]:
+            metrics["average_times"]["preprocessing"] = sum(self.processing_times["preprocessing"]) / len(self.processing_times["preprocessing"])
         
         # Calculate average times
         if self.processing_times["classification"]:

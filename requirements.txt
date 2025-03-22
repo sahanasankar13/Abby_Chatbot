@@ -48,6 +48,11 @@ trulens_eval==0.22.0
 bert-score==0.3.13
 sacrebleu==2.4.0
 
+# Preprocessing and input validation
+langdetect==1.0.9
+symspellpy==6.7.7
+zipcodes==1.2.0
+
 # Data processing and utilities
 numpy==1.24.4
 markdown==3.5

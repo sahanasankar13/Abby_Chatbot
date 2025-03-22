@@ -12,6 +12,7 @@ from .knowledge_handler import KnowledgeHandler
 from .emotional_support_handler import EmotionalSupportHandler
 from .policy_handler import PolicyHandler
 from .response_composer import ResponseComposer
+from .preprocessor import Preprocessor
 
 __version__ = "2.0.0"
 
@@ -23,5 +24,6 @@ __all__ = [
     'KnowledgeHandler',
     'EmotionalSupportHandler',
     'PolicyHandler',
-    'ResponseComposer'
+    'ResponseComposer',
+    'Preprocessor'
 ]

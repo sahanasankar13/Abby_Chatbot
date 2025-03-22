@@ -903,7 +903,7 @@ Format your response in a clear, easy-to-understand way for someone seeking poli
     
     def _get_state_from_zip(self, query: str) -> Optional[str]:
         """
-        Extract state code from a ZIP code in the query using pyzipcode3 library
+        Extract state code from a ZIP code in the query using zipcodes library
         
         Args:
             query (str): The query text that might contain a ZIP code
@@ -912,32 +912,32 @@ Format your response in a clear, easy-to-understand way for someone seeking poli
             Optional[str]: State code or None
         """
         try:
+            # Import Preprocessor here to avoid circular dependencies
+            from .preprocessor import Preprocessor
+            
+            # Check if we have initialized a preprocessor
+            if not hasattr(self, '_preprocessor'):
+                self._preprocessor = Preprocessor()
+                logger.info("Initialized Preprocessor for ZIP code lookup")
+            
             # Look for 5-digit ZIP code pattern
             zip_matches = re.findall(r'\b(\d{5})\b', query)
             
             if not zip_matches:
                 return None
             
-            # Initialize the database
-            zcdb = ZipCodeDatabase()
-            
-            # Try each ZIP code found in the text
+            # Try each ZIP code found in the text using the preprocessor
             for zip_code in zip_matches:
-                try:
-                    # Get ZIP code information
-                    zipcode = zcdb[zip_code]
-                    if zipcode and zipcode.state:
-                        logger.info(f"Matched ZIP code {zip_code} to state {zipcode.state}")
-                        return zipcode.state
-                except (KeyError, IndexError):
-                    logger.warning(f"ZIP code {zip_code} not found in database")
-                    continue
+                state = self._preprocessor.get_state_from_zip(zip_code)
+                if state:
+                    logger.info(f"Matched ZIP code {zip_code} to state {state} using preprocessor")
+                    return state
                         
-            # No valid ZIP code found
-            return None
+            # No valid ZIP code found, fall back to our original implementation
+            return self._get_state_from_zip_fallback(query)
             
         except ImportError:
-            logger.error("pyzipcode3 library not installed, falling back to simplified approach")
+            logger.error("Could not import Preprocessor, falling back to simplified approach")
             return self._get_state_from_zip_fallback(query)
     
     def _get_state_from_zip_fallback(self, query: str) -> Optional[str]:
