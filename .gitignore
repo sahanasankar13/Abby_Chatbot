@@ -123,3 +123,18 @@ node_modules/
 .platform/
 *.pem
 *.db
+
+# Specifically exclude large files
+nltk_data/
+.venv/
+venv/
+__pycache__/
+*.so
+*.dylib
+*.db
+*.js.map
+*.zip
+data/conversations/
+logs/
+deployment.zip
+deploy.zip
