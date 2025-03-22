@@ -17,8 +17,8 @@ class PolicyAPI:
 
     def __init__(self):
         """Initialize the Policy API"""
-        # Default API key - normally would be stored in env vars
-        default_api_key = 'tA3Z3l6l35344'
+        # Default API key (will be overridden by environment variable if available)
+        default_api_key = ''
         
         # Try to get API key from environment vars
         self.api_key = os.environ.get('ABORTION_POLICY_API_KEY', default_api_key)

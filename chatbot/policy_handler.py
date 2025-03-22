@@ -39,7 +39,7 @@ class PolicyHandler:
         
         # Load environment variables or use provided values
         self.openai_api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.abortion_policy_api_key = os.environ.get("ABORTION_POLICY_API_KEY", "tA3Z3l6l35344")  # Default key
+        self.abortion_policy_api_key = os.environ.get("ABORTION_POLICY_API_KEY", "")  # Default empty string
         self.policy_api_base_url = policy_api_base_url or os.environ.get("POLICY_API_BASE_URL", "https://api.abortionpolicyapi.com/v1/")
         self.openai_client = None
         
