@@ -138,3 +138,13 @@ data/conversations/
 logs/
 deployment.zip
 deploy.zip
+
+# Specifically exclude sensitive files
+.ebextensions/
+.ebextensions/*
+.ebextensions/02_environment.config
+chatbot/api_keys.py
+api_keys.py
+**/api_keys.py
+**/*api_key*
+**/*API_KEY*
