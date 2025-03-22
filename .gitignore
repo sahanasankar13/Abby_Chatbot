@@ -148,3 +148,61 @@ api_keys.py
 **/api_keys.py
 **/*api_key*
 **/*API_KEY*
+
+# Specifically exclude sensitive and large files
+.env*
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Logs
+logs/
+*.log
+logs/*
+
+# Conversation data
+data/conversations/
+data/conversations/*
+
+# Local database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# API Keys and sensitive files
+**/api_keys.py
+**/*api_key*
+chatbot/api_keys.py
+config/*api*
+.ebextensions/
+.ebextensions/*
+
+# Large data files
+nltk_data/
+models/checkpoints/
+**/models/*.bin
+**/models/*.pt
+
+# Deployment files
+.elasticbeanstalk/
+.ebextensions/
+simple_test/
+deploy_*.sh
+*deploy*.sh
+setup_*.sh
+lambda_handler.py
+serverless.yml
+package*.json
+application.py
+**/application.py
+
+# Temporary files
+*.bak
+*.swp
+*.tmp
+*~
+.DS_Store
