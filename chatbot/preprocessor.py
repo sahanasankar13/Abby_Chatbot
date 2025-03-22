@@ -43,6 +43,59 @@ class Preprocessor:
         self.phone_pattern = re.compile(r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b')
         self.zip_pattern = re.compile(r'\b(\d{5})\b')
         
+        # List of US states to preserve during typo correction
+        self.us_states = [
+            "alabama", "alaska", "arizona", "arkansas", "california", "colorado", 
+            "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", 
+            "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", 
+            "maine", "maryland", "massachusetts", "michigan", "minnesota", 
+            "mississippi", "missouri", "montana", "nebraska", "nevada", 
+            "new hampshire", "new jersey", "new mexico", "new york", 
+            "north carolina", "north dakota", "ohio", "oklahoma", "oregon", 
+            "pennsylvania", "rhode island", "south carolina", "south dakota", 
+            "tennessee", "texas", "utah", "vermont", "virginia", "washington", 
+            "west virginia", "wisconsin", "wyoming", "district of columbia", "d.c."
+        ]
+        
+        # Common foreign language variants of state names
+        self.state_variants = {
+            "californie": "california",  # French
+            "californië": "california",  # Dutch
+            "tejas": "texas",           # Spanish variant
+            "nuevo mexico": "new mexico", # Spanish
+            "nueva york": "new york",   # Spanish
+            "floride": "florida",       # French
+        }
+        
+        self.state_abbreviations = [
+            "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id", 
+            "il", "in", "ia", "ks", "ky", "la", "me", "md", "ma", "mi", "mn", "ms", 
+            "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", 
+            "or", "pa", "ri", "sc", "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", 
+            "wi", "wy", "dc"
+        ]
+        
+        # State abbreviations that need special handling to avoid false positives
+        self.ambiguous_abbrs = {
+            "in": "Indiana",  # Common preposition
+            "me": "Maine",    # Personal pronoun
+            "or": "Oregon",   # Conjunction
+            "de": "Delaware", # Common in many languages as preposition
+            "la": "Louisiana", # Spanish article/French article
+            "pa": "Pennsylvania", # Spanish stop word
+            "hi": "Hawaii",   # Greeting
+            "oh": "Ohio",     # Exclamation
+            "ok": "Oklahoma", # Affirmation 
+            "va": "Virginia", # Goes (Spanish)
+            "id": "Idaho",    # Identity
+            "ma": "Massachusetts", # Possessive (French)
+            "mo": "Missouri", # Moment (Spanish)
+            "al": "Alabama",  # Spanish preposition
+            "ut": "Utah",     # Latin word
+            "ct": "Connecticut", # Common abbreviation
+            "ri": "Rhode Island", # Spanish word
+        }
+        
         # Simple ZIP code to state mapping for fallback
         self.zip_ranges = {
             'AL': (35000, 36999),
@@ -201,12 +254,11 @@ class Preprocessor:
         
         # 1. Language Detection
         lang_result = self._check_language(message)
-        result["metadata"]["preprocessing"]["language_check"] = lang_result["status"]
+        result["metadata"]["preprocessing"]["language_check"] = lang_result
         
-        if not lang_result["is_english"]:
+        if lang_result not in ["english", "language_detection_disabled"]:
             result["is_processable"] = False
             result["stop_reason"] = "non_english_message"
-            result["processed_message"] = "Please send your question in English so I can help you better."
             return result
         
         # 2. PII Redaction
@@ -214,18 +266,14 @@ class Preprocessor:
         result["metadata"]["preprocessing"]["pii_redaction"] = redaction_info
         result["processed_message"] = redacted_message
         
-        # 3. Typo Correction (only for short messages)
-        words = redacted_message.split()
-        if len(words) < 10:
-            corrected_message, correction_info = self._correct_typos(redacted_message)
-            result["metadata"]["preprocessing"]["typo_correction"] = correction_info
-            result["processed_message"] = corrected_message
-        else:
-            result["metadata"]["preprocessing"]["typo_correction"] = "skipped_long_message"
-            
+        # 3. Apply typo correction (which now always returns the original message)
+        corrected_message, correction_info = self._correct_typos(redacted_message)
+        result["metadata"]["preprocessing"]["typo_correction"] = correction_info
+        result["processed_message"] = corrected_message
+        
         return result
     
-    def _check_language(self, message: str) -> Dict[str, Union[bool, str]]:
+    def _check_language(self, message: str) -> str:
         """
         Check if the message is in English
         
@@ -233,36 +281,11 @@ class Preprocessor:
             message (str): Message to check
             
         Returns:
-            Dict with language detection results
+            str: Language detection result code
         """
-        result = {
-            "is_english": True,
-            "status": "passed",
-            "detected_language": "en"
-        }
-        
-        try:
-            # Skip language detection for very short messages
-            if len(message.strip()) < 3:
-                result["status"] = "skipped_short_message"
-                return result
-                
-            lang = detect(message)
-            result["detected_language"] = lang
-            
-            if lang != "en":
-                result["is_english"] = False
-                result["status"] = f"non_english_detected_{lang}"
-                logger.info(f"Non-English message detected: {lang}")
-            else:
-                result["status"] = "passed"
-                
-        except LangDetectException as e:
-            logger.warning(f"Language detection error: {str(e)}")
-            result["status"] = f"error_{str(e)}"
-            # Default to allowing the message through on errors
-            
-        return result
+        # Skip language detection entirely - always return English
+        logger.info("Language detection disabled - treating all messages as English")
+        return "language_detection_disabled"
     
     def _redact_pii(self, message: str) -> Tuple[str, str]:
         """
@@ -316,28 +339,9 @@ class Preprocessor:
         Returns:
             Tuple of (corrected_message, correction_info)
         """
-        if not self.sym_spell:
-            return message, "symspell_not_initialized"
-            
-        try:
-            # Process the message with symspellpy
-            suggestions = self.sym_spell.lookup_compound(message, max_edit_distance=2)
-            
-            if not suggestions:
-                return message, "no_suggestions_found"
-                
-            suggestion = suggestions[0]  # Get top suggestion
-            
-            # Only apply correction if it's different from the original
-            if suggestion.term != message:
-                logger.info(f"Corrected: '{message}' → '{suggestion.term}'")
-                return suggestion.term, f"corrected_{message}_to_{suggestion.term}"
-            else:
-                return message, "no_corrections_needed"
-                
-        except Exception as e:
-            logger.error(f"Error in typo correction: {str(e)}")
-            return message, f"error_{str(e)}"
+        # Skip all typo correction - always return the original message
+        logger.info("Typo correction completely disabled - returning original message")
+        return message, "typo_correction_disabled"
     
     def get_state_from_zip(self, zip_code: str) -> Optional[str]:
         """
