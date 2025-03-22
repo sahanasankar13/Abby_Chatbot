@@ -7,6 +7,7 @@ from typing import Dict, List, Any, Optional
 import asyncio
 import dotenv
 from datetime import datetime
+import re
 
 from fastapi import FastAPI, HTTPException, Request, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -148,6 +149,55 @@ async def chat(request: ChatRequest,
         if "processing_time" not in response_data:
             response_data["processing_time"] = time.time() - start_time
         
+        # Clean up response text and ensure citation_objects have proper format
+        if "text" in response_data:
+            # Remove inline citations in text
+            
+            # Remove numbered citations [1], [2], etc.
+            response_data["text"] = re.sub(r'\[\d+\]', '', response_data["text"])
+            
+            # Remove citations in parentheses like (Planned Parenthood, SOURCE...)
+            response_data["text"] = re.sub(r'\s?\([^)]*(?:SOURCE|source)[^)]*\)', '', response_data["text"])
+            
+            # Remove "SOURCE" text
+            response_data["text"] = re.sub(r'\s?SOURCE.+?(?=\s|$|\.|,)', '', response_data["text"])
+            
+            # Remove "For more information, see sources" at the end
+            response_data["text"] = re.sub(
+                r"For more (?:detailed )?information,?\s*(?:you can )?(?:refer to|see|check) (?:the )?(?:resources|sources)(?:\s*from [^.]+)?\.?\s*$", 
+                "", 
+                response_data["text"]
+            )
+            # Remove citation markers at the end
+            response_data["text"] = re.sub(
+                r"(?:\s*\[\d+\])+\s*\.?$", 
+                ".", 
+                response_data["text"]
+            )
+        
+        # Process citation objects
+        if "citation_objects" in response_data:
+            # If citation_objects is a list of strings, convert to proper format
+            if response_data["citation_objects"] and isinstance(response_data["citation_objects"][0], str):
+                source_names = response_data["citation_objects"]
+                proper_citation_objects = []
+                
+                for source in source_names:
+                    # Default URL for Planned Parenthood if that's the source
+                    url = None
+                    if "Planned Parenthood" in source:
+                        url = "https://www.plannedparenthood.org"
+                    
+                    # Create citation object with available info
+                    proper_citation_objects.append({
+                        "source": source,
+                        "title": source,
+                        "url": url,
+                        "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                    })
+                
+                response_data["citation_objects"] = proper_citation_objects
+        
         # Store bot response in memory
         memory.add_message(
             session_id=session_id,
@@ -155,7 +205,8 @@ async def chat(request: ChatRequest,
             role="assistant",
             metadata={
                 "message_id": message_id,
-                "citations": response_data.get("citations", [])
+                "citations": response_data.get("citations", []),
+                "citation_objects": response_data.get("citation_objects", [])
             }
         )
         
@@ -268,16 +319,9 @@ async def submit_feedback(request: FeedbackRequest):
         logger.error(f"Error processing feedback: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error processing feedback: {str(e)}")
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health")
 async def health_check():
-    """
-    Check API health
-    """
-    return {
-        "status": "ok",
-        "version": app.version,
-        "environment": os.getenv("ENVIRONMENT", "development")
-    }
+    return {"status": "healthy"}
 
 @app.get("/metrics", status_code=200)
 async def get_metrics(processor: MultiAspectQueryProcessor = Depends(get_processor)):
@@ -528,6 +572,254 @@ async def test_citations(request: ChatRequest):
         logger.error(f"Error creating test citations: {str(e)}", exc_info=True)
         return {"error": f"Error creating test citations: {str(e)}"}
 
+@app.post("/test-duplicate-citations")
+async def test_duplicate_citations(request: ChatRequest):
+    """
+    Test endpoint that creates a response with citation URLs
+    """
+    try:
+        # Create a test response with meaningful citation objects
+        response = {
+            "text": "This is a test response with multiple citations from different sources. Pregnancy occurs when sperm fertilizes an egg, which can happen during unprotected vaginal sex. A woman is most fertile during ovulation, which typically occurs around the middle of her menstrual cycle. After fertilization, the fertilized egg (zygote) travels to the uterus and implants in the uterine lining, beginning pregnancy.",
+            "citations": ["Planned Parenthood", "Mayo Clinic", "WebMD"],
+            "citation_objects": [
+                {
+                    "source": "Planned Parenthood",
+                    "title": "How Pregnancy Happens",
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/how-pregnancy-happens",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Mayo Clinic",
+                    "title": "Getting Pregnant",
+                    "url": "https://www.mayoclinic.org/healthy-lifestyle/getting-pregnant/in-depth/how-to-get-pregnant/art-20047611",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "WebMD",
+                    "title": "Understanding Early Pregnancy",
+                    "url": "https://www.webmd.com/baby/understanding-conception",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+            ],
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        logger.info(f"Test citation response created with {len(response['citation_objects'])} citation objects")
+        logger.info(f"Citation objects: {json.dumps(response['citation_objects'])}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test citations: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test citations: {str(e)}"}
+
+@app.post("/test-inline-citations")
+async def test_inline_citations(request: ChatRequest):
+    """
+    Test endpoint that creates a response with inline numbered citations
+    """
+    try:
+        # Create a test response with explicit citation objects and numbered references
+        response = {
+            "text": "Pregnancy occurs when sperm fertilizes an egg [1], which can happen during unprotected vaginal sex. A woman is most fertile during ovulation [2], which typically occurs around the middle of her menstrual cycle. After fertilization, the fertilized egg (zygote) travels to the uterus and implants in the uterine lining, beginning pregnancy. For more detailed information, you can refer to resources from Planned Parenthood [1], Mayo Clinic [2], and WebMD [3].",
+            "citations": ["Planned Parenthood", "Mayo Clinic", "WebMD"],
+            "citation_objects": [
+                {
+                    "source": "Planned Parenthood",
+                    "title": "How Pregnancy Happens",
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/how-pregnancy-happens",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Mayo Clinic",
+                    "title": "Getting Pregnant",
+                    "url": "https://www.mayoclinic.org/healthy-lifestyle/getting-pregnant/in-depth/how-to-get-pregnant/art-20047611",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "WebMD",
+                    "title": "Understanding Early Pregnancy",
+                    "url": "https://www.webmd.com/baby/understanding-conception",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+            ],
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        logger.info(f"Test inline citation response created with {len(response['citation_objects'])} citation objects")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test inline citations: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test inline citations: {str(e)}"}
+
+@app.post("/test-planned-parenthood-citations")
+async def test_planned_parenthood_citations(request: ChatRequest):
+    """
+    Test endpoint specifically for Planned Parenthood citations that match the log example
+    """
+    try:
+        # Create a test response that matches the logs in the user's example
+        response = {
+            "text": "Pregnancy occurs when sperm fertilizes an egg, which typically happens during unprotected vaginal sex. For more detailed information, you can refer to resources from Planned Parenthood [1][2][3].",
+            "citations": ["Planned Parenthood", "Planned Parenthood", "Planned Parenthood"],
+            "citation_objects": [
+                {
+                    "source": "Planned Parenthood",
+                    "title": "How Pregnancy Happens",
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/how-pregnancy-happens",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Planned Parenthood",
+                    "title": "I Think I'm Pregnant - Now What?",
+                    "url": "https://www.plannedparenthood.org/learn/teens/stds-birth-control-pregnancy/i-think-im-pregnant-now-what",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Planned Parenthood",
+                    "title": "How Pregnancy Happens",  # Duplicate title to match the example
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/how-pregnancy-happens",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+            ],
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        logger.info(f"Test Planned Parenthood citation response created with {len(response['citation_objects'])} citation objects")
+        logger.info(f"Citation objects: {json.dumps(response['citation_objects'])}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test Planned Parenthood citations: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test Planned Parenthood citations: {str(e)}"}
+
+@app.post("/test-improved-citations")
+async def test_improved_citations(request: ChatRequest):
+    """
+    Test endpoint with well-formatted citation objects and text
+    """
+    try:
+        # Create a test response with proper citation handling and multiple sources
+        response = {
+            "text": "Emergency contraception (EC) works by preventing or delaying ovulation. There are different types of EC available, including Plan B One-Step, ella, and copper IUDs. For maximum effectiveness, emergency contraception should be used as soon as possible after unprotected sex.",
+            "citations": ["Planned Parenthood", "Mayo Clinic", "WebMD"],
+            "citation_objects": [
+                {
+                    "source": "Planned Parenthood",
+                    "title": "Emergency Contraception Options",
+                    "url": "https://www.plannedparenthood.org/learn/morning-after-pill-emergency-contraception/which-kind-emergency-contraception-should-i-use",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Mayo Clinic",
+                    "title": "Morning-After Pill",  
+                    "url": "https://www.mayoclinic.org/tests-procedures/morning-after-pill/about/pac-20394730",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "WebMD",
+                    "title": "Emergency Contraception",
+                    "url": "https://www.webmd.com/sex/birth-control/emergency-contraception",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+            ],
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        # Log URLs for debugging
+        logger.info(f"Test improved citations created with {len(response['citation_objects'])} citation objects")
+        logger.info("These sources should appear in the UI:")
+        for i, citation in enumerate(response["citation_objects"]):
+            logger.info(f"  - {citation['source']}: {citation['url']}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test improved citations: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test improved citations: {str(e)}"}
+
+@app.post("/test-clean-citations")
+async def test_clean_citations(request: ChatRequest):
+    """
+    Test endpoint with clean text and separate citations
+    """
+    try:
+        # Create a test response with citations in a format that will be processed by the frontend
+        raw_text = """Preventing sexually transmitted infections (STIs) involves a combination of strategies aimed at reducing risk during sexual activity. Here are key prevention methods:
+1. **Abstinence**: The only 100% effective way to avoid STIs is to abstain from any sexual contact, including vaginal, anal, and oral sex, as well as skin-to-skin genital touching (Planned Parenthood, SOURCE).
+2. **Use of Barriers**: If you choose to have sex, using condoms (external or internal) and dental dams can significantly lower your risk of STIs. These barriers help block the exchange of bodily fluids and reduce skin-to-skin contact that can transmit infections (SOURCE Mayo Clinic).
+3. **Regular Testing**: Getting tested for STIs regularly is crucial, especially if you have multiple partners or engage in unprotected sex. Early detection allows for treatment, which helps maintain your health and prevents the spread of infections to others (SOURCE CDC)."""
+        
+        response = {
+            "text": raw_text,  # This will be cleaned by the frontend
+            "citations": ["Planned Parenthood", "Mayo Clinic", "CDC"],
+            "citation_objects": [
+                {
+                    "source": "Planned Parenthood",
+                    "title": "STDs & Safer Sex",
+                    "url": "https://www.plannedparenthood.org/learn/stds-hiv-safer-sex",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Mayo Clinic",
+                    "title": "Sexually transmitted disease (STD) prevention",  
+                    "url": "https://www.mayoclinic.org/diseases-conditions/sexually-transmitted-diseases-stds/in-depth/std-prevention/art-20044293",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "CDC",
+                    "title": "How You Can Prevent Sexually Transmitted Diseases",
+                    "url": "https://www.cdc.gov/std/prevention/default.htm",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+            ],
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        # Log the citation objects for debugging
+        logger.info("Test clean numbered citations created")
+        logger.info(f"Citation objects: {json.dumps(response['citation_objects'])}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test clean citations: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test clean citations: {str(e)}"}
+
 @app.on_event("startup")
 async def startup_event():
     """
@@ -548,6 +840,145 @@ async def shutdown_event():
     # Clean up inactive sessions
     session_count = memory_manager.cleanup_inactive_sessions()
     logger.info(f"Cleaned up {session_count} inactive sessions")
+
+@app.post("/test-duplicated-sources")
+async def test_duplicated_sources(request: ChatRequest):
+    """
+    Test endpoint for duplicated sources with different URLs
+    """
+    try:
+        # Create a test response with multiple citations from the same source but different URLs
+        raw_text = """The signs of pregnancy can vary from person to person, and while some may experience symptoms early on, others may not notice any at all. Here are some common early signs of pregnancy:
+
+1. **Missed Period**: This is often the first sign that prompts individuals to consider the possibility of pregnancy. [1]
+2. **Swollen or Tender Breasts**: Hormonal changes can cause breast tenderness and swelling. [1]
+3. **Nausea and/or Vomiting**: Commonly referred to as "morning sickness," this can occur at any time of the day. [2]
+4. **Fatigue**: Many people feel unusually tired during early pregnancy due to hormonal changes. [1]
+5. **Bloating**: Some may experience bloating similar to what is felt during PMS. [3]
+6. **Constipation**: Hormonal changes can slow down the digestive system. [2]
+7. **Frequent Urination**: Increased urination can occur as the uterus expands and puts pressure on the bladder. [3]
+
+It's important to note that these symptoms can also be caused by other factors, such as stress or hormonal fluctuations unrelated to pregnancy. Therefore, the only definitive way to confirm a pregnancy is by taking a pregnancy test, which can be done at home or at a healthcare provider's office. [1]
+
+If you suspect you might be pregnant, consider taking a pregnancy test after your missed period for the most accurate results. If the test is positive, it's advisable to schedule an appointment with a healthcare provider to discuss your options and ensure your health. [2]"""
+        
+        # Create citation objects with specific URLs
+        citations = [
+            {
+                "source": "Planned Parenthood",
+                "title": "Pregnancy Symptoms",
+                "url": "https://www.plannedparenthood.org/learn/pregnancy/pregnancy-symptoms",
+                "accessed_date": datetime.now().strftime('%Y-%m-%d')
+            },
+            {
+                "source": "Planned Parenthood",
+                "title": "Morning Sickness & Nausea During Pregnancy",
+                "url": "https://www.plannedparenthood.org/learn/pregnancy/morning-sickness",
+                "accessed_date": datetime.now().strftime('%Y-%m-%d')
+            },
+            {
+                "source": "Planned Parenthood",
+                "title": "Pregnancy Tests & Other Services",
+                "url": "https://www.plannedparenthood.org/learn/pregnancy/pregnancy-tests",
+                "accessed_date": datetime.now().strftime('%Y-%m-%d')
+            }
+        ]
+        
+        # Log each citation and its URL for debugging
+        for i, citation in enumerate(citations):
+            logger.info(f"Citation {i+1}: {citation['title']} - {citation['url']}")
+        
+        response = {
+            "text": raw_text,
+            "citations": ["Planned Parenthood", "Planned Parenthood", "Planned Parenthood"],
+            "citation_objects": citations,
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        # Log the citation objects for debugging
+        logger.info("Test duplicated sources created")
+        logger.info(f"Citation objects: {json.dumps(response['citation_objects'])}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test duplicated sources: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test duplicated sources: {str(e)}"}
+
+@app.post("/test-citation-links")
+async def test_citation_links(request: ChatRequest):
+    """
+    Test endpoint specifically for citation links in text
+    """
+    try:
+        # Create a test response with clear numbered citations and distinct URLs
+        raw_text = """Pregnancy occurs when a sperm cell fertilizes an egg, leading to the implantation of the fertilized egg in the lining of the uterus. Here's a step-by-step overview of how this process happens:
+
+1. **Ovulation**: About halfway through a woman's menstrual cycle, a mature egg is released from the ovary in a process called ovulation. The egg then travels through the fallopian tube towards the uterus. [1]
+
+2. **Fertilization**: If sperm are present in the vagina (usually from vaginal intercourse), they can swim through the cervix and into the uterus, eventually reaching the fallopian tubes. If a sperm cell meets the egg within about 12-24 hours after ovulation, fertilization occurs. It only takes one sperm to fertilize the egg. [2]
+
+3. **Development of the Fertilized Egg**: After fertilization, the fertilized egg (now called a zygote) begins to divide and grow as it moves down the fallopian tube toward the uterus. This process takes about 3-4 days. [3]
+
+4. **Implantation**: Once the fertilized egg reaches the uterus, it floats for a couple of days before implanting itself into the thick, spongy lining of the uterus. This implantation usually occurs about 6-10 days after fertilization and marks the official start of pregnancy. [2]
+
+5. **Hormonal Changes**: After implantation, the developing embryo releases hormones that prevent the uterine lining from shedding, which is why menstruation does not occur during pregnancy. [1]
+
+If the egg is not fertilized or if the fertilized egg does not implant successfully, the body will shed the uterine lining during menstruation."""
+        
+        response = {
+            "text": raw_text,
+            "citations": ["Planned Parenthood", "Planned Parenthood", "Planned Parenthood"],
+            "citation_objects": [
+                {
+                    "source": "Planned Parenthood",
+                    "title": "How Pregnancy Happens",
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/how-pregnancy-happens",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Planned Parenthood",
+                    "title": "What happens during fertilization?",
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/fertility/what-happens-fertilization",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                },
+                {
+                    "source": "Planned Parenthood",
+                    "title": "Pregnancy Tests & Care",
+                    "url": "https://www.plannedparenthood.org/learn/pregnancy/pregnancy-tests",
+                    "accessed_date": datetime.now().strftime('%Y-%m-%d')
+                }
+            ],
+            "confidence": 0.9,
+            "aspect_type": "knowledge",
+            "message_id": str(uuid.uuid4()),
+            "processing_time": 0.1,
+            "session_id": request.session_id or str(uuid.uuid4()),
+            "timestamp": time.time(),
+            "graphics": []
+        }
+        
+        # Log detailed information about each citation for debugging
+        logger.info("=== TEST CITATION LINKS RESPONSE ===")
+        logger.info(f"Text has {len(response['citation_objects'])} citation objects")
+        
+        for i, citation in enumerate(response["citation_objects"]):
+            logger.info(f"Citation {i+1}:")
+            logger.info(f"  - Source: {citation['source']}")
+            logger.info(f"  - Title: {citation['title']}")
+            logger.info(f"  - URL: {citation['url']}")
+            
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error creating test citation links: {str(e)}", exc_info=True)
+        return {"error": f"Error creating test citation links: {str(e)}"}
 
 # Run the app
 if __name__ == "__main__":

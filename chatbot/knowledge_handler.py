@@ -153,9 +153,27 @@ Make your response concise but comprehensive.
                         
                         # Only add citations with URLs
                         if url:
+                            # Extract a meaningful title from the URL or use the document title if available
+                            title = doc.get("title", "")
+                            if not title and url:
+                                try:
+                                    from urllib.parse import urlparse
+                                    parsed_url = urlparse(url)
+                                    path_parts = parsed_url.path.strip('/').split('/')
+                                    if path_parts and path_parts[-1]:
+                                        # Convert last path segment to a readable title
+                                        raw_title = path_parts[-1].replace('-', ' ').replace('_', ' ')
+                                        title = ' '.join(word.capitalize() for word in raw_title.split())
+                                    else:
+                                        title = source
+                                except Exception as e:
+                                    logger.warning(f"Error extracting title from URL: {str(e)}")
+                                    title = source
+                            
                             citation_obj = {
                                 "source": source,
                                 "url": url,
+                                "title": title or source,
                                 "accessed_date": datetime.now().strftime('%Y-%m-%d')
                             }
                             citation_objects.append(citation_obj)

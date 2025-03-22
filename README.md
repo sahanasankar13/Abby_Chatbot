@@ -1,426 +1,172 @@
-# Reproductive Health Chatbot
+# Abby Health Chatbot
 
 An advanced reproductive health conversational AI platform providing personalized, privacy-conscious support through intelligent interaction technologies.
 
 ## Overview
 
-This system provides accurate, context-aware information for reproductive health queries with a focus on US-based policy information, while gracefully handling international queries. It features a simplified user interface, comprehensive performance tracking, and advanced metrics for quality assessment.
+This system provides accurate, context-aware information for reproductive health queries with a focus on US-based policy information, while gracefully handling international queries. It features a clean user interface, comprehensive citation handling, and multi-aspect query processing.
 
-## Key Technologies
+## Key Features
 
-- **GPT-4 Conversational AI**: Powers natural, empathetic responses
-- **BERT-based Retrieval-Augmented Generation (RAG)**: Ensures accurate information retrieval
-- **Dynamic Policy Information Integration**: Provides up-to-date US state policy data
-- **AWS Cloud Deployment**: Enables scalable, reliable hosting
-- **Responsive Web Interface**: Works across devices with privacy-focused design
-- **Enhanced Markdown Text Processing**: Improves readability of responses
-- **Advanced Metrics Dashboard**: Tracks performance, Ragas evaluation metrics, and user feedback
+- **Multi-Aspect Query Processing**: Handles knowledge, emotional support, and policy aspects simultaneously
+- **Citation Management**: Provides properly formatted citations with specific URLs
+- **Clean, Accessible UI**: Responsive design with accessibility features
+- **Suggestion Prompts**: Helps users get started with common health questions
 
-## Project Structure
+## Project Structure and File Interactions
 
-### Core Components
+### Core Application Files
 
-- **app.py**: Flask application entry point and route definitions
-- **main.py**: Server startup script
-- **models.py**: Data models for chat messages and user feedback
+- **app.py**: FastAPI application entry point that:
+  - Sets up routes and API endpoints
+  - Initializes the multi-aspect query processor
+  - Handles user requests and serves the web interface
+  - Coordinates conversation flow and memory management
+  - Provides test endpoints for citation handling and responses
 
-### Chatbot Components
+- **setup.py**: Package installation configuration for deploying the application
 
-- **chatbot/baseline_model.py**: Core model that combines BERT-RAG, GPT-4, and policy integration
-- **chatbot/bert_rag.py**: BERT-based Retrieval-Augmented Generation implementation
-- **chatbot/citation_manager.py**: Handles citations for information sources
-- **chatbot/conversation_manager.py**: Manages conversation flow and context
-- **chatbot/friendly_bot.py**: Adds empathetic, friendly elements to responses
-- **chatbot/gpt_integration.py**: Integration with OpenAI's GPT models
-- **chatbot/policy_api.py**: Integration with abortion policy API
-- **chatbot/response_evaluator.py**: Evaluates response quality, safety, and accuracy
-- **chatbot/visual_info.py**: Generates visual information graphics
+- **Procfile**: Configuration for web server deployment 
 
-### Utility Components
+- **requirements.txt**: Core dependencies needed for the application
+  
+- **requirements-minimal.txt**: Minimal set of dependencies for lightweight deployment
 
-- **utils/advanced_metrics.py**: Advanced metrics for evaluating chatbot responses
-- **utils/data_loader.py**: Loads and processes reproductive health data
-- **utils/feedback_manager.py**: Manages user feedback storage and retrieval
-- **utils/metrics.py**: Tracks and reports performance metrics
-- **utils/metrics_analyzer.py**: Analyzes evaluation logs for dashboard
-- **utils/text_processing.py**: Text processing utilities including PII detection
+### Chatbot Architecture (in `chatbot/` directory)
+
+- **__init__.py**: Exports the main chatbot components and defines the package version
+
+- **multi_aspect_processor.py**: The main orchestrator that:
+  - Manages the workflow from query to response
+  - Coordinates all specialized handlers
+  - Combines multiple aspects into cohesive responses
+  - Entry point for all user queries
+
+- **memory_manager.py**: Manages conversation history and context by:
+  - Storing conversation history
+  - Retrieving relevant context for new queries
+  - Maintaining user session information
+
+- **unified_classifier.py**: Determines the nature of user queries by:
+  - Classifying whether a query needs knowledge, emotional support, or policy information
+  - Routing queries to appropriate specialized handlers
+
+- **aspect_decomposer.py**: Breaks down complex queries into multiple aspects by:
+  - Identifying different dimensions of a query
+  - Creating specialized sub-queries for each aspect
+
+- **knowledge_handler.py**: Provides factual health information by:
+  - Retrieving relevant medical and health information
+  - Ensuring accuracy through citation management
+  - Using BertRAG for information retrieval
+
+- **emotional_support_handler.py**: Provides empathetic support by:
+  - Generating compassionate and understanding responses
+  - Addressing emotional aspects of reproductive health concerns
+
+- **policy_handler.py**: Provides legal and policy information by:
+  - Retrieving up-to-date policy information by US state
+  - Presenting policy in an understandable format
+  - Adding appropriate disclaimers
+
+- **response_composer.py**: Combines specialized responses by:
+  - Integrating multiple aspect outputs
+  - Ensuring coherent, well-structured final responses
+  - Formatting responses with appropriate markdown
+
+- **citation_manager.py**: Manages citation handling by:
+  - Tracking sources of information
+  - Formatting citations consistently
+  - Connecting citations to specific parts of responses
+
+- **bert_rag.py**: Implements retrieval-augmented generation by:
+  - Retrieving relevant documents based on user queries
+  - Enhancing responses with factual information
+  - Supporting citation tracking for retrieved information
+
+- **config.py**: Central configuration management for the chatbot
 
 ### Frontend Components
 
-- **templates/**: HTML templates for the web interface
-  - **templates/index.html**: Main chat interface
-  - **templates/admin/dashboard.html**: Admin metrics dashboard
-  - **templates/layout.html**: Base layout template
-- **static/**: Static assets (CSS, JS, images)
-  - **static/css/style.css**: Custom CSS styles
-  - **static/js/chat.js**: Client-side chat functionality
+- **templates/index.html**: Main chat interface that:
+  - Provides the user input area
+  - Displays chat messages
+  - Shows suggestion prompts
+  - Renders feedback buttons
 
-## Features
+- **templates/layout.html**: Base HTML template that:
+  - Sets up the page structure
+  - Includes required CSS and JavaScript
+  - Configures responsive design elements
 
-1. **Natural Language Understanding**: Interprets user questions naturally
-2. **Personalized Responses**: Tailors information to user context and location
-3. **Privacy Protection**: PII detection and redaction
-4. **Policy Information**: Up-to-date state policy data via API integration
-5. **Response Evaluation**: Quality, accuracy, and safety checks
-6. **Performance Metrics**: Comprehensive tracking and reporting
-7. **User Feedback**: Thumbs up/down feedback with optional comments
-8. **Admin Dashboard**: Metrics visualization and analysis
-9. **Visual Information**: SVG-based graphics for reproductive health topics
-10. **Session Management**: Type 'end' to end a session and clear history
+- **static/css/style.css**: Styling for the chat interface, including:
+  - Chat message formatting
+  - Color schemes and visual design
+  - Responsive layout adjustments
+  - Accessibility features
 
-## Environment Variables
+- **static/js/chat.js**: Client-side JavaScript that:
+  - Handles user input submission
+  - Processes and displays bot responses
+  - Renders citation formatting and linking
+  - Manages UI interactions and animations
+  - Implements suggestion prompts functionality
+  - Handles feedback submission
 
-The following environment variables are required:
+- **static/js/quick-exit.js**: Safety feature allowing users to quickly exit the page
 
-- `SESSION_SECRET`: Secret key for Flask session management
-- `OPENAI_API_KEY`: API key for OpenAI GPT models
-- `ABORTION_POLICY_API_KEY`: API key for abortion policy data
-- `DATABASE_URL`: (Optional) Database connection string for persistent storage
-- `AWS_REGION`: (Optional) AWS region for CloudWatch metrics when deployed
+- **static/images/**: Contains images used in the interface
 
-## AWS Deployment
+### Data Components
 
-### Prerequisites
+- **data/**: Contains conversation logs and other data files
+  - Conversation histories are stored in JSON format
+  - Knowledge documents used for retrieval are organized here
 
-1. An AWS account with appropriate permissions
-2. AWS CLI installed and configured
-3. Docker installed (for container deployment options)
+## System Interaction Flow
 
-### School Project Deployment (Budget-Friendly)
+1. User sends a query through the web interface (`static/js/chat.js` → `app.py`)
+2. The query is processed by the multi-aspect processor (`multi_aspect_processor.py`)
+3. The unified classifier determines query type (`unified_classifier.py`)
+4. The query is decomposed into aspects if needed (`aspect_decomposer.py`)
+5. Specialized handlers process relevant aspects:
+   - Knowledge aspect (`knowledge_handler.py` → `bert_rag.py`)
+   - Emotional aspect (`emotional_support_handler.py`)
+   - Policy aspect (`policy_handler.py`)
+6. Citations are collected and formatted (`citation_manager.py`)
+7. All aspects are combined into a coherent response (`response_composer.py`)
+8. The response is sent back to the user interface (`app.py` → `static/js/chat.js`)
+9. Conversation history is updated (`memory_manager.py`)
+10. The UI displays the response with proper formatting (`static/js/chat.js`)
 
-For school projects with a limited budget (e.g. $250 or less), we recommend using a simplified AWS Elastic Beanstalk setup:
+## Running the Application
 
-1. See the **[aws-simplified-deployment-guide.md](aws-simplified-deployment-guide.md)** for complete step-by-step instructions designed for AWS beginners.
+1. Install dependencies: `pip install -r requirements.txt`
+2. Set environment variables or create a `.env` file
+3. Run the application: `uvicorn app:app --reload`
+4. Access the chatbot at `http://localhost:8000`
 
-2. Key cost-saving tips:
-   - Use t2.micro instances (free tier eligible)
-   - Deploy a single instance without a load balancer
-   - Turn off the environment when not in use
-   - Set up billing alerts to avoid unexpected charges
-   - Delete all resources when the project is complete
+## Setting Up the Environment
 
-3. Quick deployment commands:
-   ```bash
-   # Install EB CLI
-   pip install awsebcli
-   
-   # Initialize application
-   eb init -p python-3.11 reproductive-health-chatbot
-   
-   # Create a low-cost environment
-   eb create reproductive-health-chatbot-env --instance-type t2.micro --single
-   
-   # Set environment variables
-   eb setenv OPENAI_API_KEY=your-key ABORTION_POLICY_API_KEY=your-key SESSION_SECRET=your-secret
-   
-   # Open your application
-   eb open
-   ```
+To run this application, you'll need:
 
-### Production Deployment Options
+1. Python 3.9+ installed
+2. Required environment variables:
+   - `OPENAI_API_KEY`: Your OpenAI API key for GPT access
+   - `POLICY_API_KEY`: API key for abortion policy information (optional)
 
-For production deployments with higher requirements for scalability and reliability:
+Create a `.env` file in the project root with these variables:
 
-#### Option 1: AWS Elastic Beanstalk (Recommended)
+```
+OPENAI_API_KEY=your_openai_api_key_here
+POLICY_API_BASE_URL=https://api.abortionpolicyapi.com/v1/
+POLICY_API_KEY=your_policy_api_key_here
+```
 
-1. Package the application:
-   ```bash
-   zip -r app.zip . -x "*.git*" "*.env" "*.venv*" "__pycache__/*"
-   ```
+## Contributing
 
-2. Create an Elastic Beanstalk environment:
-   - Platform: Python
-   - Application code: Upload the zip file
-   - Configure environment properties with the required environment variables
-
-3. Deploy:
-   ```bash
-   eb deploy
-   ```
-
-#### Option 2: AWS ECS (Container-based)
-
-1. Build the Docker image:
-   ```bash
-   docker build -t reproductive-health-chatbot .
-   ```
-
-2. Tag and push to Amazon ECR:
-   ```bash
-   aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
-   docker tag reproductive-health-chatbot:latest <account-id>.dkr.ecr.<region>.amazonaws.com/reproductive-health-chatbot:latest
-   docker push <account-id>.dkr.ecr.<region>.amazonaws.com/reproductive-health-chatbot:latest
-   ```
-
-3. Create an ECS task definition and service:
-   - Use the CloudFormation template provided in `cloudformation-template.yaml`
-   - Configure environment variables in the task definition
-
-#### Option 3: AWS EC2
-
-1. Launch an EC2 instance with Amazon Linux 2
-2. Install dependencies:
-   ```bash
-   sudo yum update -y
-   sudo yum install -y python3 python3-pip git
-   ```
-
-3. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd reproductive-health-chatbot
-   ```
-
-4. Install Python dependencies:
-   ```bash
-   pip3 install -r requirements.txt
-   ```
-
-5. Set up environment variables:
-   ```bash
-   echo "export OPENAI_API_KEY='your-api-key'" >> ~/.bashrc
-   echo "export ABORTION_POLICY_API_KEY='your-api-key'" >> ~/.bashrc
-   echo "export SESSION_SECRET='your-secret-key'" >> ~/.bashrc
-   source ~/.bashrc
-   ```
-
-6. Run with Gunicorn:
-   ```bash
-   gunicorn -c gunicorn.conf.py main:app
-   ```
-
-7. Set up Nginx as a reverse proxy (optional but recommended)
-
-### CloudWatch Integration
-
-This application supports sending metrics to AWS CloudWatch when deployed. To enable:
-
-1. Ensure the `AWS_REGION` environment variable is set
-2. Attach an IAM role with CloudWatch permissions to your deployment
-3. Metrics will automatically be sent to the namespace `ReproductiveHealthChatbot`
-
-## User Interface
-
-### Chat Interface
-
-- Simple, clean interface for asking questions
-- Type 'end' to end a session and clear history
-- Feedback options on each bot response (except welcome message)
-- Direct link to admin dashboard
-
-### Admin Dashboard
-
-- Comprehensive metrics visualization with multiple tabs
-- Ragas metrics evaluation with configurable sample size
-- Filtering by date range, session ID, and question type
-- User feedback analysis and performance metrics tracking
-- Advanced metrics visualization (BLEU, ROUGE, BERTScore, faithfulness)
-
-## Performance Metrics
-
-The system tracks the following metrics:
-
-- **Response Quality**: Relevance, accuracy, and completeness
-- **Safety**: Content safety and guideline adherence
-- **User Feedback**: Thumbs up/down rates and comments
-- **System Performance**: Inference time, token counts, memory usage
-- **Advanced NLP Metrics**: BLEU, ROUGE, BERTScore, and Ragas (faithfulness, context precision, context recall)
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is confidential. All rights reserved.
-
-## Contributors
-
-This project was developed by a dedicated team of professionals committed to advancing reproductive health education and support.
-
-# Abby Chatbot Metrics Documentation
-
-This document provides detailed information about the various metrics used to evaluate the performance of the Abby chatbot.
-
-## Cost Metrics
-
-### OpenAI API Costs
-
-The system tracks costs for both GPT-4 and GPT-4 mini models:
-
-#### GPT-4 Pricing (per 1M tokens)
-- **Input**: $2.50
-- **Output**: $10.00
-- **Cached Input**: $1.25
-
-#### GPT-4 Mini Pricing (per 1M tokens)
-- **Input**: $0.150
-- **Output**: $0.600
-- **Cached Input**: $0.075
-
-### Cost Tracking
-For each model, the following metrics are tracked:
-- **Input Tokens**: Total number of input tokens used
-- **Output Tokens**: Total number of output tokens generated
-- **Cached Input Tokens**: Total number of cached input tokens
-- **Input Cost**: Cost of input tokens
-- **Output Cost**: Cost of output tokens
-- **Cached Input Cost**: Cost of cached input tokens
-- **Total Cost**: Total cost for the model
-
-### Cost Calculation
-Costs are automatically calculated based on:
-1. Token usage per request
-2. Model type (GPT-4 or GPT-4 mini)
-3. Token type (input, output, or cached input)
-4. Current pricing rates
-
-### Cost Optimization
-The system provides insights for cost optimization:
-- Token usage patterns
-- Cost breakdown by model
-- Daily/weekly/monthly cost trends
-- Cost per conversation
-- Cost per response type
-
-## Core Metrics
-
-### Basic Evaluation Metrics
-- **Total Evaluations**: Total number of evaluations performed
-- **Average Scores**: Mean scores across different dimensions
-  - Relevance: How well the response matches the query
-  - Quality: Overall response quality
-  - Safety: Safety compliance score
-  - Empathy: Emotional intelligence and supportiveness
-  - Clarity: Response clarity and understandability
-- **Improvement Rate**: Percentage of responses that showed improvement over time
-
-## Advanced Text Similarity Metrics
-
-### ROUGE Metrics
-- **ROUGE-1**: Measures overlap of unigrams between reference and generated text
-- **ROUGE-2**: Measures overlap of bigrams between reference and generated text
-- **ROUGE-L**: Measures longest common subsequence between reference and generated text
-
-### BLEU Score
-- **Score**: Bilingual Evaluation Understudy score (0-100)
-- **Details**:
-  - Precisions: N-gram precisions (1-4)
-  - BP: Brevity penalty
-  - Ratio: Length ratio between system and reference
-  - System/Reference Length: Token counts
-
-### BERTScore
-- **Precision**: How well the generated text matches the reference
-- **Recall**: How much of the reference is covered by the generated text
-- **F1**: Harmonic mean of precision and recall
-
-## RAG (Retrieval-Augmented Generation) Metrics
-
-### RAGAS Metrics
-- **Faithfulness**: How well the response is grounded in the retrieved context
-- **Context Precision**: How relevant the retrieved context is
-- **Context Recall**: How much of the relevant context was retrieved
-
-### Retrieval Metrics
-- **Precision@K**: Precision at different retrieval depths (1, 3, 5, 10)
-- **Recall@K**: Recall at different retrieval depths (1, 3, 5, 10)
-- **MRR**: Mean Reciprocal Rank of relevant documents
-
-## Performance Metrics
-
-### Response Time
-- **Average (ms)**: Mean response generation time
-- **Min (ms)**: Fastest response time
-- **Max (ms)**: Slowest response time
-
-### Resource Usage
-- **Tokens**:
-  - Average: Mean token count per response
-  - Min: Minimum tokens used
-  - Max: Maximum tokens used
-- **Memory**:
-  - Average (MB): Mean memory usage
-  - Min (MB): Minimum memory usage
-  - Max (MB): Maximum memory usage
-
-## Conversation Metrics
-
-### Session Statistics
-- **Total Conversations**: Number of unique chat sessions
-- **Average Messages per Conversation**: Mean messages per session
-- **Total Messages**: Total number of messages across all sessions
-
-## Daily Metrics
-
-### Aggregated Daily Scores
-- **Relevance**: Daily average relevance score
-- **Quality**: Daily average quality score
-- **Safety**: Daily average safety score
-- **Total Evaluations**: Number of evaluations per day
-
-## Chart Metrics
-
-### Performance Trends
-- **Dates**: Chronological list of evaluation dates
-- **Daily Scores**: Quality scores over time
-- **Daily Safety**: Safety scores over time
-
-### Average Scores
-- **Relevance**: Overall relevance score
-- **Accuracy**: Overall accuracy score
-- **Completeness**: Overall completeness score
-- **Clarity**: Overall clarity score
-- **Empathy**: Overall empathy score
-
-## Calculation Methods
-
-### Text Similarity Metrics
-1. **ROUGE**: Uses the `rouge` library to calculate n-gram overlaps
-2. **BLEU**: Uses NLTK's BLEU implementation with standard parameters
-3. **BERTScore**: Uses the `bert-score` library with the default BERT model
-
-### RAG Metrics
-1. **RAGAS**: Uses the `ragas` library to evaluate:
-   - Faithfulness through entailment checking
-   - Context precision through relevance scoring
-   - Context recall through coverage analysis
-2. **Retrieval Metrics**: Calculated using standard IR metrics on retrieved documents
-
-### Performance Metrics
-1. **Response Time**: Measured using Python's `time` module
-2. **Token Usage**: Counted using the tokenizer from the language model
-3. **Memory Usage**: Measured using `psutil` for process memory tracking
-
-### Core and Conversation Metrics
-1. **Basic Stats**: Calculated using standard statistical methods (mean, min, max)
-2. **Session Analysis**: Grouped by session ID and analyzed for patterns
-3. **Daily Aggregation**: Grouped by date and averaged for trend analysis
-
-### Cost Calculation
-1. **Token Counting**: Tracks input, output, and cached input tokens per request
-2. **Model Identification**: Identifies the model used (GPT-4 or GPT-4 mini)
-3. **Rate Application**: Applies appropriate rates based on token type and model
-4. **Cost Aggregation**: Sums costs across all requests and models
-
-## Usage
-
-The metrics are automatically calculated when:
-1. The chatbot processes a new conversation
-2. A user submits feedback
-3. The dashboard is loaded
-4. A date range filter is applied
-
-Metrics can be accessed through the dashboard API endpoints:
-- `/api/metrics`: Get all metrics
-- `/api/metrics/filtered`: Get metrics filtered by date range or session
-- `/api/metrics/daily`: Get daily aggregated metrics
-- `/api/metrics/performance`: Get performance-specific metrics
-- `/api/metrics/costs`: Get cost breakdown and analysis
-
-## Dependencies
-
-Required Python packages:
-- `rouge`: For ROUGE metrics
-- `nltk`: For BLEU score calculation
-- `bert-score`: For BERTScore calculation
-- `ragas`: For RAG evaluation metrics
-- `psutil`: For system resource monitoring
-- `numpy`: For statistical calculations
-- `pandas`: For data manipulation and analysis
+This project is licensed under the MIT License - see the LICENSE file for details.

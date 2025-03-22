@@ -2,28 +2,34 @@
 
 {% block content %}
 <div class="chat-container">
+    <button id="quickExit" class="quick-exit-btn" aria-label="Quick exit from website">
+        Quick Exit
+    </button>
+    
     <div class="chat-main">
-        <div class="chat-header">
-            <img src="/static/images/logo.png" alt="Abby Logo" class="logo">
-            <h1>Abby Health Chat</h1>
+        <div class="chat-header" role="banner">
+            <h1>Abby</h1>
+            <p class="disclaimer">This chatbot provides general information about reproductive and mental health but is not a substitute for professional medical advice. Always consult with a qualified healthcare provider for personal medical decisions.</p>
         </div>
-        <div id="chatMessages" class="chat-messages"></div>
+        
+        <div id="chatMessages" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions"></div>
         
         <!-- Map will now be displayed as part of chat messages when needed -->
-        <div id="map-container" style="display: none; margin: 10px 0 20px 10px; max-width: 90%; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+        <div id="map-container" style="display: none; margin: 10px 0 20px 10px; max-width: 90%; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;" aria-hidden="true">
             <div class="map-header">
                 <h3 style="margin: 0; padding: 10px; background-color: #f5f5f5; border-bottom: 1px solid #ddd;">Nearby Healthcare Options</h3>
-                <button id="close-map" class="close-button" style="position: absolute; right: 10px; top: 8px; background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+                <button id="close-map" class="close-button" style="position: absolute; right: 10px; top: 8px; background: none; border: none; font-size: 20px; cursor: pointer;" aria-label="Close map">×</button>
             </div>
             <div id="clinic-map" style="width: 100%; height: 400px;">
                 <div class="map-loading">Loading clinic data...</div>
             </div>
         </div>
         
-        <form id="chatForm" class="chat-form">
-            <textarea id="userInput" placeholder="Ask a question here..." rows="1"></textarea>
-            <button id="sendButton" type="submit" disabled>
-                <i class="fas fa-arrow-up"></i>
+        <form id="chatForm" class="chat-form" role="form">
+            <label for="userInput" class="visually-hidden">Type your message</label>
+            <textarea id="userInput" placeholder="Ask a question..." rows="1" aria-multiline="true"></textarea>
+            <button id="sendButton" type="submit" disabled aria-label="Send message">
+                <i class="fas fa-arrow-up" aria-hidden="true"></i>
             </button>
         </form>
     </div>
@@ -32,6 +38,7 @@
 
 {% block scripts %}
 <script src="/static/js/chat.js"></script>
+<script src="/static/js/quick-exit.js"></script>
 <script>
 // Global variables
 var map = null;

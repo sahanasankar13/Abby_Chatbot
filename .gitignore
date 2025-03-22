@@ -101,3 +101,25 @@ node_modules
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+# Add specific patterns for our project
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+data/conversations/
+logs/
+*.log
+instance/
+.DS_Store
+node_modules/
+*.zip
+.ebextensions/
+.elasticbeanstalk/
+.platform/
+*.pem
+*.db
