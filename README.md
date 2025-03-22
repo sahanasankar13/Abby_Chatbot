@@ -12,6 +12,146 @@ This system provides accurate, context-aware information for reproductive health
 - **Citation Management**: Provides properly formatted citations with specific URLs
 - **Clean, Accessible UI**: Responsive design with accessibility features
 - **Suggestion Prompts**: Helps users get started with common health questions
+- **Preprocessing Layer**: Input validation, language detection, PII redaction, and typo correction
+
+## Quick Setup and Running Instructions
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package manager)
+- Git (optional, for version control)
+
+### Setup Steps
+
+1. **Extract the ZIP file or clone the repository**
+   ```bash
+   unzip Abby_Chatbot_20250321.zip
+   cd Abby_Chatbot
+   ```
+   or
+   ```bash
+   git clone <repository-url>
+   cd Abby_Chatbot
+   ```
+
+2. **Create a virtual environment**
+   ```bash
+   python -m venv .venv
+   ```
+
+3. **Activate the virtual environment**
+
+   **On MacOS/Linux:**
+   ```bash
+   source .venv/bin/activate
+   ```
+
+   **On Windows:**
+   ```bash
+   .venv\Scripts\activate
+   ```
+
+4. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Set up environment variables**
+   Create a `.env` file in the root directory (or copy from `.env.example`):
+   ```
+   OPENAI_API_KEY=your_openai_api_key_here
+   POLICY_API_BASE_URL=https://api.abortionpolicyapi.com/v1/
+   ```
+
+### Running the Chatbot
+
+1. **Run the web interface**
+   ```bash
+   uvicorn app:app --reload
+   ```
+   Then open your browser to http://127.0.0.1:8000
+
+2. **Run the demo preprocessor script**
+   ```bash
+   python demo_preprocessor.py
+   ```
+
+3. **Run tests**
+   ```bash
+   python test_preprocessor.py
+   python test_integration.py
+   ```
+
+### Troubleshooting
+
+- If you encounter missing models, run: `python -m spacy download en_core_web_sm`
+- For ZIP code functionality issues, ensure `zipcodes` library is installed
+- For typo correction, verify `data/frequency_dictionary_en_82_765.txt` exists
+- If you see a "port already in use" error, try a different port: `uvicorn app:app --reload --port 8081`
+
+## Detailed Installation and Setup
+
+### Prerequisites
+- Python 3.9+ installed
+- Git
+- OpenAI API key
+
+### Local Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd Abby_Chatbot
+   ```
+
+2. **Create and activate a virtual environment**
+   ```bash
+   # For macOS/Linux
+   python -m venv .venv
+   source .venv/bin/activate
+   
+   # For Windows
+   python -m venv .venv
+   .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   Open the `.env` file and add your OpenAI API key and other required credentials.
+
+5. **Run the application**
+   ```bash
+   # If port 8080 is already in use, try a different port:
+   uvicorn app:app --reload --port 8081
+   ```
+
+6. **Access the application**
+   Open your browser and navigate to: `http://localhost:8081`
+
+### Troubleshooting
+
+- **Port already in use error**
+  If you see an error like `[Errno 48] Address already in use`, try:
+  ```bash
+  # Kill any running uvicorn processes
+  pkill -f "uvicorn"
+  # Try starting the app with a different port
+  uvicorn app:app --reload --port 8082
+  ```
+
+- **Python package errors**
+  If you encounter any package errors, try:
+  ```bash
+  pip install --upgrade -r requirements.txt
+  ```
 
 ## Project Structure and File Interactions
 
