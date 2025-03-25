@@ -277,3 +277,106 @@ nltk_data/*
 *.bak
 *.tmp
 *~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and databases
+*.log
+logs/
+*.sqlite3
+*.db
+
+# Local development
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# AWS
+*.pem
+.aws/
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+
+# Deployment
+.elasticbeanstalk/
+.ebextensions/
+.serverless/
+
+# Backup files
+*.bak
+backup/
+*~
+
+# Sensitive data
+*.key
+*.secret
+*.pem
+*.ppk
+*.p12
+*.pfx
+*.cer
+*.crt
+*.csr
+*.der
+*.p7b
+*.p7r
+*.spc
+*.user.ini
+*_rsa
+*_dsa
+*_ed25519
+*_ecdsa
+
+# Model and data files that should be managed separately
+serialized_models/
+nltk_data/
+data/
+
+# Keep these files
+!.env.example
+!requirements.txt
+!requirements-dev.txt
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
