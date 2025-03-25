@@ -3,10 +3,11 @@ os: linux
 
 files:
   - source: /
-    destination: /opt/abby-chatbot
+    destination: /home/ec2-user/abby-chatbot
+    overwrite: true
 
 permissions:
-  - object: /opt/abby-chatbot
+  - object: /home/ec2-user/abby-chatbot
     pattern: "**"
     owner: ec2-user
     group: ec2-user
@@ -26,6 +27,10 @@ hooks:
       runas: root
   ApplicationStart:
     - location: scripts/start_application.sh
+      timeout: 300
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_application.sh
       timeout: 300
       runas: root
   ValidateService:

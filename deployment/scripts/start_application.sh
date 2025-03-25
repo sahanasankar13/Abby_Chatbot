@@ -13,34 +13,26 @@ VENV_DIR="$APP_DIR/venv"
 LOG_DIR="/var/log/abby-chatbot"
 
 # Create log directory if it doesn't exist
-mkdir -p $LOG_DIR
-chown -R ec2-user:ec2-user $LOG_DIR
+sudo mkdir -p /var/log/abby-chatbot
+sudo chown -R ec2-user:ec2-user /var/log/abby-chatbot
 
-# Create systemd service file
-cat > /etc/systemd/system/abby-chatbot.service << EOF
-[Unit]
-Description=Abby Chatbot Gunicorn Service
-After=network.target
+# Copy systemd service file
+sudo cp /home/ec2-user/abby-chatbot/deployment/scripts/abby-chatbot.service /etc/systemd/system/
 
-[Service]
-User=ec2-user
-Group=ec2-user
-WorkingDirectory=/opt/abby-chatbot
-Environment="PATH=/opt/abby-chatbot/venv/bin"
-ExecStart=/opt/abby-chatbot/venv/bin/gunicorn -b 0.0.0.0:5006 app:app --workers 3 --log-file=/var/log/abby-chatbot/gunicorn.log
-Restart=always
+# Reload systemd daemon
+sudo systemctl daemon-reload
 
-[Install]
-WantedBy=multi-user.target
-EOF
+# Start the service
+sudo systemctl start abby-chatbot
 
-# Reload systemd and start service
-systemctl daemon-reload
-systemctl enable abby-chatbot
-systemctl restart abby-chatbot
+# Enable the service to start on boot
+sudo systemctl enable abby-chatbot
+
+# Wait for the service to start
+sleep 5
 
 # Check service status
-systemctl status abby-chatbot | cat
+sudo systemctl status abby-chatbot
 
 echo "Application start script completed successfully"
 exit 0 

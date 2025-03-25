@@ -10,8 +10,23 @@ echo "Starting BeforeInstall script at $(date)"
 # Update system packages
 yum update -y
 
-# Install required packages
-yum install -y python3 python3-pip python3-devel gcc git
+# Install Python 3.9 and development tools
+amazon-linux-extras enable python3.9
+yum install -y python39 python39-devel gcc
+
+# Create application directory if it doesn't exist
+mkdir -p /home/ec2-user/abby-chatbot
+
+# Install pip for Python 3.9
+curl -O https://bootstrap.pypa.io/get-pip.py
+python3.9 get-pip.py
+rm get-pip.py
+
+# Create virtual environment
+python3.9 -m venv /home/ec2-user/abby-chatbot/venv
+
+# Install system dependencies
+yum install -y git
 
 # Create application directory if it doesn't exist
 APP_DIR="/opt/abby-chatbot"
