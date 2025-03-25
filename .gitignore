@@ -1,0 +1,279 @@
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs and sensitive data
+logs/
+*.log
+access.log
+error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+server.log
+evaluation_logs.json
+metrics.json
+user_feedback.json
+users.json
+chatbot_test_results.csv
+chatbot_simulation_report.json
+chatbot_evaluation_report.md
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# AWS credentials and config
+.aws/
+aws.config
+aws.credentials
+*.pem
+abby-chatbot-key.pem
+
+# Large binary and archives
+*.zip
+abby-chatbot.zip
+
+# Test results and reports
+chatbot_test_results.csv
+chatbot_simulation_report.json
+chatbot_evaluation_report.md
+
+# Replit specific
+replit_agent/
+node_modules
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Add specific patterns for our project
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+data/conversations/
+logs/
+*.log
+instance/
+.DS_Store
+node_modules/
+*.zip
+.ebextensions/
+.elasticbeanstalk/
+.platform/
+*.pem
+*.db
+
+# Specifically exclude large files
+nltk_data/
+.venv/
+venv/
+__pycache__/
+*.so
+*.dylib
+*.db
+*.js.map
+*.zip
+data/conversations/
+logs/
+deployment.zip
+deploy.zip
+
+# Specifically exclude sensitive files
+.ebextensions/
+.ebextensions/*
+.ebextensions/02_environment.config
+chatbot/api_keys.py
+api_keys.py
+**/api_keys.py
+**/*api_key*
+**/*API_KEY*
+
+# Specifically exclude sensitive and large files
+.env*
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Logs
+logs/
+*.log
+logs/*
+
+# Conversation data
+data/conversations/
+data/conversations/*
+
+# Local database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# API Keys and sensitive files
+**/api_keys.py
+**/*api_key*
+chatbot/api_keys.py
+config/*api*
+.ebextensions/
+.ebextensions/*
+
+# Large data files
+nltk_data/
+models/checkpoints/
+**/models/*.bin
+**/models/*.pt
+
+# Deployment files
+.elasticbeanstalk/
+.ebextensions/
+simple_test/
+deploy_*.sh
+*deploy*.sh
+setup_*.sh
+lambda_handler.py
+serverless.yml
+package*.json
+application.py
+**/application.py
+
+# Temporary files
+*.bak
+*.swp
+*.tmp
+*~
+.DS_Store
+
+# Application specific
+.webassets-cache
+
+# AWS
+terraform/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# AWS
+*.pem
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+
+# Logs and databases
+*.log
+*.sqlite
+logs/
+backup/
+
+# Local development
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Deployment artifacts
+deployment_extract/
+update_tmp/
+build/
+
+# Sensitive data
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Model files and data
+serialized_models/*
+!serialized_models/.gitkeep
+data/*
+!data/.gitkeep
+nltk_data/*
+!nltk_data/.gitkeep
+
+# Temporary files
+*.bak
+*.tmp
+*~
